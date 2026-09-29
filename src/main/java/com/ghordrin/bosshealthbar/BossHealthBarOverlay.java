@@ -13,7 +13,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.time.Duration;
-import java.util.Arrays;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
@@ -22,8 +21,6 @@ import net.runelite.api.NPCComposition;
 import net.runelite.api.ParamID;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
-import net.runelite.api.gameval.VarPlayerID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.NPCManager;
 import net.runelite.client.game.SpriteManager;
@@ -43,21 +40,9 @@ class BossHealthBarOverlay extends Overlay
 	private static final float[] PREVIEW_PHASE_MARKERS = {0.5f};
 	private static final float MAX_VIEWPORT_FRACTION = 0.85f;
 	private static final int MIN_FITTED_BAR_WIDTH = 160;
-
-	// Set to 1 on NPCs whose game boss bar only shows a percentage. No gameval constant exists for it.
-	private static final int PARAM_HP_PERCENTAGE_ONLY = 2289;
-
-	private static final int[] PHASE_MARKER_VARBITS = {
-		VarbitID.HPBAR_HUD_LOWER_THRESHOLD,
-		VarbitID.HPBAR_HUD_UPPER_THRESHOLD,
-		VarbitID.HPBAR_HUD_HP_1,
-		VarbitID.HPBAR_HUD_HP_2,
-	};
-
 	private static final int CREST_OVERLAP = 2;
 
 	private final Client client;
-	private final BossHealthBarPlugin plugin;
 	private final BossHealthBarConfig config;
 	private final NPCManager npcManager;
 	private final SpriteManager spriteManager;
@@ -65,12 +50,14 @@ class BossHealthBarOverlay extends Overlay
 	private final CrestRenderer crestRenderer;
 	private final BarPainter barPainter;
 	private final BarTextPainter textPainter;
+	private final OpponentTracker opponentTracker;
+	private final GameBossBar gameBossBar;
+	private final TobBossBar tobBossBar;
+	private final DamageTracker damageTracker;
 	private final BarAnimation animation = new BarAnimation();
 
 	private Actor trackedOpponent;
 	private BarState lastState;
-	private int percentOnlyNpcId = -1;
-	private boolean percentOnly;
 	private boolean showingPreview;
 	private long previewStartNanos;
 
@@ -79,27 +66,27 @@ class BossHealthBarOverlay extends Overlay
 	private String infoName;
 	private Integer infoMaxHealth;
 
-	private final int[] phaseMarkerValues = new int[PHASE_MARKER_VARBITS.length];
-	private int phaseMarkerMaxHealth;
-	private float[] phaseMarkers = BarState.NO_PHASE_MARKERS;
-
 	private ThemeColors themeColors;
 
 	@Inject
 	private BossHealthBarOverlay(
-		Client client,
 		BossHealthBarPlugin plugin,
+		Client client,
 		BossHealthBarConfig config,
 		NPCManager npcManager,
 		SpriteManager spriteManager,
 		ItemManager itemManager,
 		CrestRenderer crestRenderer,
 		BarPainter barPainter,
-		BarTextPainter textPainter)
+		BarTextPainter textPainter,
+		OpponentTracker opponentTracker,
+		GameBossBar gameBossBar,
+		TobBossBar tobBossBar,
+		DamageTracker damageTracker,
+		Pickers pickers)
 	{
 		super(plugin);
 		this.client = client;
-		this.plugin = plugin;
 		this.config = config;
 		this.npcManager = npcManager;
 		this.spriteManager = spriteManager;
@@ -107,13 +94,17 @@ class BossHealthBarOverlay extends Overlay
 		this.crestRenderer = crestRenderer;
 		this.barPainter = barPainter;
 		this.textPainter = textPainter;
+		this.opponentTracker = opponentTracker;
+		this.gameBossBar = gameBossBar;
+		this.tobBossBar = tobBossBar;
+		this.damageTracker = damageTracker;
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setResizable(false);
 		addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, BossHealthBarPlugin.NAME);
-		addMenuEntry(RUNELITE_OVERLAY, "Choose custom icon", BossHealthBarPlugin.NAME, menuEntry -> plugin.openIconPicker());
-		addMenuEntry(RUNELITE_OVERLAY, "Choose fill texture", BossHealthBarPlugin.NAME, menuEntry -> plugin.openFillTexturePicker());
+		addMenuEntry(RUNELITE_OVERLAY, "Choose custom icon", BossHealthBarPlugin.NAME, menuEntry -> pickers.openIconPicker());
+		addMenuEntry(RUNELITE_OVERLAY, "Choose fill texture", BossHealthBarPlugin.NAME, menuEntry -> pickers.openFillTexturePicker());
 	}
 
 	void reset()
@@ -228,7 +219,7 @@ class BossHealthBarOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		final Actor opponent = plugin.getLastOpponent();
+		final Actor opponent = opponentTracker.getOpponent();
 		final long now = System.nanoTime();
 
 		final BarState state = selectState(opponent, now);
@@ -245,7 +236,7 @@ class BossHealthBarOverlay extends Overlay
 		}
 
 		animation.tick(defeated ? 0f : clamp01(state.ratio / (float) state.scale),
-			config.animationSpeed(), config.showDamageTrail(), plugin.getLastHitMillis());
+			config.animationSpeed(), config.showDamageTrail(), damageTracker.getLastHitMillis());
 
 		final int barHeight = config.barHeight();
 		textPainter.updateFonts();
@@ -361,13 +352,13 @@ class BossHealthBarOverlay extends Overlay
 
 	private BarState readState(Actor opponent)
 	{
-		if (!plugin.shouldShowBarFor(opponent))
+		if (!opponentTracker.shouldShowBarFor(opponent))
 		{
 			return null;
 		}
 
-		final boolean nativeBar = plugin.isNativeBarNpc(opponent);
-		final boolean tobBar = plugin.isTobBarTracking(opponent);
+		final boolean nativeBar = gameBossBar.isTracking(opponent);
+		final boolean tobBar = tobBossBar.isTracking(opponent);
 		if ((nativeBar || tobBar) && !config.replaceNativeBossBar())
 		{
 			return null;
@@ -379,19 +370,20 @@ class BossHealthBarOverlay extends Overlay
 
 		// The game's bars have exact hitpoints, and some bosses stop sending overhead health updates
 		// while they're shown, so prefer them.
-		final int nativeMaxHealth = nativeBar ? client.getVarbitValue(VarbitID.HPBAR_HUD_BASEHP) : 0;
+		final int nativeMaxHealth = nativeBar ? gameBossBar.maxHealth() : 0;
 		if (nativeMaxHealth > 0)
 		{
+			final float[] markers = config.showPhaseMarkers()
+				? gameBossBar.phaseMarkers(nativeMaxHealth) : BarState.NO_PHASE_MARKERS;
 			return new BarState(name, opponent.getCombatLevel(), nativeMaxHealth,
-				client.getVarbitValue(VarbitID.HPBAR_HUD_HP), nativeMaxHealth, true,
-				isNativeBarPercentOnly(), readPhaseMarkers(nativeMaxHealth));
+				gameBossBar.health(), nativeMaxHealth, true, gameBossBar.isPercentOnly(), markers);
 		}
 
-		final int tobMax = tobBar ? client.getVarbitValue(VarbitID.TOB_CLIENT_WAVEPROGRESS_MAX) : 0;
+		final int tobMax = tobBar ? tobBossBar.maxHealth() : 0;
 		if (tobMax > 0)
 		{
-			final int tobValue = Math.max(0, Math.min(tobMax, client.getVarbitValue(VarbitID.TOB_CLIENT_WAVEPROGRESS_VAL)));
-			return new BarState(name, opponent.getCombatLevel(), maxHealth, tobValue, tobMax, false, false, BarState.NO_PHASE_MARKERS);
+			return new BarState(name, opponent.getCombatLevel(), maxHealth, tobBossBar.health(tobMax), tobMax,
+				false, false, BarState.NO_PHASE_MARKERS);
 		}
 
 		if (opponent.getHealthScale() > 0)
@@ -444,64 +436,6 @@ class BossHealthBarOverlay extends Overlay
 		infoMaxHealth = maxHealth;
 		infoActor = complete ? opponent : null;
 		infoNpcId = npcId;
-	}
-
-	private float[] readPhaseMarkers(int maxHealth)
-	{
-		if (!config.showPhaseMarkers())
-		{
-			return BarState.NO_PHASE_MARKERS;
-		}
-
-		boolean changed = maxHealth != phaseMarkerMaxHealth;
-		for (int i = 0; i < PHASE_MARKER_VARBITS.length; i++)
-		{
-			final int value = client.getVarbitValue(PHASE_MARKER_VARBITS[i]);
-			if (value != phaseMarkerValues[i])
-			{
-				phaseMarkerValues[i] = value;
-				changed = true;
-			}
-		}
-		if (!changed)
-		{
-			return phaseMarkers;
-		}
-		phaseMarkerMaxHealth = maxHealth;
-
-		float[] markers = null;
-		int count = 0;
-		for (int value : phaseMarkerValues)
-		{
-			if (value > 0 && value <= maxHealth + 1)
-			{
-				if (markers == null)
-				{
-					markers = new float[PHASE_MARKER_VARBITS.length];
-				}
-				markers[count++] = markerFraction(value, maxHealth);
-			}
-		}
-		phaseMarkers = markers == null ? BarState.NO_PHASE_MARKERS : Arrays.copyOf(markers, count);
-		return phaseMarkers;
-	}
-
-	// Same placement as the game's own bar: a marker for value v sits at (v - 1) / max health.
-	static float markerFraction(int value, int maxHealth)
-	{
-		return clamp01((value - 1) / (float) maxHealth);
-	}
-
-	private boolean isNativeBarPercentOnly()
-	{
-		final int npcId = client.getVarpValue(VarPlayerID.HPBAR_HUD_NPC);
-		if (npcId != percentOnlyNpcId)
-		{
-			final NPCComposition composition = npcId != -1 ? client.getNpcDefinition(npcId) : null;
-			percentOnly = composition != null && composition.getIntValue(PARAM_HP_PERCENTAGE_ONLY) == 1;
-			percentOnlyNpcId = npcId;
-		}
-		return percentOnly;
 	}
 
 	private int barWidth(int crestWidth)

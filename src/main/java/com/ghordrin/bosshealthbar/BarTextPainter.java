@@ -28,7 +28,7 @@ class BarTextPainter
 	private static final Color TEXT_SHADOW_FAR = new Color(0, 0, 0, 90);
 	private static final Color TEXT_SHADOW_NEAR = new Color(0, 0, 0, 200);
 
-	private final BossHealthBarPlugin plugin;
+	private final DamageTracker damageTracker;
 	private final BossHealthBarConfig config;
 
 	private String cachedFontFamily;
@@ -46,9 +46,9 @@ class BarTextPainter
 	private String ellipsizedName;
 
 	@Inject
-	BarTextPainter(BossHealthBarPlugin plugin, BossHealthBarConfig config)
+	BarTextPainter(DamageTracker damageTracker, BossHealthBarConfig config)
 	{
-		this.plugin = plugin;
+		this.damageTracker = damageTracker;
 		this.config = config;
 	}
 
@@ -223,15 +223,15 @@ class BarTextPainter
 
 	private void drawDamageNumber(Graphics2D graphics, int right, int baseline, Color color)
 	{
-		final long lastDamage = plugin.getLastDamageDealtMillis();
-		final int damage = plugin.getComboDamage();
+		final long lastDamage = damageTracker.getLastDamageDealtMillis();
+		final int damage = damageTracker.getComboDamage();
 		if (lastDamage == 0 || damage <= 0)
 		{
 			return;
 		}
 
 		final long elapsed = System.currentTimeMillis() - lastDamage;
-		final long window = BossHealthBarPlugin.DAMAGE_COMBO_WINDOW.toMillis();
+		final long window = DamageTracker.COMBO_WINDOW.toMillis();
 		if (elapsed >= window)
 		{
 			return;

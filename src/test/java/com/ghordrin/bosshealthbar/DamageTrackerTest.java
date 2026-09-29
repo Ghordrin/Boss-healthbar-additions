@@ -1,13 +1,13 @@
 package com.ghordrin.bosshealthbar;
 
-import static com.ghordrin.bosshealthbar.BossHealthBarPlugin.DAMAGE_COMBO_WINDOW;
-import static com.ghordrin.bosshealthbar.BossHealthBarPlugin.nextComboDamage;
+import static com.ghordrin.bosshealthbar.DamageTracker.COMBO_WINDOW;
+import static com.ghordrin.bosshealthbar.DamageTracker.nextComboDamage;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
-public class BossHealthBarPluginComboTest
+public class DamageTrackerTest
 {
-	private static final long WINDOW_MILLIS = DAMAGE_COMBO_WINDOW.toMillis();
+	private static final long WINDOW_MILLIS = COMBO_WINDOW.toMillis();
 
 	@Test
 	public void firstHitStartsTheCombo()

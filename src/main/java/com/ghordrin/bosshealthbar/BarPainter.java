@@ -50,7 +50,7 @@ class BarPainter
 	private static final BasicStroke THIN_STROKE = new BasicStroke(1f);
 
 	private final Client client;
-	private final BossHealthBarPlugin plugin;
+	private final DamageTracker damageTracker;
 	private final BossHealthBarConfig config;
 
 	private ThemeColors derivedColorsSource;
@@ -70,10 +70,10 @@ class BarPainter
 	private int frameStrokeHeight;
 
 	@Inject
-	BarPainter(Client client, BossHealthBarPlugin plugin, BossHealthBarConfig config)
+	BarPainter(Client client, DamageTracker damageTracker, BossHealthBarConfig config)
 	{
 		this.client = client;
-		this.plugin = plugin;
+		this.damageTracker = damageTracker;
 		this.config = config;
 	}
 
@@ -217,8 +217,8 @@ class BarPainter
 
 		if (config.flashOnBigHits() && state.maxHealth != null)
 		{
-			final long lastHit = plugin.getLastHitMillis();
-			if (lastHit != 0 && plugin.getLastHitAmount() >= state.maxHealth * BIG_HIT_FRACTION)
+			final long lastHit = damageTracker.getLastHitMillis();
+			if (lastHit != 0 && damageTracker.getLastHitAmount() >= state.maxHealth * BIG_HIT_FRACTION)
 			{
 				final long since = System.currentTimeMillis() - lastHit;
 				if (since < FLASH_DURATION.toMillis())

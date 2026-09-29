@@ -5,7 +5,7 @@ import static com.ghordrin.bosshealthbar.BarAnimation.clamp01;
 import static com.ghordrin.bosshealthbar.BarAnimation.easeOut;
 import static com.ghordrin.bosshealthbar.BarTextPainter.estimateHealth;
 import static com.ghordrin.bosshealthbar.BarTextPainter.hitpointsPercent;
-import static com.ghordrin.bosshealthbar.BossHealthBarOverlay.markerFraction;
+import static com.ghordrin.bosshealthbar.GameBossBar.markerFraction;
 import static com.ghordrin.bosshealthbar.BarAnimation.progress;
 import static com.ghordrin.bosshealthbar.BarPainter.scaledCapWidth;
 import static com.ghordrin.bosshealthbar.BarPainter.scaledFrameStroke;
