@@ -1,0 +1,15 @@
+.gradle
+build
+.idea/
+.project
+.settings/
+.classpath
+nbactions.xml
+nb-configuration.xml
+nbproject/
+AGENTS.md
+CLAUDE.md
+.claude/
+.vscode/
+CODE_REVIEW.md
+review_code.md
