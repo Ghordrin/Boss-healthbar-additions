@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -32,6 +33,7 @@ import net.runelite.client.ui.FontManager;
 class FillTexturePickerDialog extends JDialog
 {
 	private static final int THUMB_SIZE = 48;
+	private static final int COLUMNS = 6;
 	private static final int TEXTURES_PER_FRAME = 50;
 	private static final Border SELECTED_BORDER = BorderFactory.createLineBorder(ColorScheme.BRAND_ORANGE, 2);
 	private static final Border HOVER_BORDER = BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 2);
@@ -41,7 +43,7 @@ class FillTexturePickerDialog extends JDialog
 	private final ClientThread clientThread;
 	private final ConfigManager configManager;
 	private final BossHealthBarConfig config;
-	private final JPanel resultsPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 4, 4));
+	private final JPanel resultsPanel = new JPanel(new GridLayout(0, COLUMNS, 4, 4));
 	private final JLabel statusLabel = new JLabel();
 
 	private JButton selectedButton;
@@ -85,8 +87,12 @@ class FillTexturePickerDialog extends JDialog
 		header.add(buttons, BorderLayout.NORTH);
 		header.add(statusLabel, BorderLayout.SOUTH);
 
-		resultsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		final JScrollPane scrollPane = new JScrollPane(resultsPanel);
+		// Keeps the grid at its own size in the top left, instead of stretching it over the whole view.
+		final JPanel resultsHolder = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		resultsHolder.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		resultsPanel.setOpaque(false);
+		resultsHolder.add(resultsPanel);
+		final JScrollPane scrollPane = new JScrollPane(resultsHolder);
 		scrollPane.setBorder(null);
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -94,7 +100,8 @@ class FillTexturePickerDialog extends JDialog
 		content.add(header, BorderLayout.NORTH);
 		content.add(scrollPane, BorderLayout.CENTER);
 
-		setSize(360, 440);
+		setSize(400, 460);
+		setResizable(false);
 		setLocationRelativeTo(getOwner());
 
 		loadTextures();
