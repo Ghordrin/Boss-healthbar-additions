@@ -127,7 +127,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "barWidth",
 		name = "Bar width",
-		description = "The width of the health bar in pixels.",
+		description = "The width of the health bar in pixels. You can also hold Alt and drag the bar's edge to resize it, which takes over from this setting until you reset the overlay.",
 		position = 3,
 		section = appearanceSection
 	)

@@ -101,7 +101,8 @@ class BossHealthBarOverlay extends Overlay
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
-		setResizable(false);
+		setResizable(true);
+		setMinimumSize(MIN_FITTED_BAR_WIDTH);
 		addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, BossHealthBarPlugin.NAME);
 		addMenuEntry(RUNELITE_OVERLAY, "Choose custom icon", BossHealthBarPlugin.NAME, menuEntry -> pickers.openIconPicker());
 		addMenuEntry(RUNELITE_OVERLAY, "Choose fill texture", BossHealthBarPlugin.NAME, menuEntry -> pickers.openFillTexturePicker());
@@ -440,7 +441,12 @@ class BossHealthBarOverlay extends Overlay
 
 	private int barWidth(int crestWidth)
 	{
-		final int width = config.barWidth();
+		// Alt-dragging the overlay's edge sets a preferred size, which takes over from "Bar width" until
+		// the overlay is reset. Only its width is used; the bar's height has its own setting.
+		final Dimension preferred = getPreferredSize();
+		final int width = preferred != null
+			? Math.max(MIN_FITTED_BAR_WIDTH, preferred.width - crestWidth)
+			: config.barWidth();
 		final int viewportWidth = client.getViewportWidth();
 		if (!config.fitToGameView() || viewportWidth <= 0)
 		{
