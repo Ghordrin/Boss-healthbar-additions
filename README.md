@@ -1,82 +1,40 @@
 # Boss Health Bar Additions
 
-RuneLite already shows you an opponent's health, tucked in a small bar up in
-the corner that's easy to forget about. This swaps that for a wide bar with
-the opponent's name, a frame, and some animation, so a fight actually reads
-at a glance. A hit for 70 doesn't look the same as a hit for 3 anymore.
+A bigger, themed health bar for the boss you're fighting, with a damage trail and a running total of your hits.
 
-- Damage drops the fill straight away, but the health you just took off
-  hangs around as a lighter trail for a moment before draining, so you can
-  see how big the hit was.
-- Your recent hits add up into a number above the right end, resetting a
-  couple seconds after you stop.
-- The fill shifts color as health drops and pulses once the opponent's low.
+![The bar on a boss](docs/example-boss.png)
 
-That's the whole idea. No timers, no attack prediction, no mechanic
-warnings, just the same information the game already gives you, drawn
-bigger. You can drag it around like any other overlay.
+![The bar with a different theme](docs/example-monster.png)
 
-The five god themes (Saradomin, Zamorak, Bandos, Armadyl, Zaros) draw that
-god's real in-game icon at both bar ends, pulled from RuneLite's own sprite
-cache. Custom theme shows whatever item icon you pick instead.
+## What it does
+
+- Shows a wide bar with the opponent's name, combat level and hitpoints
+- When you land a hit, the health you took off stays visible as a lighter trail for a moment before it drains, so you can see how big the hit was
+- Adds your recent hits up into a number above the bar
+- The fill changes colour as health drops and pulses when it's low
+- God themes put that god's icon at both ends of the bar. The custom theme lets you pick your own colours and any item as the icon
+- You can lay one of the game's own textures over the fill
+
+It only shows what the game already tells you. No timers, attack prediction or anything like that.
+
+## Which opponents get a bar
+
+By default only bosses do. The plugin has a list of commonly fought bosses, and it also picks up anything the game's own boss health bar is showing, plus superior slayer monsters. If a boss is missing, turn on "Also show above combat level", or turn off "Only show for bosses" to get the bar on everything.
+
+If you attack something smaller during a boss fight, like the minions some bosses spawn, the bar stays on the boss.
+
+Superior slayer monsters are found by watching for the chat message when one spawns and taking the closest NPC that spawned around the same time. Works fine in practice, but it is a guess.
 
 ## Settings
 
-Everything's in RuneLite's normal config screen: find "Boss Health Bar
-Additions" in the plugin list, or right-click the bar and pick Configure.
+Everything is in the normal RuneLite config screen, or right-click the bar and pick Configure. A few worth knowing about:
 
-Turn on **Preview** to see a fake opponent loop through losing and
-regaining health, so you can tune settings without finding something to
-fight.
+- Preview shows a fake opponent that loses and regains health, so you can try settings without fighting anything
+- Replace game's boss health bar (on by default) hides the game's own boss bar and uses its numbers instead. Turn it off if you'd rather keep the game's bar, and this one stays out of the way for those fights
+- Hide vanilla opponent overlay (on by default) turns off the health bar from RuneLite's Opponent Information plugin so you don't see two. Your own setting comes back when you turn this plugin off
+- Choose custom icon and Choose fill texture open the pickers. Both are in the bar's right-click menu too. The icon search opens in your chatbox, so you need to be logged in
 
-Right-clicking the bar also gives you two pickers:
-
-- **Choose custom icon** opens the in-game item search in your chatbox,
-  the same one bank tags uses for tab icons. The item you pick shows at
-  the bar ends on the Custom theme.
-- **Choose fill texture** opens a small window with the game's own
-  textures to lay over the fill, on any theme. "None" takes it off again.
-
-Both are also in the config screen, right under Theme: click the
-**Choose fill texture** or **Choose custom icon** checkbox and the same
-picker opens.
-
-Worth knowing about a few of the settings:
-
-- **Theme** picks the colors and, for the five gods above, the icons.
-  Custom opens up its own color section, starting from whichever theme
-  you were on.
-- **Only show for bosses** (on by default) keeps the bar off regular
-  monsters. Something counts as a boss when it's on the plugin's built-in
-  list of commonly fought bosses (world bosses, Wilderness and slayer
-  bosses, raid bosses and so on), when the game's own boss bar
-  is showing it, or when it's a superior slayer monster. For anything the
-  list misses, turn on **Also show above combat level**, which lets
-  anything at or above the level you set through, bosses or not.
-- **Replace game's boss health bar** (on by default): some bosses, including
-  Theatre of Blood, have their own bar at the top of the screen with exact
-  hitpoints and phase markers. This plugin hides that bar and uses its
-  numbers instead. Turn the setting off to keep the game's bars and have
-  this one step aside for those fights.
-- **Hide vanilla opponent overlay** (on by default) turns off RuneLite's
-  own "Opponent Information" health bar while this plugin runs, so you're
-  not looking at two, and restores your setting when you disable the
-  plugin.
-
-The rest are what they sound like: bar size, damage trail, phase markers,
-flash on big hits, intro/defeat animations, low health pulse, name/combat
-level/hitpoints display, and how long the bar lingers after a fight.
-
-## How it picks a target
-
-It follows whatever you're interacting with, same as the Opponent
-Information plugin — attacking something weaker mid-fight, like an add a
-boss throws out, doesn't bump the bar off the boss.
-
-Superior slayer monsters are a special case, since the game doesn't flag
-them anywhere the plugin can read directly. It watches for the chat message
-announcing one, then guesses the attackable NPC that spawned nearest you
-around the same tick. Reliable in practice, but a guess.
+Hold Alt to move the bar, or drag its edge to make it wider or narrower. Alt + right-click and Reset puts it back.
 
 ## License
 
