@@ -33,6 +33,7 @@ Everything is in the normal RuneLite config screen, or right-click the bar and p
 - Replace game's boss health bar (on by default) hides the game's own boss bar and uses its numbers instead. Turn it off if you'd rather keep the game's bar, and this one stays out of the way for those fights
 - Hide vanilla opponent overlay (on by default) turns off the health bar from RuneLite's Opponent Information plugin so you don't see two. Your own setting comes back when you turn this plugin off
 - Choose custom icon and Choose fill texture open the pickers. Both are in the bar's right-click menu too. The icon search opens in your chatbox, so you need to be logged in
+- Use boss icon (off by default) swaps the icon at the bar ends for the boss's hiscores icon, on any theme. Raid bosses show their pet instead
 
 Hold Alt to move the bar, or drag its edge to make it wider or narrower. Alt + right-click and Reset puts it back.
 

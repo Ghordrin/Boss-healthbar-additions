@@ -1,6 +1,10 @@
 package com.ghordrin.bosshealthbar;
 
+import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.SpriteID;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -20,5 +24,27 @@ public class KnownBossesTest
 		assertFalse(KnownBosses.contains("Mithril dragon"));
 		assertFalse(KnownBosses.contains(""));
 		assertFalse(KnownBosses.contains(null));
+	}
+
+	@Test
+	public void bossesUseTheirHiscoreIcon()
+	{
+		assertEquals(new KnownBosses.Icon(false, SpriteID.IconBoss25x25.ZULRAH), KnownBosses.icon("Zulrah"));
+		assertEquals(new KnownBosses.Icon(false, SpriteID.IconBoss25x25.GROTESQUE_GUARDIANS), KnownBosses.icon("dawn"));
+	}
+
+	@Test
+	public void raidBossesUseTheirPet()
+	{
+		assertEquals(new KnownBosses.Icon(true, ItemID.TEKTONPET), KnownBosses.icon("Tekton"));
+		assertEquals(new KnownBosses.Icon(true, ItemID.VERZIKPET), KnownBosses.icon("Verzik Vitur"));
+		assertEquals(new KnownBosses.Icon(true, ItemID.TEKTONENRAGEDPET), KnownBosses.icon("Tekton (enraged)"));
+	}
+
+	@Test
+	public void otherNamesHaveNoIcon()
+	{
+		assertNull(KnownBosses.icon("Mithril dragon"));
+		assertNull(KnownBosses.icon(null));
 	}
 }

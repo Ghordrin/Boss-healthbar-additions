@@ -28,6 +28,7 @@ import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 class BossHealthBarOverlay extends Overlay
@@ -65,6 +66,10 @@ class BossHealthBarOverlay extends Overlay
 	private int infoNpcId = -1;
 	private String infoName;
 	private Integer infoMaxHealth;
+	private KnownBosses.Icon infoBossIcon;
+
+	private int bossSpriteId = -1;
+	private BufferedImage bossSprite;
 
 	private ThemeColors themeColors;
 
@@ -315,6 +320,15 @@ class BossHealthBarOverlay extends Overlay
 
 	private BufferedImage resolveIcon()
 	{
+		if (config.useBossIcon() && !showingPreview && infoBossIcon != null)
+		{
+			final BufferedImage bossIcon = bossIcon(infoBossIcon);
+			if (bossIcon != null)
+			{
+				return bossIcon;
+			}
+		}
+
 		final HealthBarTheme theme = config.theme();
 		if (theme == HealthBarTheme.CUSTOM)
 		{
@@ -324,6 +338,28 @@ class BossHealthBarOverlay extends Overlay
 
 		final Integer godIconSpriteId = theme.getGodIconSpriteId();
 		return godIconSpriteId != null ? spriteManager.getSprite(godIconSpriteId, 0) : null;
+	}
+
+	private BufferedImage bossIcon(KnownBosses.Icon icon)
+	{
+		if (icon.isItem())
+		{
+			return itemManager.getImage(icon.getId());
+		}
+
+		if (icon.getId() != bossSpriteId)
+		{
+			final BufferedImage sprite = spriteManager.getSprite(icon.getId(), 0);
+			if (sprite == null)
+			{
+				return null;
+			}
+			// The crest draws its icon into a square, so pad the sprite rather than stretch it.
+			final int size = Math.max(sprite.getWidth(), sprite.getHeight());
+			bossSprite = ImageUtil.resizeCanvas(sprite, size, size);
+			bossSpriteId = icon.getId();
+		}
+		return bossSprite;
 	}
 
 	private int drawCrest(Graphics2D graphics, CrestRenderer.Crest crest, BufferedImage icon,
@@ -416,8 +452,10 @@ class BossHealthBarOverlay extends Overlay
 		String name = Text.removeTags(opponent.getName());
 		Integer maxHealth = null;
 		boolean complete = true;
+		infoBossIcon = null;
 		if (opponent instanceof NPC)
 		{
+			infoBossIcon = KnownBosses.icon(name);
 			if (composition != null)
 			{
 				final String longName = composition.getStringValue(ParamID.NPC_HP_NAME);
