@@ -39,9 +39,9 @@ Everything is in the normal RuneLite config screen, or right-click the bar and p
 The Experimental section holds newer options that may still change:
 
 - Choose custom icon picks the item shown at the bar ends on the Custom theme
-- Use boss icon (off by default) swaps the icon at the bar ends for the boss's hiscores icon, on any theme. Raid bosses show their pet instead
+- Use boss icon (on by default) swaps the icon at the bar ends for the boss's hiscores icon, on any theme. Raid bosses show their pet instead
 - Match boss colors (off by default) gives each boss its own bar colors, on any theme. A boss keeps the same colors in every form
-- Rare gold bars (off by default) turns about 1 in 250 bars gold, with a shine and a few sparkles. It's rolled once per opponent and is only for looks
+- Rare gold bars (on by default) turns about 1 in 250 bars gold, with a shine and a few sparkles. It's rolled once per opponent and is only for looks
 
 Hold Alt to move the bar, or drag its edge to make it wider or narrower. Alt + right-click and Reset puts it back.
 

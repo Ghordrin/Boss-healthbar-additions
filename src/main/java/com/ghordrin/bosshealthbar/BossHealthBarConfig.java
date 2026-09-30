@@ -139,7 +139,7 @@ public interface BossHealthBarConfig extends Config
 	)
 	default boolean useBossIcon()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -163,7 +163,7 @@ public interface BossHealthBarConfig extends Config
 	)
 	default boolean rareGoldBars()
 	{
-		return false;
+		return true;
 	}
 
 	@Range(min = 200, max = 1400)
