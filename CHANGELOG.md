@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0
+## 1.1.0 (2026-09-30)
 
 - New Experimental section in the config. Choose custom icon moved there, and the new options below live there too
 - Use boss icon (off by default) shows the boss's hiscores icon at the bar ends, on any theme. Raid bosses show their pet
