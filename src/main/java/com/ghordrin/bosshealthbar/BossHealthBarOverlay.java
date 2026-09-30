@@ -55,12 +55,14 @@ class BossHealthBarOverlay extends Overlay
 	private final GameBossBar gameBossBar;
 	private final TobBossBar tobBossBar;
 	private final DamageTracker damageTracker;
+	private final GoldBar goldBar;
 	private final BarAnimation animation = new BarAnimation();
 
 	private Actor trackedOpponent;
 	private BarState lastState;
 	private boolean showingPreview;
 	private long previewStartNanos;
+	private boolean rolledGold;
 
 	private Actor infoActor;
 	private int infoNpcId = -1;
@@ -89,6 +91,7 @@ class BossHealthBarOverlay extends Overlay
 		GameBossBar gameBossBar,
 		TobBossBar tobBossBar,
 		DamageTracker damageTracker,
+		GoldBar goldBar,
 		Pickers pickers)
 	{
 		super(plugin);
@@ -104,6 +107,7 @@ class BossHealthBarOverlay extends Overlay
 		this.gameBossBar = gameBossBar;
 		this.tobBossBar = tobBossBar;
 		this.damageTracker = damageTracker;
+		this.goldBar = goldBar;
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -170,6 +174,7 @@ class BossHealthBarOverlay extends Overlay
 			{
 				trackedOpponent = opponent;
 				resetAnimation();
+				rolledGold = opponent != null && config.rareGoldBars() && goldBar.roll();
 			}
 		}
 
@@ -251,8 +256,11 @@ class BossHealthBarOverlay extends Overlay
 		final int headerHeight = showHeader ? textPainter.headerHeight() : 0;
 		final String footerText = textPainter.footerText(state, defeated);
 		final int footerHeight = footerText != null || config.showDefeatAnimation() ? textPainter.footerHeight() : 0;
-		final ThemeColors colors = config.matchBossColors() && !showingPreview && infoBossColors != null
+		final ThemeColors baseColors = config.matchBossColors() && !showingPreview && infoBossColors != null
 			? infoBossColors : updateThemeColors();
+		final boolean gold = rolledGold && !showingPreview && config.rareGoldBars();
+		final ThemeColors colors = gold ? goldBar.colors(baseColors) : baseColors;
+		final long nowMillis = now / 1_000_000L;
 
 		final int capRise = scaledCapRise(barHeight);
 		final int capWidth = scaledCapWidth(barHeight);
@@ -296,6 +304,11 @@ class BossHealthBarOverlay extends Overlay
 
 		graphics.translate(shownInset, 0);
 		barPainter.drawBar(graphics, colors, state, animation, defeated, barY, shownWidth, barHeight, fillProgress, shownWidth == width);
+		if (gold)
+		{
+			goldBar.drawShine(graphics, capWidth - 1, barY - 1, shownWidth - capWidth * 2 + 2, barHeight + 2,
+				animation.introElapsedMillis(now));
+		}
 		graphics.translate(-shownInset, 0);
 
 		setOpacity(graphics, originalComposite, opacity * textOpacity);
@@ -308,11 +321,22 @@ class BossHealthBarOverlay extends Overlay
 		graphics.translate(-leftExtent, -(topOffset + slideOffset));
 
 		int totalHeight = topOffset + barY + barHeight + capRise + footerHeight;
+		final int centerY = topOffset + headerHeight + barCenterOffset;
 		if (crest != null)
 		{
-			final int centerY = topOffset + headerHeight + barCenterOffset;
 			totalHeight = Math.max(totalHeight, drawCrest(graphics, crest, icon, leftExtent + shownInset + CREST_OVERLAP,
 				leftExtent + shownInset + shownWidth - CREST_OVERLAP, centerY, slideOffset));
+		}
+
+		if (gold)
+		{
+			final float sparkleY = centerY + slideOffset;
+			final float leftX = crest != null ? leftExtent + shownInset + CREST_OVERLAP : leftExtent + shownInset + capWidth / 2f;
+			final float rightX = crest != null
+				? leftExtent + shownInset + shownWidth - CREST_OVERLAP : leftExtent + shownInset + shownWidth - capWidth / 2f;
+			final float radius = crest != null ? crest.iconSize * 0.75f : Math.max(6f, barHeight);
+			goldBar.drawSparkles(graphics, leftX, sparkleY, radius, false, nowMillis);
+			goldBar.drawSparkles(graphics, rightX, sparkleY, radius, true, nowMillis);
 		}
 
 		graphics.setComposite(originalComposite);

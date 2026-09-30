@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Value;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 class ThemeColors
 {
 	static final Color DEFAULT_TEXT = new Color(0xE8E2D4);

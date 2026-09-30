@@ -138,6 +138,12 @@ final class BarAnimation
 		return fadeStartNanos == 0 ? Long.MAX_VALUE : now - fadeStartNanos;
 	}
 
+	long introElapsedMillis(long now)
+	{
+		final long elapsed = introElapsed(now);
+		return elapsed == Long.MAX_VALUE ? elapsed : elapsed / 1_000_000L;
+	}
+
 	float fadeInOpacity(long now)
 	{
 		return progress(introElapsed(now), Duration.ZERO, FADE_IN_DURATION);

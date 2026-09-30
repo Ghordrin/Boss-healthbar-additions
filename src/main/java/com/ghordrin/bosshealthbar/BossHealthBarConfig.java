@@ -154,6 +154,18 @@ public interface BossHealthBarConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = "rareGoldBars",
+		name = "Rare gold bars",
+		description = "Now and then a bar turns gold, with a shine and a few sparkles. It's rolled once per opponent, about 1 in 250, and is only for looks.",
+		position = 3,
+		section = experimentalSection
+	)
+	default boolean rareGoldBars()
+	{
+		return false;
+	}
+
 	@Range(min = 200, max = 1400)
 	@ConfigItem(
 		keyName = "barWidth",
