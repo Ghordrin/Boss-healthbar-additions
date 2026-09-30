@@ -25,8 +25,7 @@ class BarTextPainter
 	private static final int TEXT_INSET = 2;
 	private static final int LEVEL_GAP = 12;
 	private static final String DAMAGE_NUMBER_SIZING = "9999";
-	private static final Color TEXT_SHADOW_FAR = new Color(0, 0, 0, 90);
-	private static final Color TEXT_SHADOW_NEAR = new Color(0, 0, 0, 200);
+	private static final Color TEXT_SHADOW = new Color(0, 0, 0, 200);
 
 	private final DamageTracker damageTracker;
 	private final BossHealthBarConfig config;
@@ -127,9 +126,8 @@ class BarTextPainter
 		graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, pixelFont
 			? RenderingHints.VALUE_TEXT_ANTIALIAS_OFF
 			: RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, pixelFont
-			? RenderingHints.VALUE_FRACTIONALMETRICS_OFF
-			: RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+		// Fractional metrics place glyphs between pixels, which makes smoothed text look soft.
+		graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 	}
 
@@ -253,9 +251,7 @@ class BarTextPainter
 	{
 		alpha = clamp01(alpha);
 		final boolean opaque = alpha >= 1f;
-		graphics.setColor(opaque ? TEXT_SHADOW_FAR : withAlpha(TEXT_SHADOW_FAR, Math.round(TEXT_SHADOW_FAR.getAlpha() * alpha)));
-		graphics.drawString(text, x + 2, y + 2);
-		graphics.setColor(opaque ? TEXT_SHADOW_NEAR : withAlpha(TEXT_SHADOW_NEAR, Math.round(TEXT_SHADOW_NEAR.getAlpha() * alpha)));
+		graphics.setColor(opaque ? TEXT_SHADOW : withAlpha(TEXT_SHADOW, Math.round(TEXT_SHADOW.getAlpha() * alpha)));
 		graphics.drawString(text, x + 1, y + 1);
 		graphics.setColor(opaque ? color : withAlpha(color, Math.round(255 * alpha)));
 		graphics.drawString(text, x, y);
