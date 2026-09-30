@@ -2,6 +2,8 @@
 
 A bigger, themed health bar for the boss you're fighting, with a damage trail and a running total of your hits.
 
+See the [changelog](CHANGELOG.md) for what's new in each version.
+
 ![The bar on a boss](docs/example-boss.png)
 
 ![The bar with a different theme](docs/example-monster.png)
