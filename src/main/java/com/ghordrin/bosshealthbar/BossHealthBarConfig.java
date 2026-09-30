@@ -54,6 +54,13 @@ public interface BossHealthBarConfig extends Config
 	)
 	String behaviourSection = "behaviour";
 
+	@ConfigSection(
+		name = "Experimental",
+		description = "Newer options that may still change.",
+		position = 4
+	)
+	String experimentalSection = "experimental";
+
 	@ConfigItem(
 		keyName = "showPreview",
 		name = "Preview",
@@ -115,8 +122,8 @@ public interface BossHealthBarConfig extends Config
 		keyName = CHOOSE_CUSTOM_ICON_KEY,
 		name = "Choose custom icon",
 		description = "Click to search for an item in your chatbox. Its icon is shown at the bar ends on the Custom theme. You need to be logged in.",
-		position = 2,
-		section = appearanceSection
+		position = 0,
+		section = experimentalSection
 	)
 	default boolean chooseCustomIcon()
 	{
@@ -127,10 +134,22 @@ public interface BossHealthBarConfig extends Config
 		keyName = "useBossIcon",
 		name = "Use boss icon",
 		description = "Show the icon of the boss you're fighting at the bar ends, on any theme. Raid bosses show their pet. Other opponents keep the theme's icon.",
-		position = 3,
-		section = appearanceSection
+		position = 1,
+		section = experimentalSection
 	)
 	default boolean useBossIcon()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "matchBossColors",
+		name = "Match boss colors",
+		description = "Color the bar to suit the boss you're fighting, on any theme. A boss keeps the same colors in every form. Other opponents keep the theme's colors.",
+		position = 2,
+		section = experimentalSection
+	)
+	default boolean matchBossColors()
 	{
 		return false;
 	}
@@ -140,7 +159,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "barWidth",
 		name = "Bar width",
 		description = "The width of the health bar in pixels. You can also hold Alt and drag the bar's edge to resize it, which takes over from this setting until you reset the overlay.",
-		position = 4,
+		position = 2,
 		section = appearanceSection
 	)
 	default int barWidth()
@@ -152,7 +171,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "fitToGameView",
 		name = "Fit to game view",
 		description = "Make the bar narrower when it would take up too much of the game view, such as in fixed mode or a small window. The bar height and text keep their size so they stay readable.",
-		position = 5,
+		position = 3,
 		section = appearanceSection
 	)
 	default boolean fitToGameView()
@@ -165,7 +184,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "barHeight",
 		name = "Bar height",
 		description = "The height of the health bar itself in pixels, not counting the text around it.",
-		position = 6,
+		position = 4,
 		section = appearanceSection
 	)
 	default int barHeight()
@@ -177,7 +196,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDamageTrail",
 		name = "Show damage trail",
 		description = "After a hit, keep the lost health visible as a lighter section for a moment before it drains away.",
-		position = 7,
+		position = 5,
 		section = appearanceSection
 	)
 	default boolean showDamageTrail()
@@ -189,7 +208,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showPhaseMarkers",
 		name = "Show phase markers",
 		description = "When this bar replaces the game's own boss health bar, show the same phase markers the game's bar shows.",
-		position = 8,
+		position = 6,
 		section = appearanceSection
 	)
 	default boolean showPhaseMarkers()
@@ -201,7 +220,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "flashOnBigHits",
 		name = "Flash on big hits",
 		description = "Briefly flash the bar's border when a hit removes a large part of the opponent's health.",
-		position = 9,
+		position = 7,
 		section = appearanceSection
 	)
 	default boolean flashOnBigHits()
@@ -213,7 +232,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "introAnimation",
 		name = "Intro animation",
 		description = "How the bar appears for a new opponent: fade in, rise into place, widen from the center with the fill sweeping up, or rise and widen.",
-		position = 10,
+		position = 8,
 		section = appearanceSection
 	)
 	default IntroAnimation introAnimation()
@@ -225,7 +244,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDefeatAnimation",
 		name = "Defeat animation",
 		description = "When the opponent dies, hold the empty bar with a \"Defeated\" label for a moment before fading it out.",
-		position = 11,
+		position = 9,
 		section = appearanceSection
 	)
 	default boolean showDefeatAnimation()
@@ -237,7 +256,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "lowHealthEffect",
 		name = "Low health effect",
 		description = "Make the fill pulse and glow while the opponent's health is at or below the low health threshold.",
-		position = 12,
+		position = 10,
 		section = appearanceSection
 	)
 	default boolean lowHealthEffect()
@@ -251,7 +270,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "lowHealthThreshold",
 		name = "Low health threshold",
 		description = "The health percentage at or below which the low health effect starts.",
-		position = 13,
+		position = 11,
 		section = appearanceSection
 	)
 	default int lowHealthThreshold()
@@ -264,7 +283,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "animationSpeed",
 		name = "Heal animation speed",
 		description = "How quickly the bar refills when the opponent heals. Higher is faster. Damage always lowers the bar immediately.",
-		position = 14,
+		position = 12,
 		section = appearanceSection
 	)
 	default int animationSpeed()

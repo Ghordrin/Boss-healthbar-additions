@@ -4,7 +4,9 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.SpriteID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -46,5 +48,29 @@ public class KnownBossesTest
 	{
 		assertNull(KnownBosses.icon("Mithril dragon"));
 		assertNull(KnownBosses.icon(null));
+	}
+
+	@Test
+	public void everyFormOfABossSharesItsColors()
+	{
+		assertSame(KnownBosses.colors("Tekton"), KnownBosses.colors("Tekton (enraged)"));
+		assertSame(KnownBosses.colors("Doom of Mokhaiotl"), KnownBosses.colors("Doom of Mokhaiotl (Burrowed)"));
+		assertSame(KnownBosses.colors("Great Olm"), KnownBosses.colors("Great Olm (Left claw)"));
+		assertSame(KnownBosses.colors("Dagannoth Rex"), KnownBosses.colors("Dagannoth Prime"));
+	}
+
+	@Test
+	public void godAlignedBossesUseTheirTheme()
+	{
+		assertSame(HealthBarTheme.ZAMORAK.getColors(), KnownBosses.colors("K'ril Tsutsaroth"));
+		assertSame(HealthBarTheme.TUMEKEN.getColors(), KnownBosses.colors("Tumeken's Warden"));
+	}
+
+	@Test
+	public void otherNamesHaveNoColors()
+	{
+		assertNotNull(KnownBosses.colors("vorkath"));
+		assertNull(KnownBosses.colors("Mithril dragon"));
+		assertNull(KnownBosses.colors(null));
 	}
 }

@@ -1,6 +1,5 @@
 package com.ghordrin.bosshealthbar;
 
-import static com.ghordrin.bosshealthbar.ColorUtil.brighten;
 import java.awt.Color;
 import net.runelite.api.gameval.SpriteID;
 
@@ -41,17 +40,7 @@ public enum HealthBarTheme
 	{
 		this.label = label;
 		this.godIconSpriteId = godIconSpriteId;
-		final Color frameColor = new Color(frame);
-		this.colors = ThemeColors.builder()
-			.fillHigh(new Color(fillHigh))
-			.fillLow(new Color(fillLow))
-			.trail(new Color(trail))
-			.frame(frameColor)
-			.text(ThemeColors.DEFAULT_TEXT)
-			.levelText(brighten(frameColor, 0.35f))
-			.hitpointsText(ThemeColors.DEFAULT_HITPOINTS_TEXT)
-			.defeatedText(brighten(frameColor, 0.45f))
-			.build();
+		this.colors = ThemeColors.of(new Color(fillHigh), new Color(fillLow), new Color(frame), new Color(trail));
 	}
 
 	ThemeColors getColors()

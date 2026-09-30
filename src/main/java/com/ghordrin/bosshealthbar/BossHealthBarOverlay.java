@@ -67,6 +67,7 @@ class BossHealthBarOverlay extends Overlay
 	private String infoName;
 	private Integer infoMaxHealth;
 	private KnownBosses.Icon infoBossIcon;
+	private ThemeColors infoBossColors;
 
 	private int bossSpriteId = -1;
 	private BufferedImage bossSprite;
@@ -250,7 +251,8 @@ class BossHealthBarOverlay extends Overlay
 		final int headerHeight = showHeader ? textPainter.headerHeight() : 0;
 		final String footerText = textPainter.footerText(state, defeated);
 		final int footerHeight = footerText != null || config.showDefeatAnimation() ? textPainter.footerHeight() : 0;
-		final ThemeColors colors = updateThemeColors();
+		final ThemeColors colors = config.matchBossColors() && !showingPreview && infoBossColors != null
+			? infoBossColors : updateThemeColors();
 
 		final int capRise = scaledCapRise(barHeight);
 		final int capWidth = scaledCapWidth(barHeight);
@@ -453,9 +455,11 @@ class BossHealthBarOverlay extends Overlay
 		Integer maxHealth = null;
 		boolean complete = true;
 		infoBossIcon = null;
+		infoBossColors = null;
 		if (opponent instanceof NPC)
 		{
 			infoBossIcon = KnownBosses.icon(name);
+			infoBossColors = KnownBosses.colors(name);
 			if (composition != null)
 			{
 				final String longName = composition.getStringValue(ParamID.NPC_HP_NAME);
