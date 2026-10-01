@@ -7,6 +7,7 @@
 - Switching between opponents mid-fight no longer makes the bar disappear and play its intro again. It moves over to the new target, and keeps showing the old one until the new one's health is known
 - Show Boss Health Indicators lines (on by default) draws the health lines from the Boss Health Indicators plugin on this bar, since they'd otherwise be hidden along with the game's bar
 - Damage number counts lets the damage number add up your RuneLite party's hits or everyone's, not just yours
+- Fixed Boss Health Indicators lines not showing, because their colours weren't read correctly
 
 ## 1.1.0 (2026-09-30)
 

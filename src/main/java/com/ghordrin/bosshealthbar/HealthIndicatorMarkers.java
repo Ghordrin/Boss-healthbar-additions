@@ -211,11 +211,34 @@ class HealthIndicatorMarkers
 		return fraction > 0f && fraction < 1f ? new Marker(fraction, color) : null;
 	}
 
-	// Saved by Gson without a type adapter, so a color is an object holding its ARGB value. The other
-	// plugin draws its lines opaque, so the alpha is dropped.
+	// Usually a "#AARRGGBB" string, but an object holding the ARGB value if it was saved without a color
+	// type adapter. The other plugin draws its lines opaque, so the alpha is dropped.
 	private static Color color(JsonElement element)
 	{
-		if (element == null || !element.isJsonObject())
+		if (element == null)
+		{
+			return null;
+		}
+
+		final String hex = string(element);
+		if (hex != null)
+		{
+			final String digits = hex.startsWith("#") ? hex.substring(1) : hex;
+			if (digits.length() != 6 && digits.length() != 8)
+			{
+				return null;
+			}
+			try
+			{
+				return new Color((int) Long.parseLong(digits, 16));
+			}
+			catch (NumberFormatException e)
+			{
+				return null;
+			}
+		}
+
+		if (!element.isJsonObject())
 		{
 			return null;
 		}
