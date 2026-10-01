@@ -8,6 +8,7 @@ import java.util.Map;
 import lombok.Value;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.SpriteID;
+import net.runelite.client.util.Text;
 
 final class KnownBosses
 {
@@ -26,7 +27,7 @@ final class KnownBosses
 	}
 
 	// Matched by name, since most bosses have a separate NPC ID for each form. Raid bosses have no
-	// icon of their own, so they use their pet. Every form of a boss gets the same colors, so the bar
+	// icon of their own, so they use their pet if they have one. Every form of a boss gets the same colors, so the bar
 	// never changes color mid-fight.
 	private static final Map<String, Boss> BOSSES = new Builder()
 		.sprite(SpriteID.IconBoss25x25.GENERAL_GRAARDOR, HealthBarTheme.BANDOS, "General Graardor")
@@ -74,7 +75,7 @@ final class KnownBosses
 		.sprite(SpriteID.IconBoss25x25.SCURRIUS, 0x7A6A5A, "Scurrius")
 		.sprite(SpriteID.IconBoss25x25.AMOXLIATL, 0x7AB8E0, "Amoxliatl")
 		.sprite(SpriteID.IconBoss25x25.THE_HUEYCOATL, 0x2A9A7A, "The Hueycoatl")
-		.sprite(SpriteID.IconBoss25x25.YAMA, 0xC03A1E, "Yama")
+		.sprite(SpriteID.IconBoss25x25.YAMA, 0xC03A1E, "Yama", "Judge of Yama")
 		.sprite(SpriteID.IconBoss25x25.ROYAL_TITANS, 0x8A7A62, "Branda the Fire Queen", "Eldric the Ice King")
 		.sprite(SpriteID.IconBoss25x25.DOOM_OF_MOKHAIOTL, 0xA0401E, "Doom of Mokhaiotl",
 			"Doom of Mokhaiotl (Shielded)", "Doom of Mokhaiotl (Burrowed)")
@@ -90,14 +91,16 @@ final class KnownBosses
 		.sprite(SpriteID.IconBoss25x25.BRUTUS, 0x8A4A2A, "Brutus", "Demonic Brutus")
 		.sprite(SpriteID.IconBoss25x25.MAGGOT_KING, 0x9AA03A, "Maggot King")
 		.sprite(SpriteID.IconBoss25x25.MAD_ANGEL, 0x9A2A6A, "Mad Angel")
+		.sprite(SpriteID.IconBoss25x25.ZALCANO, 0x9A7A4A, "Zalcano")
 		.item(ItemID.OLMPET, 0x5A8A3A, "Great Olm", "Great Olm (Left claw)", "Great Olm (Right claw)")
 		.item(ItemID.TEKTONPET, 0xC8641E, "Tekton")
 		.item(ItemID.TEKTONENRAGEDPET, 0xC8641E, "Tekton (enraged)")
 		.item(ItemID.VASAPET, 0xC04A9A, "Vasa Nistirio")
-		.item(ItemID.VESPULAPET, 0xD0A02A, "Vespula")
+		.item(ItemID.VESPULAPET, 0xD0A02A, "Vespula", "Abyssal portal")
 		.item(ItemID.DOGADILEPET, 0x5A7A3A, "Muttadile")
 		.item(ItemID.VANGUARDPET, 0x7A8290, "Vanguard")
-		.item(ItemID.MAIDENPET, 0xA01A2A, "The Maiden of Sugadinti")
+		.noIcon(0x5A9AD0, "Ice demon")
+		.noIcon(0x8A8278, "Guardian")		.item(ItemID.MAIDENPET, 0xA01A2A, "The Maiden of Sugadinti")
 		.item(ItemID.BLOATPET, 0x7A8A3A, "Pestilent Bloat")
 		.item(ItemID.NYLOCASPET, 0x6A5A8A, "Nylocas Vasilias")
 		.item(ItemID.SOTETSEGPET, 0xC01E3A, "Sotetseg")
@@ -134,7 +137,7 @@ final class KnownBosses
 
 	private static Boss boss(String name)
 	{
-		return name != null ? BOSSES.get(name.toLowerCase(Locale.ROOT)) : null;
+		return name != null ? BOSSES.get(Text.removeTags(name).toLowerCase(Locale.ROOT)) : null;
 	}
 
 	private static final class Builder
@@ -160,6 +163,11 @@ final class KnownBosses
 		Builder item(int itemId, HealthBarTheme theme, String... names)
 		{
 			return add(new Icon(true, itemId), theme.getColors(), names);
+		}
+
+		Builder noIcon(int color, String... names)
+		{
+			return add(null, palette(color), names);
 		}
 
 		private ThemeColors palette(int color)

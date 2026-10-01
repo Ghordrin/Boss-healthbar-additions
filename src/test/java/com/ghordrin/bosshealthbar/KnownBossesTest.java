@@ -44,6 +44,21 @@ public class KnownBossesTest
 	}
 
 	@Test
+	public void bossesWithoutAnIconAreStillKnown()
+	{
+		assertTrue(KnownBosses.contains("Ice demon"));
+		assertNull(KnownBosses.icon("Ice demon"));
+		assertNotNull(KnownBosses.colors("Ice demon"));
+	}
+
+	@Test
+	public void ignoresColorTagsInNames()
+	{
+		assertTrue(KnownBosses.contains("<col=00ffff>Guardian</col>"));
+		assertNotNull(KnownBosses.colors("<col=00ffff>Guardian</col>"));
+	}
+
+	@Test
 	public void otherNamesHaveNoIcon()
 	{
 		assertNull(KnownBosses.icon("Mithril dragon"));

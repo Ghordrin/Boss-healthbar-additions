@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- More bosses are recognised, mostly raid rooms that were missing, plus NPCs some bosses summon partway through the fight
+- Fixed bosses with a coloured name in game not being recognised
+
 ## 1.1.0 (2026-09-30)
 
 - New Experimental section in the config. Choose custom icon moved there, and the new options below live there too
