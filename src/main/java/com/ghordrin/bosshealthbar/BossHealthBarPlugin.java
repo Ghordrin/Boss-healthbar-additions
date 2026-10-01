@@ -4,6 +4,8 @@ import com.google.inject.Provides;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
 import net.runelite.api.GameState;
+import net.runelite.api.Hitsplat;
+import net.runelite.api.HitsplatID;
 import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
@@ -73,6 +75,9 @@ public class BossHealthBarPlugin extends Plugin
 	@Inject
 	private HealthIndicatorMarkers healthIndicatorMarkers;
 
+	@Inject
+	private PartyDamage partyDamage;
+
 	@Provides
 	BossHealthBarConfig provideConfig(ConfigManager configManager)
 	{
@@ -84,6 +89,7 @@ public class BossHealthBarPlugin extends Plugin
 	{
 		overlay.reset();
 		healthIndicatorMarkers.invalidate();
+		partyDamage.startUp();
 		overlayManager.add(overlay);
 		opponentInfoOverride.apply();
 	}
@@ -92,6 +98,7 @@ public class BossHealthBarPlugin extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+		partyDamage.shutDown();
 		opponentInfoOverride.restore();
 		pickers.close();
 		clientThread.invoke(() ->
@@ -187,8 +194,19 @@ public class BossHealthBarPlugin extends Plugin
 	{
 		if (event.getActor() == opponentTracker.getOpponent())
 		{
-			damageTracker.recordHit(event.getHitsplat());
+			final Hitsplat hitsplat = event.getHitsplat();
+			damageTracker.recordHit(hitsplat, config.damageNumberSource());
+			if (hitsplat.isMine() && hitsplat.getHitsplatType() != HitsplatID.HEAL)
+			{
+				partyDamage.sendHit(event.getActor(), hitsplat.getAmount());
+			}
 		}
+	}
+
+	@Subscribe
+	public void onBossBarPartyHit(BossBarPartyHit event)
+	{
+		clientThread.invoke(() -> partyDamage.onPartyHit(event));
 	}
 
 	@Subscribe

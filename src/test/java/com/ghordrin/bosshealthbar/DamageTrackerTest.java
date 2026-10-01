@@ -1,8 +1,11 @@
 package com.ghordrin.bosshealthbar;
 
 import static com.ghordrin.bosshealthbar.DamageTracker.COMBO_WINDOW;
+import static com.ghordrin.bosshealthbar.DamageTracker.countsTowardCombo;
 import static com.ghordrin.bosshealthbar.DamageTracker.nextComboDamage;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 public class DamageTrackerTest
@@ -40,5 +43,34 @@ public class DamageTrackerTest
 	public void aStalePreviousComboIsIgnoredWhenThereWasNoRecentHit()
 	{
 		assertEquals(10, nextComboDamage(999, 0, 5_000, 10));
+	}
+
+	@Test
+	public void yourOwnHitsAlwaysCount()
+	{
+		for (DamageNumberSource source : DamageNumberSource.values())
+		{
+			assertTrue(source.toString(), countsTowardCombo(true, false, source));
+		}
+	}
+
+	@Test
+	public void onlyEveryoneCountsOtherPlayersHitsplats()
+	{
+		assertFalse(countsTowardCombo(false, true, DamageNumberSource.ME));
+		assertFalse(countsTowardCombo(false, true, DamageNumberSource.PARTY));
+		assertTrue(countsTowardCombo(false, true, DamageNumberSource.EVERYONE));
+		assertFalse(countsTowardCombo(false, false, DamageNumberSource.EVERYONE));
+	}
+
+	@Test
+	public void partyHitsAddToTheCombo()
+	{
+		final DamageTracker tracker = new DamageTracker();
+		tracker.recordPartyHit(20);
+		tracker.recordPartyHit(15);
+		tracker.recordPartyHit(0);
+
+		assertEquals(35, tracker.getComboDamage());
 	}
 }

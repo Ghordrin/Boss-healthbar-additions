@@ -446,7 +446,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showDamageNumber",
 		name = "Show damage number",
-		description = "Show the total damage of your recent hits above the right end of the bar. It resets a few seconds after your last hit.",
+		description = "Show the total damage of recent hits above the right end of the bar. It resets a few seconds after the last hit. \"Damage number counts\" sets whose hits are added up.",
 		position = 3,
 		section = textSection
 	)
@@ -456,10 +456,22 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "damageNumberSource",
+		name = "Damage number counts",
+		description = "Whose hits the damage number adds up. Party adds the hits of RuneLite party members who also use this plugin. Everyone adds every hit on the opponent, including players outside your party.",
+		position = 4,
+		section = textSection
+	)
+	default DamageNumberSource damageNumberSource()
+	{
+		return DamageNumberSource.ME;
+	}
+
+	@ConfigItem(
 		keyName = "hitpointsTextMode",
 		name = "Hitpoints text",
 		description = "Show the opponent's hitpoints below the bar as a percentage, a value (when the max hitpoints are known), or both. Bosses the game only shows as a percentage always show a percentage.",
-		position = 4,
+		position = 5,
 		section = textSection
 	)
 	default HitpointsTextMode hitpointsTextMode()

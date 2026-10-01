@@ -24,7 +24,7 @@ class DamageTracker
 	@Getter(AccessLevel.PACKAGE)
 	private long lastDamageDealtMillis;
 
-	void recordHit(Hitsplat hitsplat)
+	void recordHit(Hitsplat hitsplat, DamageNumberSource source)
 	{
 		if (hitsplat.getAmount() <= 0 || hitsplat.getHitsplatType() == HitsplatID.HEAL)
 		{
@@ -35,11 +35,30 @@ class DamageTracker
 		lastHitMillis = now;
 		lastHitAmount = hitsplat.getAmount();
 
-		if (hitsplat.isMine())
+		if (countsTowardCombo(hitsplat.isMine(), hitsplat.isOthers(), source))
 		{
-			comboDamage = nextComboDamage(comboDamage, lastDamageDealtMillis, now, hitsplat.getAmount());
-			lastDamageDealtMillis = now;
+			addToCombo(hitsplat.getAmount(), now);
 		}
+	}
+
+	// Party members' hits arrive over the party connection instead, so their hitsplats aren't counted twice.
+	static boolean countsTowardCombo(boolean mine, boolean others, DamageNumberSource source)
+	{
+		return mine || (others && source == DamageNumberSource.EVERYONE);
+	}
+
+	void recordPartyHit(int amount)
+	{
+		if (amount > 0)
+		{
+			addToCombo(amount, System.currentTimeMillis());
+		}
+	}
+
+	private void addToCombo(int amount, long now)
+	{
+		comboDamage = nextComboDamage(comboDamage, lastDamageDealtMillis, now, amount);
+		lastDamageDealtMillis = now;
 	}
 
 	void resetCombo()

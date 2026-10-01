@@ -12,7 +12,7 @@ See the [changelog](CHANGELOG.md) for what's new in each version.
 
 - Shows a wide bar with the opponent's name, combat level and hitpoints
 - When you land a hit, the health you took off stays visible as a lighter trail for a moment before it drains, so you can see how big the hit was
-- Adds your recent hits up into a number above the bar
+- Adds your recent hits up into a number above the bar. It can also count your RuneLite party's hits, or everyone's
 - The fill changes colour as health drops and pulses when it's low
 - God themes put that god's icon at both ends of the bar. The custom theme lets you pick your own colours and any item as the icon
 - You can lay one of the game's own textures over the fill
@@ -37,6 +37,7 @@ Everything is in the normal RuneLite config screen, or right-click the bar and p
 - Replace game's boss health bar (on by default) hides the game's own boss bar and uses its numbers instead. Turn it off if you'd rather keep the game's bar, and this one stays out of the way for those fights
 - Hide vanilla opponent overlay (on by default) turns off the health bar from RuneLite's Opponent Information plugin so you don't see two. Your own setting comes back when you turn this plugin off
 - Show Boss Health Indicators lines (on by default): if you use the Boss Health Indicators plugin, the health lines you set up there are drawn on this bar too, in your colours. Without this they'd be lost, because they sit on the game's bar that this one hides
+- Damage number counts picks whose hits the number above the bar adds up: just yours (the default), your RuneLite party's, or everyone hitting the opponent. Party only counts members who also have this plugin, since each one sends their own hits over the party connection. Everyone needs no party, but includes players outside it
 - Choose custom icon and Choose fill texture open the pickers. Both are in the bar's right-click menu too. The icon search opens in your chatbox, so you need to be logged in
 
 The Experimental section holds newer options that may still change:
