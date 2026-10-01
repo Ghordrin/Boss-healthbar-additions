@@ -79,7 +79,6 @@ public class BossHealthBarPlugin extends Plugin
 	protected void startUp()
 	{
 		overlay.reset();
-		opponentTracker.setOnOpponentChanged(overlay::resetAnimation);
 		overlayManager.add(overlay);
 		opponentInfoOverride.apply();
 	}

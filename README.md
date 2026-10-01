@@ -25,6 +25,8 @@ By default only bosses do. The plugin has a list of commonly fought bosses, and 
 
 If you attack something smaller during a boss fight, like the minions some bosses spawn, the bar stays on the boss.
 
+Switching between opponents that both get a bar, like the NPCs of a boss fought as a group, moves the bar over without playing the intro again. The game only shows an NPC's health once it's been hit, so until then the bar keeps showing the previous one, for up to 3 seconds.
+
 Superior slayer monsters are found by watching for the chat message when one spawns and taking the closest NPC that spawned around the same time. Works fine in practice, but it is a guess.
 
 ## Settings

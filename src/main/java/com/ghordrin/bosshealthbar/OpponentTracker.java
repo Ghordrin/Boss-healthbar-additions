@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
@@ -26,11 +25,6 @@ class OpponentTracker
 	@Getter(AccessLevel.PACKAGE)
 	private Actor opponent;
 	private long interactionLostMillis;
-
-	@Setter(AccessLevel.PACKAGE)
-	private Runnable onOpponentChanged = () ->
-	{
-	};
 
 	private Actor knownBossActor;
 	private String knownBossName;
@@ -144,7 +138,6 @@ class OpponentTracker
 
 	private void setOpponent(Actor target)
 	{
-		onOpponentChanged.run();
 		damage.resetCombo();
 		opponent = target;
 		log.debug("New opponent: {} (combat level {}, known boss: {}, game boss bar: {})",

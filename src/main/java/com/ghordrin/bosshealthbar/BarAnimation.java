@@ -26,6 +26,7 @@ final class BarAnimation
 	private long lastRenderNanos;
 	private long fadeStartNanos;
 	private long defeatStartNanos;
+	private boolean snapToTarget;
 
 	void reset()
 	{
@@ -34,6 +35,14 @@ final class BarAnimation
 		actualFraction = -1f;
 		fadeStartNanos = 0;
 		defeatStartNanos = 0;
+		snapToTarget = false;
+	}
+
+	// The next tick jumps straight to the new health without replaying the intro, and without
+	// showing the difference from the old target as a damage trail.
+	void retarget()
+	{
+		snapToTarget = true;
 	}
 
 	void resetFrameTime()
@@ -53,6 +62,15 @@ final class BarAnimation
 			displayedFraction = targetFraction;
 			trailFraction = targetFraction;
 			fadeStartNanos = now;
+			snapToTarget = false;
+			return;
+		}
+
+		if (snapToTarget)
+		{
+			displayedFraction = targetFraction;
+			trailFraction = targetFraction;
+			snapToTarget = false;
 			return;
 		}
 

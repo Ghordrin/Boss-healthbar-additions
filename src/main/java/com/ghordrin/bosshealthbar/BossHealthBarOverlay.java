@@ -42,6 +42,7 @@ class BossHealthBarOverlay extends Overlay
 	private static final float MAX_VIEWPORT_FRACTION = 0.85f;
 	private static final int MIN_FITTED_BAR_WIDTH = 160;
 	private static final int CREST_OVERLAP = 2;
+	private static final Duration SWITCH_HOLD = Duration.ofSeconds(3);
 
 	private final Client client;
 	private final BossHealthBarConfig config;
@@ -63,6 +64,8 @@ class BossHealthBarOverlay extends Overlay
 	private boolean showingPreview;
 	private long previewStartNanos;
 	private boolean rolledGold;
+	private long switchHoldUntilNanos;
+	private boolean retargetPending;
 
 	private Actor infoActor;
 	private int infoNpcId = -1;
@@ -133,6 +136,8 @@ class BossHealthBarOverlay extends Overlay
 	{
 		animation.reset();
 		lastState = null;
+		switchHoldUntilNanos = 0;
+		retargetPending = false;
 	}
 
 	void invalidateColors()
@@ -170,7 +175,16 @@ class BossHealthBarOverlay extends Overlay
 				animation.startDefeat(now);
 			}
 
-			if (opponent != null || !animation.isDefeatPlaying())
+			if (opponent != null && trackedOpponent != null && lastState != null && !trackedOpponent.isDead()
+				&& !animation.isDefeatPlaying())
+			{
+				// Switching targets mid-fight, e.g. between the NPCs of a group boss. The bar stays up and
+				// moves over, instead of playing the intro again.
+				trackedOpponent = opponent;
+				retargetPending = true;
+				switchHoldUntilNanos = now + SWITCH_HOLD.toNanos();
+			}
+			else if (opponent != null || !animation.isDefeatPlaying())
 			{
 				trackedOpponent = opponent;
 				resetAnimation();
@@ -186,6 +200,11 @@ class BossHealthBarOverlay extends Overlay
 		if (state != null)
 		{
 			lastState = state;
+			if (retargetPending)
+			{
+				animation.retarget();
+				retargetPending = false;
+			}
 
 			if (!opponent.isDead())
 			{
@@ -199,6 +218,12 @@ class BossHealthBarOverlay extends Overlay
 		}
 
 		if (animation.isDefeatPlaying() && lastState != null)
+		{
+			return lastState;
+		}
+
+		// A new target has no health to show until it's been hit, so keep the previous bar up meanwhile.
+		if (opponent != null && lastState != null && now < switchHoldUntilNanos && awaitingHealth(opponent))
 		{
 			return lastState;
 		}
@@ -456,6 +481,14 @@ class BossHealthBarOverlay extends Overlay
 		}
 
 		return null;
+	}
+
+	private boolean awaitingHealth(Actor opponent)
+	{
+		return opponent.getHealthScale() <= 0
+			&& opponentTracker.shouldShowBarFor(opponent)
+			&& !gameBossBar.isTracking(opponent)
+			&& !tobBossBar.isTracking(opponent);
 	}
 
 	private BarState previewState(long now)

@@ -4,6 +4,7 @@
 
 - More bosses are recognised, mostly raid rooms that were missing, plus NPCs some bosses summon partway through the fight
 - Fixed bosses with a coloured name in game not being recognised
+- Switching between opponents mid-fight no longer makes the bar disappear and play its intro again. It moves over to the new target, and keeps showing the old one until the new one's health is known
 
 ## 1.1.0 (2026-09-30)
 
