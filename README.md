@@ -36,6 +36,7 @@ Everything is in the normal RuneLite config screen, or right-click the bar and p
 - Preview shows a fake opponent that loses and regains health, so you can try settings without fighting anything
 - Replace game's boss health bar (on by default) hides the game's own boss bar and uses its numbers instead. Turn it off if you'd rather keep the game's bar, and this one stays out of the way for those fights
 - Hide vanilla opponent overlay (on by default) turns off the health bar from RuneLite's Opponent Information plugin so you don't see two. Your own setting comes back when you turn this plugin off
+- Show Boss Health Indicators lines (on by default): if you use the Boss Health Indicators plugin, the health lines you set up there are drawn on this bar too, in your colours. Without this they'd be lost, because they sit on the game's bar that this one hides
 - Choose custom icon and Choose fill texture open the pickers. Both are in the bar's right-click menu too. The icon search opens in your chatbox, so you need to be logged in
 
 The Experimental section holds newer options that may still change:

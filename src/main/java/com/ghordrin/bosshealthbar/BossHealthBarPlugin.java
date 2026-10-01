@@ -17,6 +17,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.PluginChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -69,6 +70,9 @@ public class BossHealthBarPlugin extends Plugin
 	@Inject
 	private Pickers pickers;
 
+	@Inject
+	private HealthIndicatorMarkers healthIndicatorMarkers;
+
 	@Provides
 	BossHealthBarConfig provideConfig(ConfigManager configManager)
 	{
@@ -79,6 +83,7 @@ public class BossHealthBarPlugin extends Plugin
 	protected void startUp()
 	{
 		overlay.reset();
+		healthIndicatorMarkers.invalidate();
 		overlayManager.add(overlay);
 		opponentInfoOverride.apply();
 	}
@@ -119,6 +124,12 @@ public class BossHealthBarPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
+		if (HealthIndicatorMarkers.CONFIG_GROUP.equals(event.getGroup()))
+		{
+			clientThread.invoke(healthIndicatorMarkers::invalidate);
+			return;
+		}
+
 		if (!BossHealthBarConfig.GROUP.equals(event.getGroup()))
 		{
 			return;
@@ -157,6 +168,12 @@ public class BossHealthBarPlugin extends Plugin
 				opponentInfoOverride.restore();
 			}
 		}
+	}
+
+	@Subscribe
+	public void onPluginChanged(PluginChanged event)
+	{
+		clientThread.invoke(healthIndicatorMarkers::invalidate);
 	}
 
 	@Subscribe

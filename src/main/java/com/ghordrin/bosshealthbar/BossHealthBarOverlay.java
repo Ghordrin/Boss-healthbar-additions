@@ -57,6 +57,7 @@ class BossHealthBarOverlay extends Overlay
 	private final TobBossBar tobBossBar;
 	private final DamageTracker damageTracker;
 	private final GoldBar goldBar;
+	private final HealthIndicatorMarkers indicatorMarkers;
 	private final BarAnimation animation = new BarAnimation();
 
 	private Actor trackedOpponent;
@@ -95,6 +96,7 @@ class BossHealthBarOverlay extends Overlay
 		TobBossBar tobBossBar,
 		DamageTracker damageTracker,
 		GoldBar goldBar,
+		HealthIndicatorMarkers indicatorMarkers,
 		Pickers pickers)
 	{
 		super(plugin);
@@ -111,6 +113,7 @@ class BossHealthBarOverlay extends Overlay
 		this.tobBossBar = tobBossBar;
 		this.damageTracker = damageTracker;
 		this.goldBar = goldBar;
+		this.indicatorMarkers = indicatorMarkers;
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -455,6 +458,7 @@ class BossHealthBarOverlay extends Overlay
 		updateOpponentInfo(opponent);
 		final String name = infoName;
 		final Integer maxHealth = infoMaxHealth;
+		final HealthIndicatorMarkers.Marker[] userMarkers = indicatorMarkers.markersFor(name);
 
 		// The game's bars have exact hitpoints, and some bosses stop sending overhead health updates
 		// while they're shown, so prefer them.
@@ -464,20 +468,20 @@ class BossHealthBarOverlay extends Overlay
 			final float[] markers = config.showPhaseMarkers()
 				? gameBossBar.phaseMarkers(nativeMaxHealth) : BarState.NO_PHASE_MARKERS;
 			return new BarState(name, opponent.getCombatLevel(), nativeMaxHealth,
-				gameBossBar.health(), nativeMaxHealth, true, gameBossBar.isPercentOnly(), markers);
+				gameBossBar.health(), nativeMaxHealth, true, gameBossBar.isPercentOnly(), markers, userMarkers);
 		}
 
 		final int tobMax = tobBar ? tobBossBar.maxHealth() : 0;
 		if (tobMax > 0)
 		{
 			return new BarState(name, opponent.getCombatLevel(), maxHealth, tobBossBar.health(tobMax), tobMax,
-				false, false, BarState.NO_PHASE_MARKERS);
+				false, false, BarState.NO_PHASE_MARKERS, userMarkers);
 		}
 
 		if (opponent.getHealthScale() > 0)
 		{
 			return new BarState(name, opponent.getCombatLevel(), maxHealth,
-				opponent.getHealthRatio(), opponent.getHealthScale(), false, false, BarState.NO_PHASE_MARKERS);
+				opponent.getHealthRatio(), opponent.getHealthScale(), false, false, BarState.NO_PHASE_MARKERS, userMarkers);
 		}
 
 		return null;
@@ -495,7 +499,8 @@ class BossHealthBarOverlay extends Overlay
 	{
 		final int step = (int) ((now - previewStartNanos) / PREVIEW_STEP.toNanos() % PREVIEW_HEALTH.length);
 		return new BarState(PREVIEW_NAME, PREVIEW_COMBAT_LEVEL, PREVIEW_MAX_HEALTH, PREVIEW_HEALTH[step],
-			PREVIEW_MAX_HEALTH, true, false, config.showPhaseMarkers() ? PREVIEW_PHASE_MARKERS : BarState.NO_PHASE_MARKERS);
+			PREVIEW_MAX_HEALTH, true, false, config.showPhaseMarkers() ? PREVIEW_PHASE_MARKERS : BarState.NO_PHASE_MARKERS,
+			HealthIndicatorMarkers.NONE);
 	}
 
 	private void updateOpponentInfo(Actor opponent)

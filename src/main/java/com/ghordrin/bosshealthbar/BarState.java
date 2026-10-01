@@ -12,9 +12,10 @@ final class BarState
 	final boolean exactHealth;
 	final boolean percentOnly;
 	final float[] phaseMarkers;
+	final HealthIndicatorMarkers.Marker[] userMarkers;
 
 	BarState(String name, int combatLevel, Integer maxHealth, int ratio, int scale,
-		boolean exactHealth, boolean percentOnly, float[] phaseMarkers)
+		boolean exactHealth, boolean percentOnly, float[] phaseMarkers, HealthIndicatorMarkers.Marker[] userMarkers)
 	{
 		this.name = name;
 		this.combatLevel = combatLevel;
@@ -24,5 +25,6 @@ final class BarState
 		this.exactHealth = exactHealth;
 		this.percentOnly = percentOnly;
 		this.phaseMarkers = phaseMarkers;
+		this.userMarkers = userMarkers;
 	}
 }

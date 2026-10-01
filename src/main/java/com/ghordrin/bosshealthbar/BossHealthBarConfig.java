@@ -553,4 +553,16 @@ public interface BossHealthBarConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = "showHealthIndicatorMarkers",
+		name = "Show Boss Health Indicators lines",
+		description = "If you use the \"Boss Health Indicators\" plugin, draw the health lines you set up there on this bar too, in the same colors. They would otherwise be lost when this bar replaces the game's boss health bar.",
+		position = 7,
+		section = behaviourSection
+	)
+	default boolean showHealthIndicatorMarkers()
+	{
+		return true;
+	}
 }

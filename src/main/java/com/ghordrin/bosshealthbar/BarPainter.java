@@ -204,6 +204,18 @@ class BarPainter
 			graphics.drawLine(markerX, y - 2, markerX, y + height + 1);
 		}
 
+		if (!defeated)
+		{
+			for (HealthIndicatorMarkers.Marker marker : state.userMarkers)
+			{
+				final int markerX = innerX + Math.round((innerWidth - 1) * marker.getFraction());
+				graphics.setColor(MARKER_SHADOW);
+				graphics.drawLine(markerX + 1, innerY, markerX + 1, innerY + innerHeight - 1);
+				graphics.setColor(marker.getColor());
+				graphics.drawLine(markerX, y - 2, markerX, y + height + 1);
+			}
+		}
+
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		if (useImageCache)
 		{
