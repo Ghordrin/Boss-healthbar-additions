@@ -45,6 +45,10 @@ The Experimental section holds newer options that may still change:
 
 Hold Alt to move the bar, or drag its edge to make it wider or narrower. Alt + right-click and Reset puts it back.
 
+## Contact
+
+Questions or ideas? Reach me on Discord at comrade9932 (Kuringe), or in game at Ultra Cringe.
+
 ## License
 
 BSD 2-Clause, see [LICENSE](LICENSE).
