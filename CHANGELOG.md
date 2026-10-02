@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 (2026-10-02)
 
 - More bosses are recognised, mostly raid rooms that were missing, plus NPCs some bosses summon partway through the fight
 - Fixed bosses with a coloured name in game not being recognised
