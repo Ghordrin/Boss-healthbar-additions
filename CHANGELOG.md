@@ -11,7 +11,7 @@
 - New Use Oldschool theme checkbox: a plain green bar over red with a thin dark outline, like the game's own health bars. No ornaments, shine or fill texture. While it's on, the Theme dropdown isn't used and Match boss colors and Rare gold bars are turned off, and unticking it turns them back on as you had them. With Use boss icon on, the boss's icon is shown small before its name
 - "Replace game's boss health bar" is now a dropdown called "Game's boss health bar", with a new Show both choice that keeps the game's bar and shows this one too. Your old setting carries over
 - Show icons (on by default) can be turned off for a plain bar without the icon and crests at the ends, or the icon before the name with Use Oldschool theme on
-- Settings reorganised: the Experimental section is gone, its options moved to Appearance and Choose custom icon to Custom colors. Show Party Defence Tracker defence moved to Text
+- Settings reorganised: the Experimental section is gone, its options moved to Appearance and Choose custom icon to Custom colors
 
 ## 1.2.0 (2026-10-02)
 
