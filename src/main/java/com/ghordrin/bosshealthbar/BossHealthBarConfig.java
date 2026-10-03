@@ -621,7 +621,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "hideDelay",
 		name = "Hide after",
-		description = "How long the bar stays after you stop attacking. While the game's own boss health bar shows the opponent, the bar stays regardless.",
+		description = "How long the bar stays once the fight goes quiet. It counts from when you stop attacking or from the last hit on the opponent or on you, whichever is later, while the opponent is within 15 tiles. While the game's own boss health bar shows the opponent, the bar stays regardless.",
 		position = 4,
 		section = behaviourSection
 	)

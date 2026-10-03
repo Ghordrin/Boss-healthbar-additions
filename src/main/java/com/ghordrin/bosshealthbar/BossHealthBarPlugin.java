@@ -295,6 +295,7 @@ public class BossHealthBarPlugin extends Plugin
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
+		opponentTracker.onHitsplatApplied(event.getActor(), event.getHitsplat());
 		if (event.getActor() == opponentTracker.getOpponent())
 		{
 			final Hitsplat hitsplat = event.getHitsplat();

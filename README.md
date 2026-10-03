@@ -24,9 +24,11 @@ It only shows what the game already tells you. No timers, attack prediction or a
 
 ## Which opponents get a bar
 
-By default only bosses do. The plugin has a list of commonly fought bosses, and it also picks up anything the game's own boss health bar is showing, plus superior slayer monsters. If a boss is missing, turn on "Also show above combat level", or turn off "Only show for bosses" to get the bar on everything.
+By default only bosses do. The plugin has a [list of commonly fought bosses](docs/bosses.md), and it also picks up anything the game's own boss health bar is showing, plus superior slayer monsters. If a boss is missing, turn on "Also show above combat level", or turn off "Only show for bosses" to get the bar on everything.
 
 If you attack something smaller during a boss fight, like the minions some bosses spawn, the bar stays on the boss.
+
+The bar stays while the fight is going on, even if you stop attacking to move or eat. "Hide after" counts from when you stop attacking or from the last hit on the opponent or on you, whichever is later. Hits only count while the opponent is within 15 tiles of you. Blocked hits count, poison and other damage over time don't.
 
 Switching between opponents that both get a bar, like the NPCs of a boss fought as a group, moves the bar over without playing the intro again. The game only shows an NPC's health once it's been hit, so until then the bar keeps showing the previous one, for up to 3 seconds.
 
@@ -91,7 +93,7 @@ Match boss colors and Rare gold bars don't fit this bar, so ticking Use Oldschoo
 
 ## Data
 
-The elemental weaknesses and defence drain limits come from the [Old School RuneScape Wiki](https://oldschool.runescape.wiki) and are built into the plugin, so it doesn't go online for them.
+The elemental weaknesses and defence drain limits come from the [Old School RuneScape Wiki](https://oldschool.runescape.wiki) and are built into the plugin, so it doesn't go online for them. [Supported bosses](docs/bosses.md) lists the values for each boss.
 
 ## Contact
 

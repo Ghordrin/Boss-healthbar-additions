@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
+import net.runelite.api.Hitsplat;
+import net.runelite.api.HitsplatID;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.events.InteractingChanged;
@@ -15,6 +17,9 @@ import net.runelite.api.events.InteractingChanged;
 @Singleton
 class OpponentTracker
 {
+	// Past the longest attack range, with room to reposition, but close enough that walking away counts.
+	private static final int COMBAT_DISTANCE = 15;
+
 	private final Client client;
 	private final BossHealthBarConfig config;
 	private final GameBossBar gameBossBar;
@@ -25,6 +30,8 @@ class OpponentTracker
 	@Getter(AccessLevel.PACKAGE)
 	private Actor opponent;
 	private long interactionLostMillis;
+	private long lastHitTakenMillis;
+	private long lastOpponentHitMillis;
 
 	private Actor knownBossActor;
 	private String knownBossName;
@@ -96,24 +103,93 @@ class OpponentTracker
 		log.debug("Opponent {} despawned, clearing", opponent);
 		opponent = null;
 		interactionLostMillis = 0;
+		lastOpponentHitMillis = 0;
 		damage.resetCombo();
 	}
 
-	// Clears the opponent once you've stopped interacting for longer than "Hide after", unless a
+	void onHitsplatApplied(Actor actor, Hitsplat hitsplat)
+	{
+		if (!isCombatHit(hitsplat.getHitsplatType()))
+		{
+			return;
+		}
+		if (actor == client.getLocalPlayer())
+		{
+			lastHitTakenMillis = System.currentTimeMillis();
+		}
+		else if (actor != null && actor == opponent)
+		{
+			lastOpponentHitMillis = System.currentTimeMillis();
+		}
+	}
+
+	// Clears the opponent once the fight has been quiet for longer than "Hide after", unless a
 	// game boss bar still shows it.
 	void onGameTick()
 	{
 		final Player player = client.getLocalPlayer();
-		if (opponent != null
-			&& player != null
-			&& opponent != gameBossBar.findNpc(opponent)
-			&& opponent != tobBossBar.findBoss()
-			&& interactionLostMillis != 0
-			&& player.getInteracting() == null
-			&& System.currentTimeMillis() - interactionLostMillis > config.hideDelay() * 1000L)
+		if (opponent == null || player == null || interactionLostMillis == 0)
 		{
-			log.debug("Opponent {} timed out after {}s with no interaction, clearing", opponent, config.hideDelay());
+			return;
+		}
+
+		final boolean nearby = !opponent.isDead()
+			&& opponent.getWorldArea().distanceTo(player.getWorldLocation()) <= COMBAT_DISTANCE;
+
+		if (opponent != gameBossBar.findNpc(opponent)
+			&& opponent != tobBossBar.findBoss()
+			&& player.getInteracting() == null
+			&& isQuietFor(interactionLostMillis, lastHitTakenMillis, lastOpponentHitMillis, nearby,
+				System.currentTimeMillis(), config.hideDelay() * 1000L))
+		{
+			log.debug("Opponent {} timed out after {}s with no combat, clearing", opponent, config.hideDelay());
 			opponent = null;
+		}
+	}
+
+	static boolean isQuietFor(long interactionLostMillis, long lastHitTakenMillis, long lastOpponentHitMillis,
+		boolean nearby, long now, long delayMillis)
+	{
+		if (interactionLostMillis == 0)
+		{
+			return false;
+		}
+		long lastCombat = interactionLostMillis;
+		if (nearby)
+		{
+			lastCombat = Math.max(lastCombat, Math.max(lastHitTakenMillis, lastOpponentHitMillis));
+		}
+		return now - lastCombat > delayMillis;
+	}
+
+	// Damage over time is left out on purpose, so ticks that linger after a fight don't keep the bar up.
+	static boolean isCombatHit(int hitsplatType)
+	{
+		switch (hitsplatType)
+		{
+			case HitsplatID.BLOCK_ME:
+			case HitsplatID.BLOCK_OTHER:
+			case HitsplatID.DAMAGE_ME:
+			case HitsplatID.DAMAGE_OTHER:
+			case HitsplatID.DAMAGE_ME_CYAN:
+			case HitsplatID.DAMAGE_OTHER_CYAN:
+			case HitsplatID.DAMAGE_ME_ORANGE:
+			case HitsplatID.DAMAGE_OTHER_ORANGE:
+			case HitsplatID.DAMAGE_ME_YELLOW:
+			case HitsplatID.DAMAGE_OTHER_YELLOW:
+			case HitsplatID.DAMAGE_ME_WHITE:
+			case HitsplatID.DAMAGE_OTHER_WHITE:
+			case HitsplatID.DAMAGE_MAX_ME:
+			case HitsplatID.DAMAGE_MAX_ME_CYAN:
+			case HitsplatID.DAMAGE_MAX_ME_ORANGE:
+			case HitsplatID.DAMAGE_MAX_ME_YELLOW:
+			case HitsplatID.DAMAGE_MAX_ME_WHITE:
+			case HitsplatID.DAMAGE_ME_POISE:
+			case HitsplatID.DAMAGE_OTHER_POISE:
+			case HitsplatID.DAMAGE_MAX_ME_POISE:
+				return true;
+			default:
+				return false;
 		}
 	}
 
@@ -132,6 +208,8 @@ class OpponentTracker
 	{
 		opponent = null;
 		interactionLostMillis = 0;
+		lastHitTakenMillis = 0;
+		lastOpponentHitMillis = 0;
 		knownBossActor = null;
 		knownBossName = null;
 	}
@@ -140,6 +218,7 @@ class OpponentTracker
 	{
 		damage.resetCombo();
 		opponent = target;
+		lastOpponentHitMillis = 0;
 		log.debug("New opponent: {} (combat level {}, known boss: {}, game boss bar: {})",
 			target.getName(), target.getCombatLevel(), KnownBosses.contains(target.getName()), isGameBarBoss(target));
 	}

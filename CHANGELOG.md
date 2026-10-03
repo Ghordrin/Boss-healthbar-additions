@@ -7,6 +7,7 @@
 - Show special attack counts (on by default) shows the counts from RuneLite's Special Attack Counter plugin below the bar, after the Party Defence Tracker defence, with each weapon's icon. Nothing shows unless that plugin is on with its info boxes enabled
 - Show elemental weakness (on by default) shows the boss's elemental weakness below the bar, as the element's rune and the extra damage percentage. Values from the OSRS Wiki
 - Show defence drain limit (on by default) shows how far the boss's defence can be lowered in total below the bar, or "no drain" when it can't be lowered. Values from the OSRS Wiki
+- The bar no longer fades mid-fight when you stop attacking for a moment. "Hide after" now counts from the last hit on the opponent or on you, while the opponent is within 15 tiles
 - New Use Oldschool theme checkbox: a plain green bar over red with a thin dark outline, like the game's own health bars. No ornaments, shine or fill texture. While it's on, the Theme dropdown isn't used and Match boss colors and Rare gold bars are turned off, and unticking it turns them back on as you had them. With Use boss icon on, the boss's icon is shown small before its name
 - "Replace game's boss health bar" is now a dropdown called "Game's boss health bar", with a new Show both choice that keeps the game's bar and shows this one too. Your old setting carries over
 - Show icons (on by default) can be turned off for a plain bar without the icon and crests at the ends, or the icon before the name with Use Oldschool theme on
