@@ -14,7 +14,7 @@ See the [changelog](CHANGELOG.md) for what's new in each version.
 
 - Shows a wide bar with the opponent's name, combat level and hitpoints
 - When you land a hit, the health you took off stays visible as a lighter trail for a moment before it drains, so you can see how big the hit was
-- Adds your recent hits up into a number above the bar. It can also count your RuneLite party's hits, or everyone's
+- Adds your recent hits up into a number next to the bar. It can also count your RuneLite party's hits, or everyone's
 - The fill changes colour as health drops and pulses when it's low
 - God themes put that god's icon at both ends of the bar. The custom theme lets you pick your own colours and any item as the icon
 - Use Oldschool theme switches to a plain green bar over red with a thin dark outline, closer to the game's own health bars. See [Oldschool theme](#oldschool-theme) for what applies to it
@@ -54,16 +54,24 @@ Custom colors
 - Choose custom icon picks the item shown at the bar ends on the Custom theme. It's in the bar's right-click menu too. The search opens in your chatbox, so you need to be logged in
 - The colors the Custom theme uses
 
-Text
+Text (the Layout section sets where each item goes)
 
 - Font, Show name, Show combat level and Show damage number
-- Damage number counts picks whose hits the number above the bar adds up: just yours (the default), your RuneLite party's, or everyone hitting the opponent. Party only counts members who also have this plugin, since each one sends their own hits over the party connection. Everyone needs no party, but includes players outside it
-- Hitpoints text shows the hitpoints below the bar as a percentage, a value, or both
-- Show kill count (off by default) shows your kill count for the boss below the left end of the bar. It uses the counts RuneLite's Chat Commands plugin saves from the game's kill count messages, so that plugin needs to be on, and a boss shows nothing until you've had a kill count message for it with the plugin running. Raid bosses show nothing, since the count belongs to the whole raid
-- Show Party Defence Tracker defence (on by default): if you use the Party Defence Tracker plugin, the defence from its info box is shown below the left end of the bar, after the kill count, with the Defence icon and a red down arrow, in the same colour as the info box. It only shows while that plugin has an info box for the opponent you're fighting, which is after the first defence-lowering hit. Nothing shows if that plugin isn't installed or isn't on
-- Show special attack counts (on by default): if RuneLite's Special Attack Counter plugin is on, its counts are shown below the bar, after the defence, as each weapon's icon and its count, in the same colour as the info box. Weapons like the Bandos godsword count damage, not hits. The counts are that plugin's own: they reset when you use a special attack on a different opponent and go away when the opponent dies, so the bar keeps the last counts while it shows "Defeated". Nothing shows unless that plugin is on with its info boxes enabled. If the weapons don't all fit, none of them are shown
-- Show elemental weakness (on by default) shows the boss's elemental weakness below the left end of the bar, after the kill count, defence and special attack counts: the element's rune and how much extra damage it takes from that element, for example +40%. Bosses without a weakness show nothing
-- Show defence drain limit (on by default) shows how far the boss's defence can be lowered in total, after the weakness: the Defence icon and the limit, for example -20, or "no drain" for a boss whose defence can't be lowered at all. Only bosses with a limit show it. It's a fixed value per boss form, so a limit that changes partway through a fight isn't followed
+- Damage number counts picks whose hits the damage number adds up: just yours (the default), your RuneLite party's, or everyone hitting the opponent. Party only counts members who also have this plugin, since each one sends their own hits over the party connection. Everyone needs no party, but includes players outside it
+- Hitpoints text shows the hitpoints as a percentage, a value, or both
+- Show kill count (off by default) shows your kill count for the boss. It uses the counts RuneLite's Chat Commands plugin saves from the game's kill count messages, so that plugin needs to be on, and a boss shows nothing until you've had a kill count message for it with the plugin running. Raid bosses show nothing, since the count belongs to the whole raid
+- Show Party Defence Tracker defence (on by default): if you use the Party Defence Tracker plugin, the defence from its info box is shown with the Defence icon and a red down arrow, in the same colour as the info box. It only shows while that plugin has an info box for the opponent you're fighting, which is after the first defence-lowering hit. Nothing shows if that plugin isn't installed or isn't on
+- Show special attack counts (on by default): if RuneLite's Special Attack Counter plugin is on, its counts are shown as each weapon's icon and its count, in the same colour as the info box. Weapons like the Bandos godsword count damage, not hits. The counts are that plugin's own: they reset when you use a special attack on a different opponent and go away when the opponent dies, so the bar keeps the last counts while it shows "Defeated". Nothing shows unless that plugin is on with its info boxes enabled. If the weapons don't all fit, none of them are shown
+- Show elemental weakness (on by default) shows the boss's elemental weakness: the element's rune and how much extra damage it takes from that element, for example +40%. Bosses without a weakness show nothing
+- Show defence drain limit (on by default) shows how far the boss's defence can be lowered in total: the Defence icon and the limit, for example -20, or "no drain" for a boss whose defence can't be lowered at all. Only bosses with a limit show it. It's a fixed value per boss form, so a limit that changes partway through a fight isn't followed
+
+Layout (closed by default)
+
+- Each item around the bar has a dropdown for where it goes: top left, top centre or top right above the bar, or the same three below it. The Text settings still decide whether an item shows, these only decide where. The defaults are the classic layout: name top left, damage number top right, hitpoints bottom right, everything else bottom left
+- Items in the same spot line up next to each other. The more important item sits closer to the edge, in this order: name, hitpoints, damage number, kill count, Party Defence Tracker defence, special attack counts, elemental weakness, defence drain limit. A centre spot reads left to right in that order
+- When a row gets full, space goes to the more important items first. An item that doesn't fit is left out, along with the less important items after it in the same spot, so nothing jumps into its place. The name is never left out, it's shortened instead
+- "Defeated" shows centred on whichever row Hitpoints is on. The hitpoints keep their space meanwhile, so nothing moves, and "Defeated" is left out if something else is already in the middle of that row
+- If nothing is set to go above or below the bar, that row takes up no space
 
 Behaviour
 

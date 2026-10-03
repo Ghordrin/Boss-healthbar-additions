@@ -57,9 +57,17 @@ public interface BossHealthBarConfig extends Config
 	String textSection = "text";
 
 	@ConfigSection(
+		name = "Layout",
+		description = "Where each item goes around the bar. Items in the same spot line up next to each other.",
+		position = 3,
+		closedByDefault = true
+	)
+	String layoutSection = "layout";
+
+	@ConfigSection(
 		name = "Behaviour",
 		description = "Which opponents get a bar, and how it works alongside other health bars.",
-		position = 3
+		position = 4
 	)
 	String behaviourSection = "behaviour";
 
@@ -413,7 +421,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "customHitpointsTextColor",
 		name = "Hitpoints text",
-		description = "The color of the hitpoints text below the bar.",
+		description = "The color of the hitpoints text.",
 		position = 7,
 		section = customColorsSection
 	)
@@ -450,7 +458,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showBossName",
 		name = "Show name",
-		description = "Show the opponent's name above the health bar.",
+		description = "Show the opponent's name. The Layout section sets where it goes.",
 		position = 1,
 		section = textSection
 	)
@@ -474,7 +482,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showDamageNumber",
 		name = "Show damage number",
-		description = "Show the total damage of recent hits above the right end of the bar. It resets a few seconds after the last hit. \"Damage number counts\" sets whose hits are added up.",
+		description = "Show the total damage of recent hits. It resets a few seconds after the last hit. \"Damage number counts\" sets whose hits are added up.",
 		position = 3,
 		section = textSection
 	)
@@ -498,7 +506,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "hitpointsTextMode",
 		name = "Hitpoints text",
-		description = "Show the opponent's hitpoints below the bar as a percentage, a value (when the max hitpoints are known), or both. Bosses the game only shows as a percentage always show a percentage.",
+		description = "Show the opponent's hitpoints as a percentage, a value (when the max hitpoints are known), or both. Bosses the game only shows as a percentage always show a percentage.",
 		position = 5,
 		section = textSection
 	)
@@ -510,7 +518,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showKillCount",
 		name = "Show kill count",
-		description = "Show your kill count for the boss below the left end of the bar. Needs RuneLite's Chat Commands plugin, which saves the count from the game's kill count message, so nothing shows for a boss until it has seen one.",
+		description = "Show your kill count for the boss. Needs RuneLite's Chat Commands plugin, which saves the count from the game's kill count message, so nothing shows for a boss until it has seen one.",
 		position = 6,
 		section = textSection
 	)
@@ -522,7 +530,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showPartyDefence",
 		name = "Show Party Defence Tracker defence",
-		description = "If you use the \"Party Defence Tracker\" plugin, show the defence from its info box below the bar, after the kill count. Nothing shows when that plugin isn't installed or isn't on.",
+		description = "If you use the \"Party Defence Tracker\" plugin, show the defence from its info box. Nothing shows when that plugin isn't installed or isn't on.",
 		position = 7,
 		section = textSection
 	)
@@ -534,7 +542,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showSpecialAttackCounts",
 		name = "Show special attack counts",
-		description = "If RuneLite's \"Special Attack Counter\" plugin is on, show its counts below the bar, after the Party Defence Tracker defence, with each weapon's icon. Weapons like the Bandos godsword count damage, not hits. Nothing shows unless that plugin is on with its info boxes enabled.",
+		description = "If RuneLite's \"Special Attack Counter\" plugin is on, show its counts with each weapon's icon. Weapons like the Bandos godsword count damage, not hits. Nothing shows unless that plugin is on with its info boxes enabled.",
 		position = 8,
 		section = textSection
 	)
@@ -546,7 +554,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showWeakness",
 		name = "Show elemental weakness",
-		description = "Show the boss's elemental weakness below the bar, as the element's rune and the extra damage it takes, for example +40%. The values come from the OSRS Wiki, and bosses without a weakness show nothing.",
+		description = "Show the boss's elemental weakness, as the element's rune and the extra damage it takes, for example +40%. The values come from the OSRS Wiki, and bosses without a weakness show nothing.",
 		position = 9,
 		section = textSection
 	)
@@ -558,13 +566,109 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showDrainCap",
 		name = "Show defence drain limit",
-		description = "Show how far the boss's defence can be lowered in total below the bar, for example -20, or \"no drain\" when it can't be lowered. Only shown for bosses with a limit. The values come from the OSRS Wiki.",
+		description = "Show how far the boss's defence can be lowered in total, for example -20, or \"no drain\" when it can't be lowered. Only shown for bosses with a limit. The values come from the OSRS Wiki.",
 		position = 10,
 		section = textSection
 	)
 	default boolean showDrainCap()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "namePosition",
+		name = "Name",
+		description = "Where the opponent's name goes, together with its icon and combat level. The name is shortened when it doesn't fit.",
+		position = 0,
+		section = layoutSection
+	)
+	default BarPosition namePosition()
+	{
+		return BarPosition.TOP_LEFT;
+	}
+
+	@ConfigItem(
+		keyName = "damageNumberPosition",
+		name = "Damage number",
+		description = "Where the damage number goes.",
+		position = 1,
+		section = layoutSection
+	)
+	default BarPosition damageNumberPosition()
+	{
+		return BarPosition.TOP_RIGHT;
+	}
+
+	@ConfigItem(
+		keyName = "hitpointsPosition",
+		name = "Hitpoints",
+		description = "Where the hitpoints text goes. \"Defeated\" shows centred on the same row.",
+		position = 2,
+		section = layoutSection
+	)
+	default BarPosition hitpointsPosition()
+	{
+		return BarPosition.BOTTOM_RIGHT;
+	}
+
+	@ConfigItem(
+		keyName = "killCountPosition",
+		name = "Kill count",
+		description = "Where the kill count goes.",
+		position = 3,
+		section = layoutSection
+	)
+	default BarPosition killCountPosition()
+	{
+		return BarPosition.BOTTOM_LEFT;
+	}
+
+	@ConfigItem(
+		keyName = "partyDefencePosition",
+		name = "Party Defence Tracker",
+		description = "Where the Party Defence Tracker defence goes.",
+		position = 4,
+		section = layoutSection
+	)
+	default BarPosition partyDefencePosition()
+	{
+		return BarPosition.BOTTOM_LEFT;
+	}
+
+	@ConfigItem(
+		keyName = "specialAttackCountsPosition",
+		name = "Special attack counts",
+		description = "Where the special attack counts go.",
+		position = 5,
+		section = layoutSection
+	)
+	default BarPosition specialAttackCountsPosition()
+	{
+		return BarPosition.BOTTOM_LEFT;
+	}
+
+	@ConfigItem(
+		keyName = "weaknessPosition",
+		name = "Elemental weakness",
+		description = "Where the elemental weakness goes.",
+		position = 6,
+		section = layoutSection
+	)
+	default BarPosition weaknessPosition()
+	{
+		return BarPosition.BOTTOM_LEFT;
+	}
+
+	@ConfigItem(
+		keyName = "drainCapPosition",
+		name = "Defence drain limit",
+		description = "Where the defence drain limit goes.",
+		position = 7,
+		section = layoutSection
+	)
+	default BarPosition drainCapPosition()
+	{
+		return BarPosition.BOTTOM_LEFT;
 	}
 
 	@ConfigItem(

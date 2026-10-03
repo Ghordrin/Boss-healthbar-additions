@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New Layout section: pick where each item around the bar goes, in one of three spots above or below it. Items in the same spot line up next to each other. The defaults keep the classic layout, and Preview now shows a sample damage number too
+
 ## 1.3.0 (2026-10-03)
 
 - Show kill count (off by default) shows your kill count for the boss below the left end of the bar. It reads the counts RuneLite's Chat Commands plugin saves, so that plugin needs to be on

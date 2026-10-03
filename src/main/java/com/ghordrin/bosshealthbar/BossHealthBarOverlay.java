@@ -45,6 +45,7 @@ class BossHealthBarOverlay extends Overlay
 	private static final Duration PREVIEW_STEP = Duration.ofMillis(1200);
 	private static final float[] PREVIEW_PHASE_MARKERS = {0.5f};
 	private static final String PREVIEW_KILL_COUNT = KillCounts.text(128);
+	private static final int PREVIEW_DAMAGE = 37;
 	private static final PartyDefence.Reading PREVIEW_DEFENCE = new PartyDefence.Reading("42", Color.WHITE);
 	private static final BossStats.Info PREVIEW_STATS = new BossStats.Info(BossStats.Element.FIRE,
 		BossStats.weaknessText(new BossStats.Weakness(BossStats.Element.FIRE, 40)), BossStats.drainCapText(20));
@@ -302,9 +303,7 @@ class BossHealthBarOverlay extends Overlay
 
 		final int barHeight = config.barHeight();
 		textPainter.updateFonts();
-		final boolean showHeader = config.showBossName() || config.showDamageNumber();
-		final int headerHeight = showHeader ? textPainter.headerHeight() : 0;
-		final String footerText = textPainter.footerText(state, defeated);
+		final String hitpointsText = textPainter.hitpointsText(state);
 		final String killCountText = !config.showKillCount() ? null
 			: showingPreview ? PREVIEW_KILL_COUNT : killCounts.textFor(state.killCountKey);
 		final PartyDefence.Reading defence = defeated || !partyDefence.isAvailable() ? null
@@ -314,9 +313,10 @@ class BossHealthBarOverlay extends Overlay
 		final BossStats.Info stats = state.stats;
 		final String weaknessText = stats != null && config.showWeakness() ? stats.getWeaknessText() : null;
 		final String drainCapText = stats != null && config.showDrainCap() ? stats.getDrainCapText() : null;
-		final int footerHeight = footerText != null || config.showKillCount() || config.showDefeatAnimation()
-			|| partyDefence.isAvailable() || specialAttackCounts.isAvailable() || weaknessText != null || drainCapText != null
-			? textPainter.footerHeight() : 0;
+		textPainter.updateRows(partyDefence.isAvailable(), specialAttackCounts.isAvailable(), weaknessText != null,
+			drainCapText != null);
+		final int headerHeight = textPainter.topRowHeight();
+		final int footerHeight = textPainter.bottomRowHeight();
 		final BarTheme theme = BarTheme.of(config);
 		final boolean flat = theme.isFlat();
 		final ThemeColors baseColors = barColors(updateThemeColors(),
@@ -354,14 +354,18 @@ class BossHealthBarOverlay extends Overlay
 		setOpacity(graphics, originalComposite, opacity);
 
 		textPainter.applyTextHints(graphics);
+		textPainter.layoutText(graphics, state.name, state.combatLevel, flat ? icon : null, hitpointsText, defeated,
+			showingPreview ? PREVIEW_DAMAGE : 0, killCountText, defence,
+			defence != null || drainCapText != null ? partyDefence.icon() : null, specialAttacks, weaknessText,
+			weaknessText != null ? itemManager.getImage(stats.getWeaknessElement().getRuneItemId()) : null, drainCapText,
+			width, capWidth, barY + barHeight + capRise);
 
 		graphics.translate(leftExtent, topOffset + slideOffset);
 
-		if (showHeader)
+		if (headerHeight > 0)
 		{
 			setOpacity(graphics, originalComposite, opacity * textOpacity);
-			textPainter.drawHeader(graphics, state.name, state.combatLevel, flat ? icon : null, width, capWidth,
-				headerHeight - textPainter.headerBaselineGap(), colors);
+			textPainter.drawRow(graphics, true, colors);
 			setOpacity(graphics, originalComposite, opacity);
 		}
 
@@ -376,14 +380,7 @@ class BossHealthBarOverlay extends Overlay
 		graphics.translate(-shownInset, 0);
 
 		setOpacity(graphics, originalComposite, opacity * textOpacity);
-		if (footerText != null || killCountText != null || defence != null || !specialAttacks.isEmpty()
-			|| weaknessText != null || drainCapText != null)
-		{
-			textPainter.drawFooter(graphics, footerText, killCountText, defence,
-				defence != null || drainCapText != null ? partyDefence.icon() : null, specialAttacks, weaknessText,
-				weaknessText != null ? itemManager.getImage(stats.getWeaknessElement().getRuneItemId()) : null, drainCapText,
-				defeated, width, capWidth, barY + barHeight + capRise, colors);
-		}
+		textPainter.drawRow(graphics, false, colors);
 		setOpacity(graphics, originalComposite, opacity);
 
 		graphics.translate(-leftExtent, -(topOffset + slideOffset));
