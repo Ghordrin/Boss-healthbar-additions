@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 (2026-10-03)
 
 - Show kill count (off by default) shows your kill count for the boss below the left end of the bar. It reads the counts RuneLite's Chat Commands plugin saves, so that plugin needs to be on
 - Show Party Defence Tracker defence (on by default) shows the boss's defence from the Party Defence Tracker plugin's info box below the bar, after the kill count. Nothing shows without that plugin
