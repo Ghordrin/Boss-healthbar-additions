@@ -3,7 +3,7 @@ package com.ghordrin.bosshealthbar;
 import java.awt.Color;
 import net.runelite.api.gameval.SpriteID;
 
-public enum HealthBarTheme
+public enum HealthBarTheme implements BarTheme
 {
 	// GodWarsIcons has no named constants: _0 is Saradomin, _1 Zamorak, _2 Bandos and _3 Armadyl.
 	SARADOMIN("Saradomin", 0x2F62C8, 0x1C3C84, 0xC9A54A, 0xF4F0E0, SpriteID.GodWarsIcons._0),
@@ -43,12 +43,32 @@ public enum HealthBarTheme
 		this.colors = ThemeColors.of(new Color(fillHigh), new Color(fillLow), new Color(frame), new Color(trail));
 	}
 
-	ThemeColors getColors()
+	static HealthBarTheme named(String name)
+	{
+		for (HealthBarTheme theme : values())
+		{
+			if (theme.name().equals(name))
+			{
+				return theme;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public boolean isFlat()
+	{
+		return false;
+	}
+
+	@Override
+	public ThemeColors getColors()
 	{
 		return colors;
 	}
 
-	Integer getGodIconSpriteId()
+	@Override
+	public Integer getGodIconSpriteId()
 	{
 		return godIconSpriteId;
 	}

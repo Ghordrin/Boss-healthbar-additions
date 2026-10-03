@@ -34,6 +34,9 @@ class BarPainter
 	private static final int CAP_RISE = 3;
 	private static final int CAP_REFERENCE_HEIGHT = 8;
 	private static final float CAP_SCALE_PER_PIXEL = 0.09f;
+	// Flat bars only need room for their outline, and for marker lines that stick out above and below.
+	private static final int FLAT_EDGE = 1;
+	private static final int FLAT_RISE = 2;
 	// Cached images are drawn at twice their size and scaled down, so they stay sharp in stretched mode.
 	static final float RASTER_SCALE = 2f;
 	private static final int BAR_IMAGE_PAD = 8;
@@ -93,38 +96,43 @@ class BarPainter
 	}
 
 	void drawBar(Graphics2D graphics, ThemeColors colors, BarState state, BarAnimation animation, boolean defeated,
-		int y, int width, int height, float fillProgress, boolean useImageCache)
+		int y, int width, int height, float fillProgress, boolean useImageCache, boolean flat)
 	{
 		updateDerivedColors(colors);
 		final float displayedFraction = animation.getDisplayedFraction();
 		final float[] phaseMarkers = defeated ? BarState.NO_PHASE_MARKERS : state.phaseMarkers;
 		final float lowHealthPulse = animation.lowHealthPulse(defeated, config.lowHealthEffect(), config.lowHealthThreshold());
 		final Color frameColor = colors.getFrame();
-		final int barX = scaledCapWidth(height);
-		final int barWidth = width - scaledCapWidth(height) * 2;
+		final int barX = capWidth(height, flat);
+		final int barWidth = width - barX * 2;
 
-		final int innerX = barX + 1;
-		final int innerY = y + 1;
-		final int innerWidth = barWidth - 2;
-		final int innerHeight = height - 2;
+		// The flat outline sits outside the bar, while the ornate frame is drawn on its edge.
+		final int inset = flat ? 0 : 1;
+		final int innerX = barX + inset;
+		final int innerY = y + inset;
+		final int innerWidth = barWidth - inset * 2;
+		final int innerHeight = height - inset * 2;
 
 		final Color baseFill = lerp(colors.getFillLow(), colors.getFillHigh(), clamp01(displayedFraction));
 		final Color fill = lowHealthPulse > 0f ? brighten(baseFill, 0.55f * lowHealthPulse) : baseFill;
 		final int fillWidth = Math.round(innerWidth * clamp01(displayedFraction) * fillProgress);
 
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		if (useImageCache)
+		if (!flat)
 		{
-			updateBarImages(width, height, frameColor);
-			graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-			drawRasterImage(graphics, backdropImage, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD, width + BAR_IMAGE_PAD * 2, height + BAR_IMAGE_PAD * 2);
-		}
-		else
-		{
-			drawBackdrop(graphics, barX, y, barWidth, height);
+			if (useImageCache)
+			{
+				updateBarImages(width, height, frameColor);
+				graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				drawRasterImage(graphics, backdropImage, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD, width + BAR_IMAGE_PAD * 2, height + BAR_IMAGE_PAD * 2);
+			}
+			else
+			{
+				drawBackdrop(graphics, barX, y, barWidth, height);
+			}
 		}
 
-		if (lowHealthPulse > 0f && fillWidth > 0)
+		if (!flat && lowHealthPulse > 0f && fillWidth > 0)
 		{
 			final Color glow = brighten(baseFill, 0.2f);
 			for (int i = 4; i >= 1; i--)
@@ -138,7 +146,8 @@ class BarPainter
 
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-		graphics.setPaint(new GradientPaint(0, y, TRACK_TOP, 0, y + height, TRACK_BOTTOM));
+		final Color track = colors.getTrack();
+		graphics.setPaint(track != null ? track : new GradientPaint(0, y, TRACK_TOP, 0, y + height, TRACK_BOTTOM));
 		graphics.fillRect(barX, y, barWidth, height);
 
 		final float trailFraction = animation.getTrailFraction();
@@ -146,23 +155,23 @@ class BarPainter
 		{
 			Color trail = colors.getTrail();
 			int trailWidth = Math.round(innerWidth * clamp01(trailFraction) * fillProgress);
-			graphics.setPaint(verticalSheen(innerY, innerHeight, trail, 0.2f, 0.35f));
+			graphics.setPaint(flat ? trail : verticalSheen(innerY, innerHeight, trail, 0.2f, 0.35f));
 			graphics.fillRect(innerX, innerY, trailWidth, innerHeight);
 		}
 
 		final int healWidth = Math.round(innerWidth * clamp01(animation.getActualFraction()) * fillProgress);
 		if (healWidth > fillWidth)
 		{
-			graphics.setPaint(verticalSheen(innerY, innerHeight, healColor, 0.35f, 0.3f));
+			graphics.setPaint(flat ? healColor : verticalSheen(innerY, innerHeight, healColor, 0.35f, 0.3f));
 			graphics.fillRect(innerX, innerY, healWidth, innerHeight);
 		}
 
 		if (fillWidth > 0)
 		{
-			graphics.setPaint(verticalSheen(innerY, innerHeight, fill, 0.3f, 0.45f));
+			graphics.setPaint(flat ? fill : verticalSheen(innerY, innerHeight, fill, 0.3f, 0.45f));
 			graphics.fillRect(innerX, innerY, fillWidth, innerHeight);
 
-			final BufferedImage fillTexture = resolveFillTexture();
+			final BufferedImage fillTexture = flat ? null : resolveFillTexture();
 			if (fillTexture != null)
 			{
 				final Composite textureComposite = graphics.getComposite();
@@ -172,25 +181,35 @@ class BarPainter
 				graphics.setComposite(textureComposite);
 			}
 
-			graphics.setColor(withAlpha(brighten(fill, 0.6f), 90));
-			graphics.drawLine(innerX, innerY, innerX + fillWidth - 1, innerY);
+			if (!flat)
+			{
+				graphics.setColor(withAlpha(brighten(fill, 0.6f), 90));
+				graphics.drawLine(innerX, innerY, innerX + fillWidth - 1, innerY);
+			}
 		}
 
 		final int filledWidth = Math.max(fillWidth, healWidth);
-		if (filledWidth < innerWidth)
+		if (!flat && filledWidth < innerWidth)
 		{
 			graphics.setColor(TRACK_EDGE_SHADOW);
 			graphics.drawLine(innerX + filledWidth, innerY, innerX + innerWidth - 1, innerY);
 		}
 
-		graphics.setStroke(frameStroke(height));
-		if (lowHealthPulse > 0f)
+		if (flat)
 		{
+			graphics.setStroke(THIN_STROKE);
+			graphics.setColor(frameColor);
+			graphics.drawRect(barX - 1, y - 1, barWidth + 1, height + 1);
+		}
+		else if (lowHealthPulse > 0f)
+		{
+			graphics.setStroke(frameStroke(height));
 			final Color frame = lerp(frameColor, brighten(baseFill, 0.3f), 0.85f * lowHealthPulse);
 			drawFrame(graphics, barX, y, barWidth, height, frame, withAlpha(brighten(frame, 0.35f), 120));
 		}
 		else
 		{
+			graphics.setStroke(frameStroke(height));
 			drawFrame(graphics, barX, y, barWidth, height, frameColor, frameHighlightColor);
 		}
 
@@ -217,14 +236,17 @@ class BarPainter
 		}
 
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		if (useImageCache)
+		if (!flat)
 		{
-			graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-			drawRasterImage(graphics, endsImage, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD, width + BAR_IMAGE_PAD * 2, height + BAR_IMAGE_PAD * 2);
-		}
-		else
-		{
-			drawEnds(graphics, barX, y, barWidth, height, frameColor);
+			if (useImageCache)
+			{
+				graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				drawRasterImage(graphics, endsImage, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD, width + BAR_IMAGE_PAD * 2, height + BAR_IMAGE_PAD * 2);
+			}
+			else
+			{
+				drawEnds(graphics, barX, y, barWidth, height, frameColor);
+			}
 		}
 
 		if (config.flashOnBigHits() && state.maxHealth != null)
@@ -295,6 +317,16 @@ class BarPainter
 		image.setRGB(0, 0, side, side, pixels, 0, side);
 		fillTextureCache.put(textureId, image);
 		return image;
+	}
+
+	static int capWidth(int barHeight, boolean flat)
+	{
+		return flat ? FLAT_EDGE : scaledCapWidth(barHeight);
+	}
+
+	static int capRise(int barHeight, boolean flat)
+	{
+		return flat ? FLAT_RISE : scaledCapRise(barHeight);
 	}
 
 	static float capScale(int barHeight)

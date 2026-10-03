@@ -4,8 +4,8 @@ import com.google.common.base.Strings;
 import static com.ghordrin.bosshealthbar.BarAnimation.clamp01;
 import static com.ghordrin.bosshealthbar.BarPainter.RASTER_SCALE;
 import static com.ghordrin.bosshealthbar.BarPainter.drawRasterImage;
-import static com.ghordrin.bosshealthbar.BarPainter.scaledCapRise;
-import static com.ghordrin.bosshealthbar.BarPainter.scaledCapWidth;
+import static com.ghordrin.bosshealthbar.BarPainter.capRise;
+import static com.ghordrin.bosshealthbar.BarPainter.capWidth;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
@@ -174,7 +174,7 @@ class BossHealthBarOverlay extends Overlay
 	{
 		if (themeColors == null)
 		{
-			final HealthBarTheme theme = config.theme();
+			final BarTheme theme = BarTheme.of(config);
 			themeColors = theme.getColors() != null ? theme.getColors() : ThemeColors.builder()
 				.fillHigh(config.customFillHighColor())
 				.fillLow(config.customFillLowColor())
@@ -317,17 +317,19 @@ class BossHealthBarOverlay extends Overlay
 		final int footerHeight = footerText != null || config.showKillCount() || config.showDefeatAnimation()
 			|| partyDefence.isAvailable() || specialAttackCounts.isAvailable() || weaknessText != null || drainCapText != null
 			? textPainter.footerHeight() : 0;
-		final ThemeColors baseColors = config.matchBossColors() && !showingPreview && infoBossColors != null
-			? infoBossColors : updateThemeColors();
-		final boolean gold = rolledGold && !showingPreview && config.rareGoldBars();
+		final BarTheme theme = BarTheme.of(config);
+		final boolean flat = theme.isFlat();
+		final ThemeColors baseColors = barColors(updateThemeColors(),
+			config.matchBossColors() && !showingPreview ? infoBossColors : null, flat);
+		final boolean gold = showsGold(rolledGold && !showingPreview && config.rareGoldBars(), flat);
 		final ThemeColors colors = gold ? goldBar.colors(baseColors) : baseColors;
 		final long nowMillis = now / 1_000_000L;
 
-		final int capRise = scaledCapRise(barHeight);
-		final int capWidth = scaledCapWidth(barHeight);
+		final int capRise = capRise(barHeight, flat);
+		final int capWidth = capWidth(barHeight, flat);
 
-		final BufferedImage icon = resolveIcon();
-		final CrestRenderer.Crest crest = icon != null
+		final BufferedImage icon = resolveIcon(theme);
+		final CrestRenderer.Crest crest = icon != null && !flat
 			? crestRenderer.getCrest(colors.getFrame(), colors.getFillHigh(), 1f, barHeight / 2f + capRise + 0.5f) : null;
 		final int leftExtent = crest != null ? Math.max(0, crest.left.anchorX - CREST_OVERLAP) : 0;
 		final int rightExtent = crest != null
@@ -358,13 +360,14 @@ class BossHealthBarOverlay extends Overlay
 		if (showHeader)
 		{
 			setOpacity(graphics, originalComposite, opacity * textOpacity);
-			textPainter.drawHeader(graphics, state.name, state.combatLevel, width, capWidth,
+			textPainter.drawHeader(graphics, state.name, state.combatLevel, flat ? icon : null, width, capWidth,
 				headerHeight - textPainter.headerBaselineGap(), colors);
 			setOpacity(graphics, originalComposite, opacity);
 		}
 
 		graphics.translate(shownInset, 0);
-		barPainter.drawBar(graphics, colors, state, animation, defeated, barY, shownWidth, barHeight, fillProgress, shownWidth == width);
+		barPainter.drawBar(graphics, colors, state, animation, defeated, barY, shownWidth, barHeight, fillProgress,
+			shownWidth == width, flat);
 		if (gold)
 		{
 			goldBar.drawShine(graphics, capWidth - 1, barY - 1, shownWidth - capWidth * 2 + 2, barHeight + 2,
@@ -409,8 +412,23 @@ class BossHealthBarOverlay extends Overlay
 		return new Dimension(leftExtent + width + rightExtent, totalHeight);
 	}
 
-	private BufferedImage resolveIcon()
+	static ThemeColors barColors(ThemeColors themeColors, ThemeColors bossColors, boolean flat)
 	{
+		return bossColors != null && !flat ? bossColors : themeColors;
+	}
+
+	static boolean showsGold(boolean rolledGold, boolean flat)
+	{
+		return rolledGold && !flat;
+	}
+
+	private BufferedImage resolveIcon(BarTheme theme)
+	{
+		if (!config.showIcons())
+		{
+			return null;
+		}
+
 		if (config.useBossIcon() && !showingPreview && infoBossIcon != null)
 		{
 			final BufferedImage bossIcon = bossIcon(infoBossIcon);
@@ -420,7 +438,6 @@ class BossHealthBarOverlay extends Overlay
 			}
 		}
 
-		final HealthBarTheme theme = config.theme();
 		if (theme == HealthBarTheme.CUSTOM)
 		{
 			final int itemId = config.customIconItemId();
@@ -487,7 +504,7 @@ class BossHealthBarOverlay extends Overlay
 
 		final boolean nativeBar = gameBossBar.isTracking(opponent);
 		final boolean tobBar = tobBossBar.isTracking(opponent);
-		if ((nativeBar || tobBar) && !config.replaceNativeBossBar())
+		if ((nativeBar || tobBar) && config.nativeBossBarMode().hidesOurBar())
 		{
 			return null;
 		}

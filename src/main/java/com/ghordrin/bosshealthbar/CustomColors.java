@@ -21,20 +21,8 @@ class CustomColors
 	// previousThemeName is the saved name of the previous theme, or null when it was the default.
 	void copyFrom(String previousThemeName)
 	{
-		HealthBarTheme previous = BossHealthBarConfig.DEFAULT_THEME;
-		if (previousThemeName != null)
-		{
-			previous = null;
-			for (HealthBarTheme theme : HealthBarTheme.values())
-			{
-				if (theme.name().equals(previousThemeName))
-				{
-					previous = theme;
-					break;
-				}
-			}
-		}
-
+		final HealthBarTheme previous = previousThemeName != null
+			? HealthBarTheme.named(previousThemeName) : BossHealthBarConfig.DEFAULT_THEME;
 		final ThemeColors colors = previous != null ? previous.getColors() : null;
 		if (colors == null)
 		{

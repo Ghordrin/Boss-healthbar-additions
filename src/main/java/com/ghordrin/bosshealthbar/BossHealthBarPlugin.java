@@ -1,6 +1,7 @@
 package com.ghordrin.bosshealthbar;
 
 import com.google.inject.Provides;
+import java.util.List;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
 import net.runelite.api.GameState;
@@ -97,6 +98,7 @@ public class BossHealthBarPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		migrateReplaceNativeBossBar();
 		overlay.reset();
 		healthIndicatorMarkers.invalidate();
 		killCounts.invalidate();
@@ -120,6 +122,67 @@ public class BossHealthBarPlugin extends Plugin
 			tobBossBar.restore();
 			resetState();
 		});
+	}
+
+	private void migrateReplaceNativeBossBar()
+	{
+		final String oldSaved = configManager.getConfiguration(
+			BossHealthBarConfig.GROUP, BossHealthBarConfig.OLD_REPLACE_NATIVE_BOSS_BAR_KEY);
+		if (oldSaved == null)
+		{
+			return;
+		}
+
+		final NativeBossBarMode mode = NativeBossBarMode.migrate(oldSaved,
+			configManager.getConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.NATIVE_BOSS_BAR_MODE_KEY));
+		if (mode != null)
+		{
+			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.NATIVE_BOSS_BAR_MODE_KEY, mode);
+		}
+		configManager.unsetConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.OLD_REPLACE_NATIVE_BOSS_BAR_KEY);
+	}
+
+	// Reset can walk the settings in any order, so put these back to their defaults once it's done.
+	@Override
+	public void resetConfiguration()
+	{
+		applyWrites(OldschoolToggle.resetWrites());
+	}
+
+	private void applyOldschoolToggle(String key, boolean oldValue, boolean newValue)
+	{
+		applyWrites(OldschoolToggle.writes(key, oldValue, newValue,
+			new OldschoolToggle.Settings(config.oldschoolTheme(), config.matchBossColors(), config.rareGoldBars(),
+				savedBoolean(BossHealthBarConfig.SAVED_MATCH_BOSS_COLORS_KEY),
+				savedBoolean(BossHealthBarConfig.SAVED_RARE_GOLD_BARS_KEY))));
+	}
+
+	private void applyWrites(List<OldschoolToggle.Write> writes)
+	{
+		// Each write posts its own change event straight away. Handling those again is harmless, since
+		// the remembered keys are cleared before anything is turned back on.
+		for (OldschoolToggle.Write write : writes)
+		{
+			if (write.getValue() == null)
+			{
+				configManager.unsetConfiguration(BossHealthBarConfig.GROUP, write.getKey());
+			}
+			else
+			{
+				configManager.setConfiguration(BossHealthBarConfig.GROUP, write.getKey(), write.getValue());
+			}
+		}
+	}
+
+	private Boolean savedBoolean(String key)
+	{
+		final String saved = configManager.getConfiguration(BossHealthBarConfig.GROUP, key);
+		return saved != null ? Boolean.valueOf(saved) : null;
+	}
+
+	private static boolean parseBoolean(String value, boolean defaultValue)
+	{
+		return value != null ? Boolean.parseBoolean(value) : defaultValue;
 	}
 
 	@Subscribe
@@ -170,6 +233,13 @@ public class BossHealthBarPlugin extends Plugin
 			&& HealthBarTheme.CUSTOM.name().equals(event.getNewValue()))
 		{
 			customColors.copyFrom(event.getOldValue());
+		}
+
+		if (OldschoolToggle.handles(event.getKey()))
+		{
+			final boolean defaultValue = BossHealthBarConfig.RARE_GOLD_BARS_KEY.equals(event.getKey());
+			applyOldschoolToggle(event.getKey(), parseBoolean(event.getOldValue(), defaultValue),
+				parseBoolean(event.getNewValue(), defaultValue));
 		}
 
 		// The config screen has no buttons, so these two checkboxes act as one: ticking opens the
@@ -288,7 +358,7 @@ public class BossHealthBarPlugin extends Plugin
 		opponentTracker.followGameBars();
 
 		final Actor opponent = opponentTracker.getOpponent();
-		final boolean replace = config.replaceNativeBossBar();
+		final boolean replace = config.nativeBossBarMode().hidesGameBar();
 		final boolean opponentGetsBar = opponentTracker.shouldShowBarFor(opponent);
 		gameBossBar.update(opponent, replace, opponentGetsBar);
 		tobBossBar.update(opponent, replace, opponentGetsBar);

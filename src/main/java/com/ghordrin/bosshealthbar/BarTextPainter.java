@@ -30,6 +30,7 @@ class BarTextPainter
 	private static final int FOOTER_HEIGHT = 16;
 	private static final int TEXT_INSET = 2;
 	private static final int LEVEL_GAP = 12;
+	private static final int HEADER_ICON_GAP = 4;
 	private static final String DAMAGE_NUMBER_SIZING = "9999";
 	private static final Color TEXT_SHADOW = new Color(0, 0, 0, 200);
 	private static final Color DEFENCE_ARROW = new Color(220, 40, 40);
@@ -150,13 +151,19 @@ class BarTextPainter
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 	}
 
-	void drawHeader(Graphics2D graphics, String name, int combatLevel, int width, int capWidth, int baseline, ThemeColors colors)
+	void drawHeader(Graphics2D graphics, String name, int combatLevel, BufferedImage icon, int width, int capWidth,
+		int baseline, ThemeColors colors)
 	{
-		final int left = capWidth + TEXT_INSET;
+		int left = capWidth + TEXT_INSET;
 		final int right = width - capWidth - TEXT_INSET;
 
 		if (config.showBossName())
 		{
+			if (icon != null)
+			{
+				left = drawHeaderIcon(graphics, icon, left, baseline);
+			}
+
 			String levelText = null;
 			int levelWidth = 0;
 			if (config.showCombatLevel() && combatLevel > 0)
@@ -190,6 +197,22 @@ class BarTextPainter
 		{
 			drawDamageNumber(graphics, right, baseline, colors.getText());
 		}
+	}
+
+	private int drawHeaderIcon(Graphics2D graphics, BufferedImage icon, int left, int baseline)
+	{
+		graphics.setFont(textFont);
+		final int ascent = graphics.getFontMetrics().getAscent();
+		final int size = ascent + 1;
+		// Centred on the capital letters, which take up roughly the top 70% of the ascent.
+		final int top = baseline - Math.round(ascent * 0.35f) - size / 2;
+		final Object interpolation = graphics.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		// Drawn scaled every frame, because ItemManager's image only fills in once the item has loaded.
+		graphics.drawImage(icon, left, top, size, size, null);
+		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, interpolation != null
+			? interpolation : RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+		return left + size + HEADER_ICON_GAP;
 	}
 
 	String footerText(BarState state, boolean defeated)

@@ -22,8 +22,17 @@ public interface BossHealthBarConfig extends Config
 	String CHOOSE_CUSTOM_ICON_KEY = "chooseCustomIcon";
 	String THEME_KEY = "theme";
 	HealthBarTheme DEFAULT_THEME = HealthBarTheme.ZAMORAK;
+	String OLDSCHOOL_THEME_KEY = "oldschoolTheme";
+	String MATCH_BOSS_COLORS_KEY = "matchBossColors";
+	String RARE_GOLD_BARS_KEY = "rareGoldBars";
+	// What Match boss colors and Rare gold bars were set to before Oldschool turned them off.
+	String SAVED_MATCH_BOSS_COLORS_KEY = "oldschoolSavedMatchBossColors";
+	String SAVED_RARE_GOLD_BARS_KEY = "oldschoolSavedRareGoldBars";
 	String FONT_KEY = "font";
 	FontType DEFAULT_FONT = new FontType().withFamily(Font.SERIF).withSize(17);
+	String NATIVE_BOSS_BAR_MODE_KEY = "nativeBossBarMode";
+	// The checkbox nativeBossBarMode replaced. Its saved value is moved over on startup.
+	String OLD_REPLACE_NATIVE_BOSS_BAR_KEY = "replaceNativeBossBar";
 
 	@ConfigSection(
 		name = "Appearance",
@@ -34,7 +43,7 @@ public interface BossHealthBarConfig extends Config
 
 	@ConfigSection(
 		name = "Custom colors",
-		description = "The colors used when Theme is set to Custom.",
+		description = "The icon and colors used when Theme is set to Custom.",
 		position = 1,
 		closedByDefault = true
 	)
@@ -53,13 +62,6 @@ public interface BossHealthBarConfig extends Config
 		position = 3
 	)
 	String behaviourSection = "behaviour";
-
-	@ConfigSection(
-		name = "Experimental",
-		description = "Newer options that may still change.",
-		position = 4
-	)
-	String experimentalSection = "experimental";
 
 	@ConfigItem(
 		keyName = "showPreview",
@@ -97,7 +99,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = THEME_KEY,
 		name = "Theme",
-		description = "The colors of the health bar. Choose Custom to tweak the colors in the Custom colors section, starting from the theme you had selected.",
+		description = "The colors of the health bar. Choose Custom to tweak the colors in the Custom colors section, starting from the theme you had selected. Not used while \"Use Oldschool theme\" is on.",
 		position = 0,
 		section = appearanceSection
 	)
@@ -107,10 +109,22 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = OLDSCHOOL_THEME_KEY,
+		name = "Use Oldschool theme",
+		description = "A plain green bar over red with a thin dark outline, like the game's own health bars. While it's on, the Theme dropdown is not used, and Match boss colors and Rare gold bars are turned off. They're turned back on as you had them when you untick this. Fill textures and the Custom colors don't apply to it either.",
+		position = 1,
+		section = appearanceSection
+	)
+	default boolean oldschoolTheme()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = CHOOSE_FILL_TEXTURE_KEY,
 		name = "Choose fill texture",
-		description = "Click to open a window with the game's own textures to lay over the fill, on any theme. \"None\" in that window takes it off again.",
-		position = 1,
+		description = "Click to open a window with the game's own textures to lay over the fill, on any theme. Not used while \"Use Oldschool theme\" is on. \"None\" in that window takes it off again.",
+		position = 2,
 		section = appearanceSection
 	)
 	default boolean chooseFillTexture()
@@ -118,60 +132,13 @@ public interface BossHealthBarConfig extends Config
 		return false;
 	}
 
-	@ConfigItem(
-		keyName = CHOOSE_CUSTOM_ICON_KEY,
-		name = "Choose custom icon",
-		description = "Click to search for an item in your chatbox. Its icon is shown at the bar ends on the Custom theme. You need to be logged in.",
-		position = 0,
-		section = experimentalSection
-	)
-	default boolean chooseCustomIcon()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = "useBossIcon",
-		name = "Use boss icon",
-		description = "Show the icon of the boss you're fighting at the bar ends, on any theme. Raid bosses show their pet. Other opponents keep the theme's icon.",
-		position = 1,
-		section = experimentalSection
-	)
-	default boolean useBossIcon()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "matchBossColors",
-		name = "Match boss colors",
-		description = "Color the bar to suit the boss you're fighting, on any theme. A boss keeps the same colors in every form. Other opponents keep the theme's colors.",
-		position = 2,
-		section = experimentalSection
-	)
-	default boolean matchBossColors()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = "rareGoldBars",
-		name = "Rare gold bars",
-		description = "Now and then a bar turns gold, with a shine and a few sparkles. It's rolled once per opponent, about 1 in 250, and is only for looks.",
-		position = 3,
-		section = experimentalSection
-	)
-	default boolean rareGoldBars()
-	{
-		return true;
-	}
-
 	@Range(min = 200, max = 1400)
+	@Units(Units.PIXELS)
 	@ConfigItem(
 		keyName = "barWidth",
 		name = "Bar width",
-		description = "The width of the health bar in pixels. You can also hold Alt and drag the bar's edge to resize it, which takes over from this setting until you reset the overlay.",
-		position = 2,
+		description = "The width of the health bar. You can also hold Alt and drag the bar's edge to resize it, which takes over from this setting until you reset the overlay.",
+		position = 3,
 		section = appearanceSection
 	)
 	default int barWidth()
@@ -179,23 +146,12 @@ public interface BossHealthBarConfig extends Config
 		return 600;
 	}
 
-	@ConfigItem(
-		keyName = "fitToGameView",
-		name = "Fit to game view",
-		description = "Make the bar narrower when it would take up too much of the game view, such as in fixed mode or a small window. The bar height and text keep their size so they stay readable.",
-		position = 3,
-		section = appearanceSection
-	)
-	default boolean fitToGameView()
-	{
-		return true;
-	}
-
 	@Range(min = 4, max = 24)
+	@Units(Units.PIXELS)
 	@ConfigItem(
 		keyName = "barHeight",
 		name = "Bar height",
-		description = "The height of the health bar itself in pixels, not counting the text around it.",
+		description = "The height of the health bar itself, not counting the text around it.",
 		position = 4,
 		section = appearanceSection
 	)
@@ -205,10 +161,70 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "fitToGameView",
+		name = "Fit to game view",
+		description = "Make the bar narrower when it would take up too much of the game view, such as in fixed mode or a small window. The bar height and text keep their size so they stay readable.",
+		position = 5,
+		section = appearanceSection
+	)
+	default boolean fitToGameView()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showIcons",
+		name = "Show icons",
+		description = "Show an icon with the bar: the theme's or boss's icon in a crest at the bar ends, or small before the name while \"Use Oldschool theme\" is on. Turn off for a plain bar without the crests.",
+		position = 6,
+		section = appearanceSection
+	)
+	default boolean showIcons()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "useBossIcon",
+		name = "Use boss icon",
+		description = "Show the icon of the boss you're fighting at the bar ends, on any theme. While \"Use Oldschool theme\" is on, it's shown small before the name instead. Raid bosses show their pet. Other opponents keep the theme's icon. Needs Show icons.",
+		position = 7,
+		section = appearanceSection
+	)
+	default boolean useBossIcon()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = MATCH_BOSS_COLORS_KEY,
+		name = "Match boss colors",
+		description = "Color the bar to suit the boss you're fighting, on any theme. A boss keeps the same colors in every form. Other opponents keep the theme's colors. Ticking this turns off \"Use Oldschool theme\".",
+		position = 8,
+		section = appearanceSection
+	)
+	default boolean matchBossColors()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = RARE_GOLD_BARS_KEY,
+		name = "Rare gold bars",
+		description = "Now and then a bar turns gold, with a shine and a few sparkles. It's rolled once per opponent, about 1 in 250, and is only for looks. Ticking this turns off \"Use Oldschool theme\".",
+		position = 9,
+		section = appearanceSection
+	)
+	default boolean rareGoldBars()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "showDamageTrail",
 		name = "Show damage trail",
 		description = "After a hit, keep the lost health visible as a lighter section for a moment before it drains away.",
-		position = 5,
+		position = 10,
 		section = appearanceSection
 	)
 	default boolean showDamageTrail()
@@ -216,59 +232,24 @@ public interface BossHealthBarConfig extends Config
 		return true;
 	}
 
+	@Range(min = 1, max = 10)
 	@ConfigItem(
-		keyName = "showPhaseMarkers",
-		name = "Show phase markers",
-		description = "When this bar replaces the game's own boss health bar, show the same phase markers the game's bar shows.",
-		position = 6,
+		keyName = "animationSpeed",
+		name = "Heal animation speed",
+		description = "How quickly the bar refills when the opponent heals. Higher is faster. Damage always lowers the bar immediately.",
+		position = 11,
 		section = appearanceSection
 	)
-	default boolean showPhaseMarkers()
+	default int animationSpeed()
 	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "flashOnBigHits",
-		name = "Flash on big hits",
-		description = "Briefly flash the bar's border when a hit removes a large part of the opponent's health.",
-		position = 7,
-		section = appearanceSection
-	)
-	default boolean flashOnBigHits()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = "introAnimation",
-		name = "Intro animation",
-		description = "How the bar appears for a new opponent: fade in, rise into place, widen from the center with the fill sweeping up, or rise and widen.",
-		position = 8,
-		section = appearanceSection
-	)
-	default IntroAnimation introAnimation()
-	{
-		return IntroAnimation.SLIDE_AND_EXPAND;
-	}
-
-	@ConfigItem(
-		keyName = "showDefeatAnimation",
-		name = "Defeat animation",
-		description = "When the opponent dies, hold the empty bar with a \"Defeated\" label for a moment before fading it out.",
-		position = 9,
-		section = appearanceSection
-	)
-	default boolean showDefeatAnimation()
-	{
-		return true;
+		return 6;
 	}
 
 	@ConfigItem(
 		keyName = "lowHealthEffect",
 		name = "Low health effect",
 		description = "Make the fill pulse and glow while the opponent's health is at or below the low health threshold.",
-		position = 10,
+		position = 12,
 		section = appearanceSection
 	)
 	default boolean lowHealthEffect()
@@ -282,7 +263,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "lowHealthThreshold",
 		name = "Low health threshold",
 		description = "The health percentage at or below which the low health effect starts.",
-		position = 11,
+		position = 13,
 		section = appearanceSection
 	)
 	default int lowHealthThreshold()
@@ -290,17 +271,64 @@ public interface BossHealthBarConfig extends Config
 		return 25;
 	}
 
-	@Range(min = 1, max = 10)
 	@ConfigItem(
-		keyName = "animationSpeed",
-		name = "Heal animation speed",
-		description = "How quickly the bar refills when the opponent heals. Higher is faster. Damage always lowers the bar immediately.",
-		position = 12,
+		keyName = "flashOnBigHits",
+		name = "Flash on big hits",
+		description = "Briefly flash the bar's border when a hit removes a large part of the opponent's health.",
+		position = 14,
 		section = appearanceSection
 	)
-	default int animationSpeed()
+	default boolean flashOnBigHits()
 	{
-		return 6;
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "introAnimation",
+		name = "Intro animation",
+		description = "How the bar appears for a new opponent: fade in, rise into place, widen from the center with the fill sweeping up, or rise and widen.",
+		position = 15,
+		section = appearanceSection
+	)
+	default IntroAnimation introAnimation()
+	{
+		return IntroAnimation.SLIDE_AND_EXPAND;
+	}
+
+	@ConfigItem(
+		keyName = "showDefeatAnimation",
+		name = "Defeat animation",
+		description = "When the opponent dies, hold the empty bar with a \"Defeated\" label for a moment before fading it out.",
+		position = 16,
+		section = appearanceSection
+	)
+	default boolean showDefeatAnimation()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showPhaseMarkers",
+		name = "Show phase markers",
+		description = "While the game's own boss health bar shows the opponent, show the same phase markers it shows.",
+		position = 17,
+		section = appearanceSection
+	)
+	default boolean showPhaseMarkers()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = CHOOSE_CUSTOM_ICON_KEY,
+		name = "Choose custom icon",
+		description = "Click to search for an item in your chatbox. Its icon is shown at the bar ends on the Custom theme. You need to be logged in.",
+		position = 0,
+		section = customColorsSection
+	)
+	default boolean chooseCustomIcon()
+	{
+		return false;
 	}
 
 	@Alpha
@@ -308,7 +336,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "customFillHighColor",
 		name = "Fill (full health)",
 		description = "The fill color at full health. The fill blends towards the low health color as health drops.",
-		position = 0,
+		position = 1,
 		section = customColorsSection
 	)
 	default Color customFillHighColor()
@@ -321,7 +349,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "customFillLowColor",
 		name = "Fill (low health)",
 		description = "The fill color as the opponent's health reaches zero. Set it to the same color as full health for a single color.",
-		position = 1,
+		position = 2,
 		section = customColorsSection
 	)
 	default Color customFillLowColor()
@@ -334,7 +362,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "customTrailColor",
 		name = "Damage trail",
 		description = "The color of the damage trail.",
-		position = 2,
+		position = 3,
 		section = customColorsSection
 	)
 	default Color customTrailColor()
@@ -347,7 +375,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "customFrameColor",
 		name = "Frame",
 		description = "The color of the bar's frame, end pieces, underline and phase markers.",
-		position = 3,
+		position = 4,
 		section = customColorsSection
 	)
 	default Color customFrameColor()
@@ -360,7 +388,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "customTextColor",
 		name = "Name and damage text",
 		description = "The color of the opponent's name and the damage number.",
-		position = 4,
+		position = 5,
 		section = customColorsSection
 	)
 	default Color customTextColor()
@@ -373,7 +401,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "customLevelTextColor",
 		name = "Combat level text",
 		description = "The color of the combat level next to the name.",
-		position = 5,
+		position = 6,
 		section = customColorsSection
 	)
 	default Color customLevelTextColor()
@@ -386,7 +414,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "customHitpointsTextColor",
 		name = "Hitpoints text",
 		description = "The color of the hitpoints text below the bar.",
-		position = 6,
+		position = 7,
 		section = customColorsSection
 	)
 	default Color customHitpointsTextColor()
@@ -399,7 +427,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "customDefeatedTextColor",
 		name = "Defeated text",
 		description = "The color of the \"Defeated\" label.",
-		position = 7,
+		position = 8,
 		section = customColorsSection
 	)
 	default Color customDefeatedTextColor()
@@ -492,10 +520,22 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showPartyDefence",
+		name = "Show Party Defence Tracker defence",
+		description = "If you use the \"Party Defence Tracker\" plugin, show the defence from its info box below the bar, after the kill count. Nothing shows when that plugin isn't installed or isn't on.",
+		position = 7,
+		section = textSection
+	)
+	default boolean showPartyDefence()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "showSpecialAttackCounts",
 		name = "Show special attack counts",
 		description = "If RuneLite's \"Special Attack Counter\" plugin is on, show its counts below the bar, after the Party Defence Tracker defence, with each weapon's icon. Weapons like the Bandos godsword count damage, not hits. Nothing shows unless that plugin is on with its info boxes enabled.",
-		position = 7,
+		position = 8,
 		section = textSection
 	)
 	default boolean showSpecialAttackCounts()
@@ -507,7 +547,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showWeakness",
 		name = "Show elemental weakness",
 		description = "Show the boss's elemental weakness below the bar, as the element's rune and the extra damage it takes, for example +40%. The values come from the OSRS Wiki, and bosses without a weakness show nothing.",
-		position = 8,
+		position = 9,
 		section = textSection
 	)
 	default boolean showWeakness()
@@ -519,7 +559,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDrainCap",
 		name = "Show defence drain limit",
 		description = "Show how far the boss's defence can be lowered in total below the bar, for example -20, or \"no drain\" when it can't be lowered. Only shown for bosses with a limit. The values come from the OSRS Wiki.",
-		position = 9,
+		position = 10,
 		section = textSection
 	)
 	default boolean showDrainCap()
@@ -530,7 +570,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "bossOnly",
 		name = "Only show for bosses",
-		description = "Only show the bar for bosses: a built-in list of commonly fought bosses and anything the game's own boss health bar is showing, plus opponents at or above the combat level and superior slayer monsters when those settings are on. Turn off to show it for any opponent.",
+		description = "Only show the bar for bosses: a built-in list of commonly fought bosses and anything the game's own boss health bar is showing, plus opponents at or above the minimum combat level and superior slayer monsters when those settings are on. Turn off to show it for any opponent.",
 		position = 0,
 		section = behaviourSection
 	)
@@ -542,7 +582,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showAboveCombatLevel",
 		name = "Also show above combat level",
-		description = "When \"Only show for bosses\" is on, also show the bar for any opponent at or above the combat level below, boss or not. Useful for bosses missing from the built-in list that the game doesn't give a health bar either.",
+		description = "When \"Only show for bosses\" is on, also show the bar for any opponent at or above the minimum combat level below, boss or not. Useful for bosses missing from the built-in list that the game doesn't give a health bar either.",
 		position = 1,
 		section = behaviourSection
 	)
@@ -554,7 +594,7 @@ public interface BossHealthBarConfig extends Config
 	@Range(min = 1, max = 1000)
 	@ConfigItem(
 		keyName = "minimumCombatLevel",
-		name = "Combat level",
+		name = "Minimum combat level",
 		description = "The combat level used by \"Also show above combat level\".",
 		position = 2,
 		section = behaviourSection
@@ -591,20 +631,20 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "replaceNativeBossBar",
-		name = "Replace game's boss health bar",
-		description = "Some bosses show the game's own health bar at the top of the screen. When on, that bar is hidden while you fight the boss and this bar is shown instead. When off, this bar is hidden for those bosses.",
+		keyName = NATIVE_BOSS_BAR_MODE_KEY,
+		name = "Game's boss health bar",
+		description = "Some bosses show the game's own health bar at the top of the screen. Replace it hides that bar while you fight the boss and shows this one instead. Show both keeps the game's bar and shows this one too. Hide this bar keeps the game's bar and hides this one for those bosses.",
 		position = 5,
 		section = behaviourSection
 	)
-	default boolean replaceNativeBossBar()
+	default NativeBossBarMode nativeBossBarMode()
 	{
-		return true;
+		return NativeBossBarMode.REPLACE;
 	}
 
 	@ConfigItem(
 		keyName = HIDE_VANILLA_OVERLAY_KEY,
-		name = "Hide vanilla opponent overlay",
+		name = "Hide Opponent Information bar",
 		description = "Turn off the health bar of RuneLite's \"Opponent Information\" plugin while this plugin is on, so two health bars aren't shown at once.",
 		position = 6,
 		section = behaviourSection
@@ -622,18 +662,6 @@ public interface BossHealthBarConfig extends Config
 		section = behaviourSection
 	)
 	default boolean showHealthIndicatorMarkers()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "showPartyDefence",
-		name = "Show Party Defence Tracker defence",
-		description = "If you use the \"Party Defence Tracker\" plugin, show the defence from its info box below the bar, after the kill count. Nothing shows when that plugin isn't installed or isn't on.",
-		position = 8,
-		section = behaviourSection
-	)
-	default boolean showPartyDefence()
 	{
 		return true;
 	}

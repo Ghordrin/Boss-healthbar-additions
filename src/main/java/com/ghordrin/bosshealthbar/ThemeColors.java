@@ -16,6 +16,8 @@ class ThemeColors
 	Color fillHigh;
 	Color fillLow;
 	Color trail;
+	// Plain color behind the fill. Null keeps the default dark track.
+	Color track;
 
 	Color frame;
 
