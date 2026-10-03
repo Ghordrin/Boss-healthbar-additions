@@ -20,6 +20,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginChanged;
+import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -78,6 +79,15 @@ public class BossHealthBarPlugin extends Plugin
 	@Inject
 	private PartyDamage partyDamage;
 
+	@Inject
+	private KillCounts killCounts;
+
+	@Inject
+	private PartyDefence partyDefence;
+
+	@Inject
+	private SpecialAttackCounts specialAttackCounts;
+
 	@Provides
 	BossHealthBarConfig provideConfig(ConfigManager configManager)
 	{
@@ -89,6 +99,9 @@ public class BossHealthBarPlugin extends Plugin
 	{
 		overlay.reset();
 		healthIndicatorMarkers.invalidate();
+		killCounts.invalidate();
+		partyDefence.reset();
+		specialAttackCounts.reset();
 		partyDamage.startUp();
 		overlayManager.add(overlay);
 		opponentInfoOverride.apply();
@@ -125,6 +138,9 @@ public class BossHealthBarPlugin extends Plugin
 		superiorTracker.reset();
 		opponentTracker.reset();
 		damageTracker.reset();
+		killCounts.invalidate();
+		partyDefence.reset();
+		specialAttackCounts.reset();
 		overlay.reset();
 	}
 
@@ -134,6 +150,12 @@ public class BossHealthBarPlugin extends Plugin
 		if (HealthIndicatorMarkers.CONFIG_GROUP.equals(event.getGroup()))
 		{
 			clientThread.invoke(healthIndicatorMarkers::invalidate);
+			return;
+		}
+
+		if (KillCounts.CONFIG_GROUP.equals(event.getGroup()))
+		{
+			clientThread.invoke(killCounts::invalidate);
 			return;
 		}
 
@@ -180,7 +202,18 @@ public class BossHealthBarPlugin extends Plugin
 	@Subscribe
 	public void onPluginChanged(PluginChanged event)
 	{
-		clientThread.invoke(healthIndicatorMarkers::invalidate);
+		clientThread.invoke(() ->
+		{
+			healthIndicatorMarkers.invalidate();
+			partyDefence.invalidatePlugin();
+			specialAttackCounts.invalidatePlugin();
+		});
+	}
+
+	@Subscribe
+	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
+	{
+		clientThread.invoke(killCounts::invalidate);
 	}
 
 	@Subscribe
@@ -244,6 +277,8 @@ public class BossHealthBarPlugin extends Plugin
 		tobBossBar.onGameTick();
 		superiorTracker.onGameTick();
 		opponentTracker.onGameTick();
+		partyDefence.update(opponentTracker.getOpponent());
+		specialAttackCounts.update(opponentTracker.getOpponent());
 	}
 
 	// Runs every frame because the game's scripts can unhide their bars whenever they update.

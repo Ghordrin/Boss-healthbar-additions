@@ -1,5 +1,6 @@
 package com.ghordrin.bosshealthbar;
 
+import com.google.common.annotations.VisibleForTesting;
 import static com.ghordrin.bosshealthbar.BarAnimation.clamp01;
 import static com.ghordrin.bosshealthbar.ColorUtil.withAlpha;
 import java.awt.Color;
@@ -7,9 +8,14 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import net.runelite.client.config.FontType;
 import net.runelite.client.ui.FontManager;
+import net.runelite.client.util.ImageUtil;
 
 class BarTextPainter
 {
@@ -26,6 +32,12 @@ class BarTextPainter
 	private static final int LEVEL_GAP = 12;
 	private static final String DAMAGE_NUMBER_SIZING = "9999";
 	private static final Color TEXT_SHADOW = new Color(0, 0, 0, 200);
+	private static final Color DEFENCE_ARROW = new Color(220, 40, 40);
+	private static final int DEFENCE_GAP = 3;
+	private static final float RUNE_ICON_SCALE = 1.3f;
+	private static final int NO_ROOM = -1;
+	private static final int SPECIAL_ATTACK_GAP = 6;
+	private static final int MAX_CACHED_ITEM_ICONS = 16;
 
 	private final DamageTracker damageTracker;
 	private final BossHealthBarConfig config;
@@ -43,6 +55,13 @@ class BarTextPainter
 	private Font ellipsizedFont;
 	private int ellipsizedWidth;
 	private String ellipsizedName;
+
+	private BufferedImage defenceIconSource;
+	private int defenceIconHeight;
+	private BufferedImage defenceIconScaled;
+
+	private final Map<BufferedImage, BufferedImage> itemIcons = new IdentityHashMap<>();
+	private int itemIconHeight;
 
 	@Inject
 	BarTextPainter(DamageTracker damageTracker, BossHealthBarConfig config)
@@ -178,16 +197,277 @@ class BarTextPainter
 		return defeated ? DEFEATED_TEXT : buildHitpointsText(state);
 	}
 
-	void drawFooter(Graphics2D graphics, String text, boolean defeated, int width, int capWidth, int top, ThemeColors colors)
+	void drawFooter(Graphics2D graphics, String text, String killCountText, PartyDefence.Reading defence,
+		BufferedImage defenceIcon, List<SpecialAttackCounts.Reading> specialAttacks, String weaknessText,
+		BufferedImage weaknessIcon, String drainCapText, boolean defeated, int width, int capWidth, int top,
+		ThemeColors colors)
 	{
 		graphics.setFont(smallFont);
 		final FontMetrics metrics = graphics.getFontMetrics();
-		final int textX = defeated
-			? (width - metrics.stringWidth(text)) / 2
-			: width - capWidth - TEXT_INSET - metrics.stringWidth(text);
 		final int baseline = top + metrics.getAscent() + 1;
-		final Color color = defeated ? colors.getDefeatedText() : colors.getHitpointsText();
-		drawShadowedText(graphics, text, textX, baseline, color, 1f);
+		int textX = width - capWidth - TEXT_INSET;
+		if (text != null)
+		{
+			textX = defeated
+				? (width - metrics.stringWidth(text)) / 2
+				: width - capWidth - TEXT_INSET - metrics.stringWidth(text);
+			final Color color = defeated ? colors.getDefeatedText() : colors.getHitpointsText();
+			drawShadowedText(graphics, text, textX, baseline, color, 1f);
+		}
+
+		// Items end at the bar's edge, or a gap before the hitpoints text.
+		final int limit = text != null ? textX - LEVEL_GAP : textX;
+		// Once an item doesn't fit, the rest are left out too, so none of them moves into an earlier one's spot.
+		int left = capWidth + TEXT_INSET;
+		if (killCountText != null)
+		{
+			final int killCountWidth = metrics.stringWidth(killCountText);
+			if (left + killCountWidth <= limit)
+			{
+				drawShadowedText(graphics, killCountText, left, baseline, colors.getLevelText(), 0.9f);
+				left += killCountWidth + LEVEL_GAP;
+			}
+			else
+			{
+				left = NO_ROOM;
+			}
+		}
+
+		if (defence != null && left != NO_ROOM)
+		{
+			left = drawDefence(graphics, defence, defenceIcon, metrics, left, limit, baseline, colors);
+		}
+
+		if (!specialAttacks.isEmpty() && left != NO_ROOM)
+		{
+			left = drawSpecialAttacks(graphics, specialAttacks, metrics, left, limit, baseline, colors);
+		}
+
+		if (weaknessText != null && left != NO_ROOM)
+		{
+			left = drawWeakness(graphics, weaknessText, weaknessIcon, metrics, left, limit, baseline, colors);
+		}
+
+		if (drainCapText != null && left != NO_ROOM)
+		{
+			drawDrainCap(graphics, drainCapText, defenceIcon, metrics, left, limit, baseline, colors);
+		}
+	}
+
+	private int drawDefence(Graphics2D graphics, PartyDefence.Reading defence, BufferedImage icon, FontMetrics metrics,
+		int left, int limit, int baseline, ThemeColors colors)
+	{
+		final int ascent = metrics.getAscent();
+		final BufferedImage scaledIcon = scaledDefenceIcon(icon, ascent + 1);
+		final int iconWidth = scaledIcon != null ? scaledIcon.getWidth() + DEFENCE_GAP : 0;
+		final int arrowWidth = Math.max(5, Math.round(ascent * 0.6f));
+		final int arrowHeight = Math.max(3, Math.round(arrowWidth * 0.6f));
+		final int textWidth = metrics.stringWidth(defence.getText());
+		final int end = left + iconWidth + arrowWidth + DEFENCE_GAP + textWidth;
+		if (end > limit)
+		{
+			return NO_ROOM;
+		}
+
+		final int middle = baseline - ascent / 2;
+		int x = left;
+		if (scaledIcon != null)
+		{
+			graphics.drawImage(scaledIcon, x, middle - scaledIcon.getHeight() / 2, null);
+			x += iconWidth;
+		}
+
+		final int arrowTop = middle - arrowHeight / 2;
+		final int[] xs = {x, x + arrowWidth, x + arrowWidth / 2};
+		final int[] ys = {arrowTop, arrowTop, arrowTop + arrowHeight};
+		final Object antialiasing = graphics.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		graphics.translate(1, 1);
+		graphics.setColor(TEXT_SHADOW);
+		graphics.fillPolygon(xs, ys, 3);
+		graphics.translate(-1, -1);
+		graphics.setColor(DEFENCE_ARROW);
+		graphics.fillPolygon(xs, ys, 3);
+		if (antialiasing != null)
+		{
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, antialiasing);
+		}
+		x += arrowWidth + DEFENCE_GAP;
+
+		final Color color = defence.getColor() != null ? defence.getColor() : colors.getText();
+		drawShadowedText(graphics, defence.getText(), x, baseline, color, 1f);
+		return end + LEVEL_GAP;
+	}
+
+	private int drawSpecialAttacks(Graphics2D graphics, List<SpecialAttackCounts.Reading> readings, FontMetrics metrics,
+		int left, int limit, int baseline, ThemeColors colors)
+	{
+		final int ascent = metrics.getAscent();
+		final int middle = baseline - ascent / 2;
+		// Weapon images have a transparent border too, so they're sized like the rune.
+		final int iconHeight = Math.round((ascent + 1) * RUNE_ICON_SCALE);
+
+		// The weapons are shown all together or not at all.
+		final int end = specialAttacksEnd(readings, metrics, left, iconHeight);
+		if (end > limit)
+		{
+			return NO_ROOM;
+		}
+
+		int x = left;
+		for (SpecialAttackCounts.Reading reading : readings)
+		{
+			final BufferedImage icon = reading.getImage();
+			final int iconWidth = itemIconWidth(icon, iconHeight);
+			final int iconPadding = itemIconPadding(iconWidth);
+			final int iconAdvance = iconAdvance(icon, iconHeight);
+			final int itemEnd = x + iconAdvance + metrics.stringWidth(reading.getText());
+
+			if (iconWidth > 0)
+			{
+				final BufferedImage scaled = scaledItemIcon(icon, iconWidth, iconHeight);
+				if (scaled != null)
+				{
+					graphics.drawImage(scaled, x - iconPadding, middle - iconHeight / 2, null);
+				}
+				x += iconAdvance;
+			}
+
+			final Color color = reading.getColor() != null ? reading.getColor() : colors.getText();
+			drawShadowedText(graphics, reading.getText(), x, baseline, color, 1f);
+			x = itemEnd + SPECIAL_ATTACK_GAP;
+		}
+		return end + LEVEL_GAP;
+	}
+
+	@VisibleForTesting
+	static int specialAttacksEnd(List<SpecialAttackCounts.Reading> readings, FontMetrics metrics, int left, int iconHeight)
+	{
+		int end = left - SPECIAL_ATTACK_GAP;
+		for (SpecialAttackCounts.Reading reading : readings)
+		{
+			end += SPECIAL_ATTACK_GAP + iconAdvance(reading.getImage(), iconHeight) + metrics.stringWidth(reading.getText());
+		}
+		return end;
+	}
+
+	private static int itemIconWidth(BufferedImage icon, int iconHeight)
+	{
+		return icon != null && icon.getWidth() > 0 && icon.getHeight() > 0
+			? Math.max(1, Math.round(icon.getWidth() * iconHeight / (float) icon.getHeight())) : 0;
+	}
+
+	private static int itemIconPadding(int iconWidth)
+	{
+		return (iconWidth - Math.round(iconWidth / RUNE_ICON_SCALE)) / 2;
+	}
+
+	private static int iconAdvance(BufferedImage icon, int iconHeight)
+	{
+		final int iconWidth = itemIconWidth(icon, iconHeight);
+		return iconWidth > 0 ? iconWidth - itemIconPadding(iconWidth) * 2 + DEFENCE_GAP : 0;
+	}
+
+	private BufferedImage scaledItemIcon(BufferedImage icon, int width, int height)
+	{
+		if (height != itemIconHeight || itemIcons.size() > MAX_CACHED_ITEM_ICONS)
+		{
+			itemIcons.clear();
+			itemIconHeight = height;
+		}
+
+		BufferedImage scaled = itemIcons.get(icon);
+		// ItemManager hands out a blank image that fills in once the item has loaded, so that one isn't cached yet.
+		if (scaled == null && hasVisiblePixel(icon))
+		{
+			scaled = ImageUtil.resizeImage(icon, width, height);
+			itemIcons.put(icon, scaled);
+		}
+		return scaled;
+	}
+
+	private static boolean hasVisiblePixel(BufferedImage image)
+	{
+		for (int y = 0; y < image.getHeight(); y++)
+		{
+			for (int x = 0; x < image.getWidth(); x++)
+			{
+				if ((image.getRGB(x, y) >>> 24) != 0)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private int drawWeakness(Graphics2D graphics, String text, BufferedImage icon, FontMetrics metrics,
+		int left, int limit, int baseline, ThemeColors colors)
+	{
+		final int ascent = metrics.getAscent();
+		// Item images have a transparent border around the rune, so draw them larger to match the skill icon.
+		final int iconHeight = icon != null && icon.getHeight() > 0 ? Math.round((ascent + 1) * RUNE_ICON_SCALE) : 0;
+		final int iconWidth = iconHeight > 0 ? Math.round(icon.getWidth() * iconHeight / (float) icon.getHeight()) : 0;
+		final int iconPadding = (iconWidth - Math.round(iconWidth / RUNE_ICON_SCALE)) / 2;
+		final int iconAdvance = iconWidth > 0 ? iconWidth - iconPadding * 2 + DEFENCE_GAP : 0;
+		final int end = left + iconAdvance + metrics.stringWidth(text);
+		if (end > limit)
+		{
+			return NO_ROOM;
+		}
+
+		int x = left;
+		if (iconWidth > 0)
+		{
+			final int middle = baseline - ascent / 2;
+			final Object interpolation = graphics.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+			graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+			// Drawn scaled every frame, because ItemManager's image only fills in once the item has loaded.
+			graphics.drawImage(icon, x - iconPadding, middle - iconHeight / 2, iconWidth, iconHeight, null);
+			graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, interpolation != null
+				? interpolation : RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+			x += iconAdvance;
+		}
+
+		drawShadowedText(graphics, text, x, baseline, colors.getLevelText(), 0.9f);
+		return end + LEVEL_GAP;
+	}
+
+	private void drawDrainCap(Graphics2D graphics, String text, BufferedImage icon, FontMetrics metrics,
+		int left, int limit, int baseline, ThemeColors colors)
+	{
+		final int ascent = metrics.getAscent();
+		final BufferedImage scaledIcon = scaledDefenceIcon(icon, ascent + 1);
+		final int iconWidth = scaledIcon != null ? scaledIcon.getWidth() + DEFENCE_GAP : 0;
+		if (left + iconWidth + metrics.stringWidth(text) > limit)
+		{
+			return;
+		}
+
+		int x = left;
+		if (scaledIcon != null)
+		{
+			graphics.drawImage(scaledIcon, x, baseline - ascent / 2 - scaledIcon.getHeight() / 2, null);
+			x += iconWidth;
+		}
+
+		drawShadowedText(graphics, text, x, baseline, colors.getLevelText(), 0.9f);
+	}
+
+	private BufferedImage scaledDefenceIcon(BufferedImage icon, int height)
+	{
+		if (icon == null || icon.getWidth() <= 0 || icon.getHeight() <= 0)
+		{
+			return null;
+		}
+		if (icon != defenceIconSource || height != defenceIconHeight)
+		{
+			final int width = Math.max(1, Math.round(icon.getWidth() * height / (float) icon.getHeight()));
+			defenceIconScaled = icon.getHeight() == height ? icon : ImageUtil.resizeImage(icon, width, height);
+			defenceIconSource = icon;
+			defenceIconHeight = height;
+		}
+		return defenceIconScaled;
 	}
 
 	private String ellipsizeName(String name, FontMetrics metrics, int maxWidth)

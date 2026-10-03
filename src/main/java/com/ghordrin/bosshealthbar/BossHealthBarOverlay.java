@@ -7,18 +7,23 @@ import static com.ghordrin.bosshealthbar.BarPainter.drawRasterImage;
 import static com.ghordrin.bosshealthbar.BarPainter.scaledCapRise;
 import static com.ghordrin.bosshealthbar.BarPainter.scaledCapWidth;
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 import net.runelite.api.ParamID;
+import net.runelite.api.gameval.ItemID;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import net.runelite.client.game.ItemManager;
@@ -39,6 +44,10 @@ class BossHealthBarOverlay extends Overlay
 	private static final int[] PREVIEW_HEALTH = {500, 500, 440, 385, 310, 250, 190, 120, 70, 70, 70, 500, 500};
 	private static final Duration PREVIEW_STEP = Duration.ofMillis(1200);
 	private static final float[] PREVIEW_PHASE_MARKERS = {0.5f};
+	private static final String PREVIEW_KILL_COUNT = KillCounts.text(128);
+	private static final PartyDefence.Reading PREVIEW_DEFENCE = new PartyDefence.Reading("42", Color.WHITE);
+	private static final BossStats.Info PREVIEW_STATS = new BossStats.Info(BossStats.Element.FIRE,
+		BossStats.weaknessText(new BossStats.Weakness(BossStats.Element.FIRE, 40)), BossStats.drainCapText(20));
 	private static final float MAX_VIEWPORT_FRACTION = 0.85f;
 	private static final int MIN_FITTED_BAR_WIDTH = 160;
 	private static final int CREST_OVERLAP = 2;
@@ -58,6 +67,9 @@ class BossHealthBarOverlay extends Overlay
 	private final DamageTracker damageTracker;
 	private final GoldBar goldBar;
 	private final HealthIndicatorMarkers indicatorMarkers;
+	private final KillCounts killCounts;
+	private final PartyDefence partyDefence;
+	private final SpecialAttackCounts specialAttackCounts;
 	private final BarAnimation animation = new BarAnimation();
 
 	private Actor trackedOpponent;
@@ -71,6 +83,8 @@ class BossHealthBarOverlay extends Overlay
 	private Actor infoActor;
 	private int infoNpcId = -1;
 	private String infoName;
+	private String infoKillCountKey;
+	private BossStats.Info infoStats;
 	private Integer infoMaxHealth;
 	private KnownBosses.Icon infoBossIcon;
 	private ThemeColors infoBossColors;
@@ -79,6 +93,8 @@ class BossHealthBarOverlay extends Overlay
 	private BufferedImage bossSprite;
 
 	private ThemeColors themeColors;
+
+	private List<SpecialAttackCounts.Reading> previewSpecialAttacks;
 
 	@Inject
 	private BossHealthBarOverlay(
@@ -97,6 +113,9 @@ class BossHealthBarOverlay extends Overlay
 		DamageTracker damageTracker,
 		GoldBar goldBar,
 		HealthIndicatorMarkers indicatorMarkers,
+		KillCounts killCounts,
+		PartyDefence partyDefence,
+		SpecialAttackCounts specialAttackCounts,
 		Pickers pickers)
 	{
 		super(plugin);
@@ -114,6 +133,9 @@ class BossHealthBarOverlay extends Overlay
 		this.damageTracker = damageTracker;
 		this.goldBar = goldBar;
 		this.indicatorMarkers = indicatorMarkers;
+		this.killCounts = killCounts;
+		this.partyDefence = partyDefence;
+		this.specialAttackCounts = specialAttackCounts;
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -283,7 +305,18 @@ class BossHealthBarOverlay extends Overlay
 		final boolean showHeader = config.showBossName() || config.showDamageNumber();
 		final int headerHeight = showHeader ? textPainter.headerHeight() : 0;
 		final String footerText = textPainter.footerText(state, defeated);
-		final int footerHeight = footerText != null || config.showDefeatAnimation() ? textPainter.footerHeight() : 0;
+		final String killCountText = !config.showKillCount() ? null
+			: showingPreview ? PREVIEW_KILL_COUNT : killCounts.textFor(state.killCountKey);
+		final PartyDefence.Reading defence = defeated || !partyDefence.isAvailable() ? null
+			: showingPreview ? PREVIEW_DEFENCE : partyDefence.readingFor(opponent);
+		final List<SpecialAttackCounts.Reading> specialAttacks = specialAttackCounts.isAvailable()
+			? state.specialAttacks : Collections.emptyList();
+		final BossStats.Info stats = state.stats;
+		final String weaknessText = stats != null && config.showWeakness() ? stats.getWeaknessText() : null;
+		final String drainCapText = stats != null && config.showDrainCap() ? stats.getDrainCapText() : null;
+		final int footerHeight = footerText != null || config.showKillCount() || config.showDefeatAnimation()
+			|| partyDefence.isAvailable() || specialAttackCounts.isAvailable() || weaknessText != null || drainCapText != null
+			? textPainter.footerHeight() : 0;
 		final ThemeColors baseColors = config.matchBossColors() && !showingPreview && infoBossColors != null
 			? infoBossColors : updateThemeColors();
 		final boolean gold = rolledGold && !showingPreview && config.rareGoldBars();
@@ -340,9 +373,13 @@ class BossHealthBarOverlay extends Overlay
 		graphics.translate(-shownInset, 0);
 
 		setOpacity(graphics, originalComposite, opacity * textOpacity);
-		if (footerText != null)
+		if (footerText != null || killCountText != null || defence != null || !specialAttacks.isEmpty()
+			|| weaknessText != null || drainCapText != null)
 		{
-			textPainter.drawFooter(graphics, footerText, defeated, width, capWidth, barY + barHeight + capRise, colors);
+			textPainter.drawFooter(graphics, footerText, killCountText, defence,
+				defence != null || drainCapText != null ? partyDefence.icon() : null, specialAttacks, weaknessText,
+				weaknessText != null ? itemManager.getImage(stats.getWeaknessElement().getRuneItemId()) : null, drainCapText,
+				defeated, width, capWidth, barY + barHeight + capRise, colors);
 		}
 		setOpacity(graphics, originalComposite, opacity);
 
@@ -459,6 +496,9 @@ class BossHealthBarOverlay extends Overlay
 		final String name = infoName;
 		final Integer maxHealth = infoMaxHealth;
 		final HealthIndicatorMarkers.Marker[] userMarkers = indicatorMarkers.markersFor(name);
+		final String killCountKey = infoKillCountKey;
+		final BossStats.Info stats = infoStats;
+		final List<SpecialAttackCounts.Reading> specialAttacks = specialAttackCounts.readings();
 
 		// The game's bars have exact hitpoints, and some bosses stop sending overhead health updates
 		// while they're shown, so prefer them.
@@ -468,20 +508,22 @@ class BossHealthBarOverlay extends Overlay
 			final float[] markers = config.showPhaseMarkers()
 				? gameBossBar.phaseMarkers(nativeMaxHealth) : BarState.NO_PHASE_MARKERS;
 			return new BarState(name, opponent.getCombatLevel(), nativeMaxHealth,
-				gameBossBar.health(), nativeMaxHealth, true, gameBossBar.isPercentOnly(), markers, userMarkers);
+				gameBossBar.health(), nativeMaxHealth, true, gameBossBar.isPercentOnly(), markers, userMarkers,
+				killCountKey, stats, specialAttacks);
 		}
 
 		final int tobMax = tobBar ? tobBossBar.maxHealth() : 0;
 		if (tobMax > 0)
 		{
 			return new BarState(name, opponent.getCombatLevel(), maxHealth, tobBossBar.health(tobMax), tobMax,
-				false, false, BarState.NO_PHASE_MARKERS, userMarkers);
+				false, false, BarState.NO_PHASE_MARKERS, userMarkers, killCountKey, stats, specialAttacks);
 		}
 
 		if (opponent.getHealthScale() > 0)
 		{
 			return new BarState(name, opponent.getCombatLevel(), maxHealth,
-				opponent.getHealthRatio(), opponent.getHealthScale(), false, false, BarState.NO_PHASE_MARKERS, userMarkers);
+				opponent.getHealthRatio(), opponent.getHealthScale(), false, false, BarState.NO_PHASE_MARKERS, userMarkers,
+				killCountKey, stats, specialAttacks);
 		}
 
 		return null;
@@ -500,7 +542,19 @@ class BossHealthBarOverlay extends Overlay
 		final int step = (int) ((now - previewStartNanos) / PREVIEW_STEP.toNanos() % PREVIEW_HEALTH.length);
 		return new BarState(PREVIEW_NAME, PREVIEW_COMBAT_LEVEL, PREVIEW_MAX_HEALTH, PREVIEW_HEALTH[step],
 			PREVIEW_MAX_HEALTH, true, false, config.showPhaseMarkers() ? PREVIEW_PHASE_MARKERS : BarState.NO_PHASE_MARKERS,
-			HealthIndicatorMarkers.NONE);
+			HealthIndicatorMarkers.NONE, null, PREVIEW_STATS,
+			specialAttackCounts.isAvailable() ? previewSpecialAttacks() : Collections.emptyList());
+	}
+
+	private List<SpecialAttackCounts.Reading> previewSpecialAttacks()
+	{
+		if (previewSpecialAttacks == null)
+		{
+			previewSpecialAttacks = Arrays.asList(
+				new SpecialAttackCounts.Reading(itemManager.getImage(ItemID.DRAGON_WARHAMMER), "2", Color.WHITE),
+				new SpecialAttackCounts.Reading(itemManager.getImage(ItemID.BGS), "31", Color.WHITE));
+		}
+		return previewSpecialAttacks;
 	}
 
 	private void updateOpponentInfo(Actor opponent)
@@ -518,8 +572,12 @@ class BossHealthBarOverlay extends Overlay
 		boolean complete = true;
 		infoBossIcon = null;
 		infoBossColors = null;
+		infoKillCountKey = null;
+		infoStats = null;
 		if (opponent instanceof NPC)
 		{
+			infoKillCountKey = KillCounts.key(name);
+			infoStats = BossStats.info(composition != null ? npcId : ((NPC) opponent).getId());
 			infoBossIcon = KnownBosses.icon(name);
 			infoBossColors = KnownBosses.colors(name);
 			if (composition != null)

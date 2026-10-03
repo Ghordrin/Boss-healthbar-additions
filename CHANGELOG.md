@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Show kill count (off by default) shows your kill count for the boss below the left end of the bar. It reads the counts RuneLite's Chat Commands plugin saves, so that plugin needs to be on
+- Show Party Defence Tracker defence (on by default) shows the boss's defence from the Party Defence Tracker plugin's info box below the bar, after the kill count. Nothing shows without that plugin
+- Show special attack counts (on by default) shows the counts from RuneLite's Special Attack Counter plugin below the bar, after the Party Defence Tracker defence, with each weapon's icon. Nothing shows unless that plugin is on with its info boxes enabled
+- Show elemental weakness (on by default) shows the boss's elemental weakness below the bar, as the element's rune and the extra damage percentage. Values from the OSRS Wiki
+- Show defence drain limit (on by default) shows how far the boss's defence can be lowered in total below the bar, or "no drain" when it can't be lowered. Values from the OSRS Wiki
+
 ## 1.2.0 (2026-10-02)
 
 - More bosses are recognised, mostly raid rooms that were missing, plus NPCs some bosses summon partway through the fight

@@ -480,6 +480,54 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showKillCount",
+		name = "Show kill count",
+		description = "Show your kill count for the boss below the left end of the bar. Needs RuneLite's Chat Commands plugin, which saves the count from the game's kill count message, so nothing shows for a boss until it has seen one.",
+		position = 6,
+		section = textSection
+	)
+	default boolean showKillCount()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "showSpecialAttackCounts",
+		name = "Show special attack counts",
+		description = "If RuneLite's \"Special Attack Counter\" plugin is on, show its counts below the bar, after the Party Defence Tracker defence, with each weapon's icon. Weapons like the Bandos godsword count damage, not hits. Nothing shows unless that plugin is on with its info boxes enabled.",
+		position = 7,
+		section = textSection
+	)
+	default boolean showSpecialAttackCounts()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showWeakness",
+		name = "Show elemental weakness",
+		description = "Show the boss's elemental weakness below the bar, as the element's rune and the extra damage it takes, for example +40%. The values come from the OSRS Wiki, and bosses without a weakness show nothing.",
+		position = 8,
+		section = textSection
+	)
+	default boolean showWeakness()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showDrainCap",
+		name = "Show defence drain limit",
+		description = "Show how far the boss's defence can be lowered in total below the bar, for example -20, or \"no drain\" when it can't be lowered. Only shown for bosses with a limit. The values come from the OSRS Wiki.",
+		position = 9,
+		section = textSection
+	)
+	default boolean showDrainCap()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "bossOnly",
 		name = "Only show for bosses",
 		description = "Only show the bar for bosses: a built-in list of commonly fought bosses and anything the game's own boss health bar is showing, plus opponents at or above the combat level and superior slayer monsters when those settings are on. Turn off to show it for any opponent.",
@@ -574,6 +622,18 @@ public interface BossHealthBarConfig extends Config
 		section = behaviourSection
 	)
 	default boolean showHealthIndicatorMarkers()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showPartyDefence",
+		name = "Show Party Defence Tracker defence",
+		description = "If you use the \"Party Defence Tracker\" plugin, show the defence from its info box below the bar, after the kill count. Nothing shows when that plugin isn't installed or isn't on.",
+		position = 8,
+		section = behaviourSection
+	)
+	default boolean showPartyDefence()
 	{
 		return true;
 	}

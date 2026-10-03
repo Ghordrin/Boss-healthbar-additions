@@ -37,7 +37,12 @@ Everything is in the normal RuneLite config screen, or right-click the bar and p
 - Replace game's boss health bar (on by default) hides the game's own boss bar and uses its numbers instead. Turn it off if you'd rather keep the game's bar, and this one stays out of the way for those fights
 - Hide vanilla opponent overlay (on by default) turns off the health bar from RuneLite's Opponent Information plugin so you don't see two. Your own setting comes back when you turn this plugin off
 - Show Boss Health Indicators lines (on by default): if you use the Boss Health Indicators plugin, the health lines you set up there are drawn on this bar too, in your colours. Without this they'd be lost, because they sit on the game's bar that this one hides
+- Show Party Defence Tracker defence (on by default): if you use the Party Defence Tracker plugin, the defence from its info box is shown below the left end of the bar, after the kill count, with the Defence icon and a red down arrow, in the same colour as the info box. It only shows while that plugin has an info box for the opponent you're fighting, which is after the first defence-lowering hit. Nothing shows if that plugin isn't installed or isn't on
+- Show special attack counts (on by default): if RuneLite's Special Attack Counter plugin is on, its counts are shown below the bar, after the defence, as each weapon's icon and its count, in the same colour as the info box. Weapons like the Bandos godsword count damage, not hits. The counts are that plugin's own: they reset when you use a special attack on a different opponent and go away when the opponent dies, so the bar keeps the last counts while it shows "Defeated". Nothing shows unless that plugin is on with its info boxes enabled. If the weapons don't all fit, none of them are shown
 - Damage number counts picks whose hits the number above the bar adds up: just yours (the default), your RuneLite party's, or everyone hitting the opponent. Party only counts members who also have this plugin, since each one sends their own hits over the party connection. Everyone needs no party, but includes players outside it
+- Show kill count (off by default) shows your kill count for the boss below the left end of the bar. It uses the counts RuneLite's Chat Commands plugin saves from the game's kill count messages, so that plugin needs to be on, and a boss shows nothing until you've had a kill count message for it with the plugin running. Raid bosses show nothing, since the count belongs to the whole raid
+- Show elemental weakness (on by default) shows the boss's elemental weakness below the left end of the bar, after the kill count, defence and special attack counts: the element's rune and how much extra damage it takes from that element, for example +40%. Bosses without a weakness show nothing
+- Show defence drain limit (on by default) shows how far the boss's defence can be lowered in total, after the weakness: the Defence icon and the limit, for example -20, or "no drain" for a boss whose defence can't be lowered at all. Only bosses with a limit show it. It's a fixed value per boss form, so a limit that changes partway through a fight isn't followed
 - Choose custom icon and Choose fill texture open the pickers. Both are in the bar's right-click menu too. The icon search opens in your chatbox, so you need to be logged in
 
 The Experimental section holds newer options that may still change:
@@ -48,6 +53,10 @@ The Experimental section holds newer options that may still change:
 - Rare gold bars (on by default) turns about 1 in 250 bars gold, with a shine and a few sparkles. It's rolled once per opponent and is only for looks
 
 Hold Alt to move the bar, or drag its edge to make it wider or narrower. Alt + right-click and Reset puts it back.
+
+## Data
+
+The elemental weaknesses and defence drain limits come from the [Old School RuneScape Wiki](https://oldschool.runescape.wiki) and are built into the plugin, so it doesn't go online for them.
 
 ## Contact
 
