@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 (2026-10-04)
 
 - New Layout section: pick where each item around the bar goes, in one of three spots above or below it. Items in the same spot line up next to each other. The defaults keep the classic layout, and Preview now shows a sample damage number too
 - The damage number now shows the damage of your latest attack, with hits that land together added up, instead of a running total that 4-tick weapons and thralls could keep going for a whole fight
