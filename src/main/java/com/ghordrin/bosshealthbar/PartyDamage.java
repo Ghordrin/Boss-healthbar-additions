@@ -52,9 +52,14 @@ class PartyDamage
 		partyService.send(new BossBarPartyHit(client.getWorld(), ((NPC) target).getIndex(), damage));
 	}
 
+	boolean countsPartyHits()
+	{
+		return config.damageNumberSource() == DamageNumberSource.PARTY && partyService.isInParty();
+	}
+
 	void onPartyHit(BossBarPartyHit hit)
 	{
-		if (config.damageNumberSource() != DamageNumberSource.PARTY)
+		if (!countsPartyHits())
 		{
 			return;
 		}
@@ -68,7 +73,7 @@ class PartyDamage
 		final Actor opponent = opponentTracker.getOpponent();
 		if (opponent instanceof NPC && ((NPC) opponent).getIndex() == hit.getNpcIndex() && client.getWorld() == hit.getWorld())
 		{
-			damageTracker.recordPartyHit(hit.getDamage());
+			damageTracker.recordPartyHit(hit.getDamage(), client.getTickCount());
 		}
 	}
 }

@@ -494,7 +494,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showDamageNumber",
 		name = "Show damage number",
-		description = "Show the total damage of recent hits. It resets a few seconds after the last hit. \"Damage number counts\" sets whose hits are added up.",
+		description = "Show the damage of the latest hits. Hits that land together, like a multi-hit special attack, are added up. It fades a few seconds after the last hit. \"Damage number counts\" sets whose hits are added up.",
 		position = 3,
 		section = textSection
 	)
@@ -506,7 +506,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "damageNumberSource",
 		name = "Damage number counts",
-		description = "Whose hits the damage number adds up. Party adds the hits of RuneLite party members who also use this plugin. Everyone adds every hit on the opponent, including players outside your party.",
+		description = "Whose hits the damage number adds up. Me shows the damage of your latest attack. Party adds up your hits and those of RuneLite party members who also use this plugin, for as long as the hits keep coming.",
 		position = 4,
 		section = textSection
 	)

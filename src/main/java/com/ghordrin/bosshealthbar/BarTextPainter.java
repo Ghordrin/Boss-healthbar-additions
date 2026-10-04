@@ -691,7 +691,7 @@ class BarTextPainter
 			}
 
 			final long elapsed = System.currentTimeMillis() - lastDamage;
-			final long window = DamageTracker.COMBO_WINDOW.toMillis();
+			final long window = DamageTracker.DISPLAY_HOLD.toMillis();
 			if (elapsed >= window)
 			{
 				return;

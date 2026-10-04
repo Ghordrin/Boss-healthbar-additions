@@ -3,8 +3,7 @@ package com.ghordrin.bosshealthbar;
 public enum DamageNumberSource
 {
 	ME("Me"),
-	PARTY("Party"),
-	EVERYONE("Everyone");
+	PARTY("Party");
 
 	private final String label;
 

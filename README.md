@@ -1,6 +1,6 @@
 # Boss Health Bar Additions
 
-A bigger, themed health bar for the boss you're fighting, with a damage trail and a running total of your hits.
+A bigger, themed health bar for the boss you're fighting, with a damage trail and the damage of your latest attack.
 
 See the [changelog](CHANGELOG.md) for what's new in each version.
 
@@ -14,7 +14,7 @@ See the [changelog](CHANGELOG.md) for what's new in each version.
 
 - Shows a wide bar with the opponent's name, combat level and hitpoints
 - When you land a hit, the health you took off stays visible as a lighter trail for a moment before it drains, so you can see how big the hit was
-- Adds your recent hits up into a number next to the bar. It can also count your RuneLite party's hits, or everyone's
+- Adds your recent hits up into a number next to the bar. It can also count your RuneLite party's hits
 - The fill changes colour as health drops and pulses when it's low
 - God themes put that god's icon at both ends of the bar. The custom theme lets you pick your own colours and any item as the icon
 - Use Oldschool theme switches to a plain green bar over red with a thin dark outline, closer to the game's own health bars. See [Oldschool theme](#oldschool-theme) for what applies to it
@@ -58,7 +58,7 @@ Custom colors
 Text (the Layout section sets where each item goes)
 
 - Font, Show name, Show combat level and Show damage number
-- Damage number counts picks whose hits the damage number adds up: just yours (the default), your RuneLite party's, or everyone hitting the opponent. Party only counts members who also have this plugin, since each one sends their own hits over the party connection. Everyone needs no party, but includes players outside it
+- Damage number counts picks whose hits the damage number adds up: just yours (the default) or your RuneLite party's. Me shows the damage of your latest attack. Party keeps a running total while hits keep coming, and starts over after 2.5 seconds without one. It only counts members who also have this plugin, since each one sends their own hits over the party connection. Other players' hits never count, and outside a party, Party works like Me
 - Hitpoints text shows the hitpoints as a percentage, a value, or both
 - Show kill count (off by default) shows your kill count for the boss. It uses the counts RuneLite's Chat Commands plugin saves from the game's kill count messages, so that plugin needs to be on, and a boss shows nothing until you've had a kill count message for it with the plugin running. Raid bosses show nothing, since the count belongs to the whole raid
 - Show Party Defence Tracker defence (on by default): if you use the Party Defence Tracker plugin, the defence from its info box is shown with the Defence icon and a red down arrow, in the same colour as the info box. It only shows while that plugin has an info box for the opponent you're fighting, which is after the first defence-lowering hit. Nothing shows if that plugin isn't installed or isn't on

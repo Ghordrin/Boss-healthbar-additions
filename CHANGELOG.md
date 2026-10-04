@@ -3,6 +3,8 @@
 ## Unreleased
 
 - New Layout section: pick where each item around the bar goes, in one of three spots above or below it. Items in the same spot line up next to each other. The defaults keep the classic layout, and Preview now shows a sample damage number too
+- The damage number now shows the damage of your latest attack, with hits that land together added up, instead of a running total that 4-tick weapons and thralls could keep going for a whole fight
+- Damage number counts no longer has Everyone, since other players' hits made the number jump around. It's now Me or Party, and anyone who had Everyone is back on Me. Party keeps a running total of the party's hits while they keep coming
 - New Bar ends option in Appearance. Subtle swaps the end pieces for a small bracket with curled tips that the frame curves into, which leaves more room for the bar. Classic (the default) keeps the current ends. The ends only show with Show icons off, and the option does nothing with Use Oldschool theme on
 - Fixed the Dagannoth Kings showing a leftover Echo name instead of their own names
 

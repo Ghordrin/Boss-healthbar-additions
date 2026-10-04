@@ -4,6 +4,7 @@ import com.google.inject.Provides;
 import java.util.List;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
+import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.HitsplatID;
@@ -34,6 +35,9 @@ import net.runelite.client.ui.overlay.OverlayManager;
 public class BossHealthBarPlugin extends Plugin
 {
 	static final String NAME = "Boss Health Bar Additions";
+
+	@Inject
+	private Client client;
 
 	@Inject
 	private ClientThread clientThread;
@@ -299,7 +303,7 @@ public class BossHealthBarPlugin extends Plugin
 		if (event.getActor() == opponentTracker.getOpponent())
 		{
 			final Hitsplat hitsplat = event.getHitsplat();
-			damageTracker.recordHit(hitsplat, config.damageNumberSource());
+			damageTracker.recordHit(hitsplat, client.getTickCount(), partyDamage.countsPartyHits());
 			if (hitsplat.isMine() && hitsplat.getHitsplatType() != HitsplatID.HEAL)
 			{
 				partyDamage.sendHit(event.getActor(), hitsplat.getAmount());
