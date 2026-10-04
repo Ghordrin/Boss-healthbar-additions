@@ -36,63 +36,76 @@ Superior slayer monsters are found by watching for the chat message when one spa
 
 ## Settings
 
-Everything is in the normal RuneLite config screen, or right-click the bar and pick Configure. Preview, at the top, shows a fake opponent that loses and regains health, so you can try settings without fighting anything. A few worth knowing about, by section:
+Everything is in the normal RuneLite config screen, or right-click the bar and pick Configure. Preview, at the top, shows a sample opponent that loses and regains health, so you can try settings without fighting anything. Look and Text are open by default, the other sections are folded.
 
-Appearance
+Look
 
-- Theme, and Choose fill texture, which opens a picker with the game's own textures to lay over the fill. It's in the bar's right-click menu too
-- Use Oldschool theme (off by default) switches to the plain Oldschool bar. The Theme dropdown isn't used while it's on. See [Oldschool theme](#oldschool-theme)
-- Bar width and Bar height, in pixels. Fit to game view makes the bar narrower when the game view is small
-- Bar ends picks the ornament at each end of the bar. Classic (the default) has an end piece with a diamond. Subtle curves the frame into a small bracket with curled tips, and leaves more room for the bar. The ends only show with Show icons off, since the icon crests cover them
-- Show icons (on by default) shows the icon in a crest at both bar ends, or small before the name with Use Oldschool theme on. Turn it off for a plain bar without the crests
-- Use boss icon (on by default) swaps the icon for the boss's hiscores icon, on any theme. Raid bosses show their pet instead. With Use Oldschool theme on, the icon is shown small before the boss's name. Needs Show icons
-- Match boss colors (off by default) gives each boss its own bar colors, on any theme. A boss keeps the same colors in every form. Ticking it turns off Use Oldschool theme
-- Rare gold bars (on by default) turns about 1 in 250 bars gold, with a shine and a few sparkles. It's rolled once per opponent and is only for looks. Ticking it turns off Use Oldschool theme
-- Show damage trail and Heal animation speed, Low health effect and its threshold, Flash on big hits, Intro animation, Defeat animation and Show phase markers
-- Burn away (off by default) changes how the bar goes after "Defeated": instead of fading out, it burns away from right to left behind a glowing edge, throwing off a few sparks, while the text around it fades out. Only used with Defeat animation on
+- Theme picks the bar's colors. Custom starts from the theme you had and uses the Custom colors section
+- Use Oldschool theme (off by default) switches to the plain Oldschool bar. See [Oldschool theme](#oldschool-theme)
+- Match boss colors (off by default) gives each boss its own bar colors, on any theme. A boss keeps the same colors in every form
+- Rare gold bars (on by default) turns about 1 in 250 bars gold, with a shine and a few sparkles. It's rolled once per opponent and is only for looks
+- Show icons (on by default) shows the icon in a crest at both bar ends, or small before the name with Use Oldschool theme on
+- Use boss icon (on by default) uses the boss's hiscores icon instead of the theme's. Raid bosses show their pet. Needs Show icons
+- Bar ends picks the ornament at each end of the bar. Classic (the default) has an end piece with a diamond. Subtle curves the frame into a small bracket with curled tips. The ends only show with Show icons off, since the icon crests cover them
+- Choose fill texture opens a picker with the game's own textures to lay over the fill. It's in the bar's right-click menu too
+- Show phase markers shows the same phase markers as the game's own boss health bar
+- Bar width and Bar height, in pixels. Holding Alt and dragging the bar's edge overrides the width until you reset the overlay
+- Fit to game view makes the bar narrower when the game view is small
 
-Custom colors
+Text
 
-- Choose custom icon picks the item shown at the bar ends on the Custom theme. It's in the bar's right-click menu too. The search opens in your chatbox, so you need to be logged in
-- The colors the Custom theme uses
+- Font, Show name, Show combat level and Hitpoints text (percentage, value, or both)
+- Show damage number shows the damage of your latest attack. Hits that land together, like a multi-hit special attack, are added up
+- Damage number counts picks whose hits it adds up. Me (the default) shows your latest attack. Party keeps a running total of your RuneLite party's hits while they keep coming, and starts over after 2.5 seconds without one. It only counts members who also have this plugin. Outside a party, Party works like Me
 
-Text (the Layout section sets where each item goes)
+Boss info (folded by default)
 
-- Font, Show name, Show combat level and Show damage number
-- Damage number counts picks whose hits the damage number adds up: just yours (the default) or your RuneLite party's. Me shows the damage of your latest attack. Party keeps a running total while hits keep coming, and starts over after 2.5 seconds without one. It only counts members who also have this plugin, since each one sends their own hits over the party connection. Other players' hits never count, and outside a party, Party works like Me
-- Hitpoints text shows the hitpoints as a percentage, a value, or both
-- Show kill count (off by default) shows your kill count for the boss. It uses the counts RuneLite's Chat Commands plugin saves from the game's kill count messages, so that plugin needs to be on, and a boss shows nothing until you've had a kill count message for it with the plugin running. Raid bosses show nothing, since the count belongs to the whole raid
-- Show Party Defence Tracker defence (on by default): if you use the Party Defence Tracker plugin, the defence from its info box is shown with the Defence icon and a red down arrow, in the same colour as the info box. It only shows while that plugin has an info box for the opponent you're fighting, which is after the first defence-lowering hit. Nothing shows if that plugin isn't installed or isn't on
-- Show special attack counts (on by default): if RuneLite's Special Attack Counter plugin is on, its counts are shown as each weapon's icon and its count, in the same colour as the info box. Weapons like the Bandos godsword count damage, not hits. The counts are that plugin's own: they reset when you use a special attack on a different opponent and go away when the opponent dies, so the bar keeps the last counts while it shows "Defeated". Nothing shows unless that plugin is on with its info boxes enabled. If the weapons don't all fit, none of them are shown
-- Show elemental weakness (on by default) shows the boss's elemental weakness: the element's rune and how much extra damage it takes from that element, for example +40%. Bosses without a weakness show nothing
-- Show defence drain limit (on by default) shows how far the boss's defence can be lowered in total: the Defence icon and the limit, for example -20, or "no drain" for a boss whose defence can't be lowered at all. Only bosses with a limit show it. It's a fixed value per boss form, so a limit that changes partway through a fight isn't followed
+- Kill count (off by default) shows your kill count for the boss. It uses the counts RuneLite's Chat Commands plugin saves, so that plugin needs to be on, and a boss shows nothing until it has seen a kill count message for it. Raid bosses show nothing, since the count belongs to the whole raid
+- Elemental weakness (on by default) shows the element's rune and the extra damage the boss takes from it, for example +40%
+- Defence drain limit (on by default) shows how far the boss's defence can be lowered in total, for example -20, or "no drain". It's a fixed value per boss form
+- Special attack counts (on by default) shows the counts from RuneLite's Special Attack Counter plugin with each weapon's icon. Some weapons count damage instead of hits. Needs that plugin on with its info boxes. If the weapons don't all fit, none are shown
+- Party Defence Tracker defence (on by default) shows the defence from the Party Defence Tracker plugin's info box, with the Defence icon and a red down arrow. It shows once that plugin has an info box for your opponent
 
-Layout (closed by default)
+Animations (folded by default)
 
-- Each item around the bar has a dropdown for where it goes: top left, top centre or top right above the bar, or the same three below it. The Text settings still decide whether an item shows, these only decide where. The defaults are the classic layout: name top left, damage number top right, hitpoints bottom right, everything else bottom left
+- Damage trail keeps the lost health visible as a lighter section for a moment after a hit
+- Heal speed sets how quickly the bar refills when the opponent heals. Damage always lowers it immediately
+- Low health effect and Low health threshold make the fill pulse and glow when health is low
+- Flash on big hits and Intro animation
+- Defeat animation holds the empty bar with a "Defeated" label before it goes
+- Burn away (off by default) burns the bar away from right to left behind a glowing edge instead of fading it out. Only used with Defeat animation on
+
+Layout (folded by default)
+
+- Each item around the bar has a dropdown for where it goes: top left, top centre or top right above the bar, or the same three below it. The Text and Boss info settings still decide whether an item shows, these only decide where. The defaults are the classic layout: name top left, damage number top right, hitpoints bottom right, everything else bottom left
 - Items in the same spot line up next to each other. The more important item sits closer to the edge, in this order: name, hitpoints, damage number, kill count, Party Defence Tracker defence, special attack counts, elemental weakness, defence drain limit. A centre spot reads left to right in that order
 - When a row gets full, space goes to the more important items first. An item that doesn't fit is left out, along with the less important items after it in the same spot, so nothing jumps into its place. The name is never left out, it's shortened instead
 - "Defeated" shows centred on whichever row Hitpoints is on. The hitpoints keep their space meanwhile, so nothing moves, and "Defeated" is left out if something else is already in the middle of that row
 - If nothing is set to go above or below the bar, that row takes up no space
 
-Behaviour
+Custom colors (folded by default)
 
-- Only show for bosses, Also show above combat level, Minimum combat level and Show for superior slayer monsters pick which opponents get a bar (see above)
+- Choose custom icon picks the item shown at the bar ends on the Custom theme. It's in the bar's right-click menu too. The search opens in your chatbox, so you need to be logged in
+- The colors the Custom theme uses
+
+When to show (folded by default)
+
+- Only show for bosses, Also show above combat level, Minimum combat level and Superior slayer monsters pick which opponents get a bar (see above)
 - Hide after sets how long the bar stays once the fight goes quiet
 - Game's boss health bar decides what happens for bosses that show the game's own health bar at the top of the screen. Replace it (the default) hides the game's bar and uses its numbers on this one. Show both keeps the game's bar and shows this one too. Hide this bar keeps the game's bar and leaves this one out of those fights
 - Hide Opponent Information bar (on by default) turns off the health bar from RuneLite's Opponent Information plugin so you don't see two. Your own setting comes back when you turn this plugin off
-- Show Boss Health Indicators lines (on by default): if you use the Boss Health Indicators plugin, the health lines you set up there are drawn on this bar too, in your colours. Without this they'd be lost when this bar replaces the game's bar
+- Boss Health Indicators lines (on by default): if you use the Boss Health Indicators plugin, the health lines you set up there are drawn on this bar too, in your colours. Without this they'd be lost when this bar replaces the game's bar
 
 Hold Alt to move the bar, or drag its edge to make it wider or narrower. Alt + right-click and Reset puts it back.
 
 ## Oldschool theme
 
-Tick Use Oldschool theme in the Appearance section for a simpler bar in the style of the game's own health bars. While it's on, the Theme dropdown isn't used. It has:
+Tick Use Oldschool theme in the Look section for a simpler bar in the style of the game's own health bars. While it's on, the Theme dropdown isn't used. It has:
 
 - A flat green bar over red with a thin dark outline, and plain text
 - The boss's icon, small before its name, with Show icons and Use boss icon on
 - The damage trail, heals, the low health pulse (without the glow), flash on big hits, phase markers and Boss Health Indicators lines
-- The intro and defeat animations, Burn away included, and every text and footer option
+- The intro and defeat animations, Burn away included, and every Text, Boss info and Layout option
 
 These don't apply to it:
 
