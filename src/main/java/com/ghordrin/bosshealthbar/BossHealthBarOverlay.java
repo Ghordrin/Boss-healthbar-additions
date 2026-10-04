@@ -597,7 +597,7 @@ class BossHealthBarOverlay extends Overlay
 			if (composition != null)
 			{
 				final String longName = composition.getStringValue(ParamID.NPC_HP_NAME);
-				if (!Strings.isNullOrEmpty(longName))
+				if (!Strings.isNullOrEmpty(longName) && longName.contains(name))
 				{
 					name = longName;
 				}

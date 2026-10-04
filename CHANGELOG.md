@@ -3,6 +3,7 @@
 ## Unreleased
 
 - New Layout section: pick where each item around the bar goes, in one of three spots above or below it. Items in the same spot line up next to each other. The defaults keep the classic layout, and Preview now shows a sample damage number too
+- Fixed the Dagannoth Kings showing a leftover Echo name instead of their own names
 
 ## 1.3.0 (2026-10-03)
 
