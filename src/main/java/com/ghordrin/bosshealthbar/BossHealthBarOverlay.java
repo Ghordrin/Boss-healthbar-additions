@@ -325,8 +325,9 @@ class BossHealthBarOverlay extends Overlay
 		final ThemeColors colors = gold ? goldBar.colors(baseColors) : baseColors;
 		final long nowMillis = now / 1_000_000L;
 
-		final int capRise = capRise(barHeight, flat);
-		final int capWidth = capWidth(barHeight, flat);
+		final BarEnds ends = config.barEnds();
+		final int capRise = capRise(barHeight, flat, ends);
+		final int capWidth = capWidth(barHeight, flat, ends);
 
 		final BufferedImage icon = resolveIcon(theme);
 		final CrestRenderer.Crest crest = icon != null && !flat
@@ -371,7 +372,7 @@ class BossHealthBarOverlay extends Overlay
 
 		graphics.translate(shownInset, 0);
 		barPainter.drawBar(graphics, colors, state, animation, defeated, barY, shownWidth, barHeight, fillProgress,
-			shownWidth == width, flat);
+			shownWidth == width, flat, ends);
 		if (gold)
 		{
 			goldBar.drawShine(graphics, capWidth - 1, barY - 1, shownWidth - capWidth * 2 + 2, barHeight + 2,

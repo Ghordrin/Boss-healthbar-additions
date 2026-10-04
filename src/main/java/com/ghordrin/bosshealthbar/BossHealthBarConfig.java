@@ -181,10 +181,22 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "barEnds",
+		name = "Bar ends",
+		description = "The ornament at each end of the bar. Subtle curves the frame into a small bracket with curled tips. Only visible with Show icons off, since the icon crests cover the ends. Not used while \"Use Oldschool theme\" is on.",
+		position = 6,
+		section = appearanceSection
+	)
+	default BarEnds barEnds()
+	{
+		return BarEnds.CLASSIC;
+	}
+
+	@ConfigItem(
 		keyName = "showIcons",
 		name = "Show icons",
 		description = "Show an icon with the bar: the theme's or boss's icon in a crest at the bar ends, or small before the name while \"Use Oldschool theme\" is on. Turn off for a plain bar without the crests.",
-		position = 6,
+		position = 7,
 		section = appearanceSection
 	)
 	default boolean showIcons()
@@ -196,7 +208,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "useBossIcon",
 		name = "Use boss icon",
 		description = "Show the icon of the boss you're fighting at the bar ends, on any theme. While \"Use Oldschool theme\" is on, it's shown small before the name instead. Raid bosses show their pet. Other opponents keep the theme's icon. Needs Show icons.",
-		position = 7,
+		position = 8,
 		section = appearanceSection
 	)
 	default boolean useBossIcon()
@@ -208,7 +220,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = MATCH_BOSS_COLORS_KEY,
 		name = "Match boss colors",
 		description = "Color the bar to suit the boss you're fighting, on any theme. A boss keeps the same colors in every form. Other opponents keep the theme's colors. Ticking this turns off \"Use Oldschool theme\".",
-		position = 8,
+		position = 9,
 		section = appearanceSection
 	)
 	default boolean matchBossColors()
@@ -220,7 +232,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = RARE_GOLD_BARS_KEY,
 		name = "Rare gold bars",
 		description = "Now and then a bar turns gold, with a shine and a few sparkles. It's rolled once per opponent, about 1 in 250, and is only for looks. Ticking this turns off \"Use Oldschool theme\".",
-		position = 9,
+		position = 10,
 		section = appearanceSection
 	)
 	default boolean rareGoldBars()
@@ -232,7 +244,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDamageTrail",
 		name = "Show damage trail",
 		description = "After a hit, keep the lost health visible as a lighter section for a moment before it drains away.",
-		position = 10,
+		position = 11,
 		section = appearanceSection
 	)
 	default boolean showDamageTrail()
@@ -245,7 +257,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "animationSpeed",
 		name = "Heal animation speed",
 		description = "How quickly the bar refills when the opponent heals. Higher is faster. Damage always lowers the bar immediately.",
-		position = 11,
+		position = 12,
 		section = appearanceSection
 	)
 	default int animationSpeed()
@@ -257,7 +269,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "lowHealthEffect",
 		name = "Low health effect",
 		description = "Make the fill pulse and glow while the opponent's health is at or below the low health threshold.",
-		position = 12,
+		position = 13,
 		section = appearanceSection
 	)
 	default boolean lowHealthEffect()
@@ -271,7 +283,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "lowHealthThreshold",
 		name = "Low health threshold",
 		description = "The health percentage at or below which the low health effect starts.",
-		position = 13,
+		position = 14,
 		section = appearanceSection
 	)
 	default int lowHealthThreshold()
@@ -283,7 +295,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "flashOnBigHits",
 		name = "Flash on big hits",
 		description = "Briefly flash the bar's border when a hit removes a large part of the opponent's health.",
-		position = 14,
+		position = 15,
 		section = appearanceSection
 	)
 	default boolean flashOnBigHits()
@@ -295,7 +307,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "introAnimation",
 		name = "Intro animation",
 		description = "How the bar appears for a new opponent: fade in, rise into place, widen from the center with the fill sweeping up, or rise and widen.",
-		position = 15,
+		position = 16,
 		section = appearanceSection
 	)
 	default IntroAnimation introAnimation()
@@ -307,7 +319,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDefeatAnimation",
 		name = "Defeat animation",
 		description = "When the opponent dies, hold the empty bar with a \"Defeated\" label for a moment before fading it out.",
-		position = 16,
+		position = 17,
 		section = appearanceSection
 	)
 	default boolean showDefeatAnimation()
@@ -319,7 +331,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showPhaseMarkers",
 		name = "Show phase markers",
 		description = "While the game's own boss health bar shows the opponent, show the same phase markers it shows.",
-		position = 17,
+		position = 18,
 		section = appearanceSection
 	)
 	default boolean showPhaseMarkers()

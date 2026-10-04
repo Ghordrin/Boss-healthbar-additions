@@ -3,6 +3,7 @@
 ## Unreleased
 
 - New Layout section: pick where each item around the bar goes, in one of three spots above or below it. Items in the same spot line up next to each other. The defaults keep the classic layout, and Preview now shows a sample damage number too
+- New Bar ends option in Appearance. Subtle swaps the end pieces for a small bracket with curled tips that the frame curves into, which leaves more room for the bar. Classic (the default) keeps the current ends. The ends only show with Show icons off, and the option does nothing with Use Oldschool theme on
 - Fixed the Dagannoth Kings showing a leftover Echo name instead of their own names
 
 ## 1.3.0 (2026-10-03)

@@ -15,6 +15,8 @@ import java.awt.LinearGradientPaint;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.TexturePaint;
+import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.time.Duration;
 import java.util.HashMap;
@@ -37,9 +39,12 @@ class BarPainter
 	// Flat bars only need room for their outline, and for marker lines that stick out above and below.
 	private static final int FLAT_EDGE = 1;
 	private static final int FLAT_RISE = 2;
+	// Subtle ends reach 4.8x the cap scale past the bar end and 3.6x above the frame line, outline included.
+	private static final float SUBTLE_CAP_WIDTH = 5f;
+	private static final float SUBTLE_TIP_REACH = 3.6f;
 	// Cached images are drawn at twice their size and scaled down, so they stay sharp in stretched mode.
 	static final float RASTER_SCALE = 2f;
-	private static final int BAR_IMAGE_PAD = 8;
+	private static final int BAR_IMAGE_PAD = 10;
 
 	private static final Color TRACK_TOP = new Color(6, 5, 5, 225);
 	private static final Color TRACK_BOTTOM = new Color(26, 22, 22, 225);
@@ -47,6 +52,9 @@ class BarPainter
 	private static final Color BACKDROP = new Color(0, 0, 0, 34);
 	private static final Color FRAME_OUTLINE = new Color(6, 5, 5);
 	private static final Color DIAMOND_OUTLINE = new Color(6, 5, 5, 170);
+	private static final Color BRACKET_OUTLINE = new Color(6, 5, 5, 215);
+	private static final Color BRACKET_FILL_TOP = new Color(6, 5, 5);
+	private static final Color BRACKET_FILL_BOTTOM = new Color(26, 22, 22);
 	private static final Color TRACK_EDGE_SHADOW = new Color(0, 0, 0, 120);
 	private static final Color MARKER_SHADOW = new Color(0, 0, 0, 170);
 	private static final Color FLASH_COLOR = new Color(1f, 0.95f, 0.85f);
@@ -66,6 +74,7 @@ class BarPainter
 	private int barImageWidth;
 	private int barImageHeight;
 	private Color barImageFrameColor;
+	private BarEnds barImageEnds;
 
 	private final Map<Integer, BufferedImage> fillTextureCache = new HashMap<>();
 
@@ -96,14 +105,14 @@ class BarPainter
 	}
 
 	void drawBar(Graphics2D graphics, ThemeColors colors, BarState state, BarAnimation animation, boolean defeated,
-		int y, int width, int height, float fillProgress, boolean useImageCache, boolean flat)
+		int y, int width, int height, float fillProgress, boolean useImageCache, boolean flat, BarEnds ends)
 	{
 		updateDerivedColors(colors);
 		final float displayedFraction = animation.getDisplayedFraction();
 		final float[] phaseMarkers = defeated ? BarState.NO_PHASE_MARKERS : state.phaseMarkers;
 		final float lowHealthPulse = animation.lowHealthPulse(defeated, config.lowHealthEffect(), config.lowHealthThreshold());
 		final Color frameColor = colors.getFrame();
-		final int barX = capWidth(height, flat);
+		final int barX = capWidth(height, flat, ends);
 		final int barWidth = width - barX * 2;
 
 		// The flat outline sits outside the bar, while the ornate frame is drawn on its edge.
@@ -122,7 +131,7 @@ class BarPainter
 		{
 			if (useImageCache)
 			{
-				updateBarImages(width, height, frameColor);
+				updateBarImages(width, height, frameColor, ends);
 				graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 				drawRasterImage(graphics, backdropImage, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD, width + BAR_IMAGE_PAD * 2, height + BAR_IMAGE_PAD * 2);
 			}
@@ -245,7 +254,7 @@ class BarPainter
 			}
 			else
 			{
-				drawEnds(graphics, barX, y, barWidth, height, frameColor);
+				drawEnds(graphics, barX, y, barWidth, height, frameColor, ends);
 			}
 		}
 
@@ -259,7 +268,16 @@ class BarPainter
 				{
 					float alpha = 1f - (since / (float) FLASH_DURATION.toMillis());
 					graphics.setColor(withAlpha(FLASH_COLOR, Math.round(clamp01(alpha) * 0.8f * 255)));
-					graphics.drawRect(barX, y, barWidth - 1, height - 1);
+					graphics.setStroke(THIN_STROKE);
+					if (ends == BarEnds.SUBTLE && !flat)
+					{
+						graphics.drawLine(barX, y, barX + barWidth - 1, y);
+						graphics.drawLine(barX, y + height - 1, barX + barWidth - 1, y + height - 1);
+					}
+					else
+					{
+						graphics.drawRect(barX, y, barWidth - 1, height - 1);
+					}
 				}
 			}
 		}
@@ -319,14 +337,33 @@ class BarPainter
 		return image;
 	}
 
-	static int capWidth(int barHeight, boolean flat)
+	static int capWidth(int barHeight, boolean flat, BarEnds ends)
 	{
-		return flat ? FLAT_EDGE : scaledCapWidth(barHeight);
+		if (flat)
+		{
+			return FLAT_EDGE;
+		}
+		return ends == BarEnds.SUBTLE ? subtleCapWidth(barHeight) : scaledCapWidth(barHeight);
 	}
 
-	static int capRise(int barHeight, boolean flat)
+	static int capRise(int barHeight, boolean flat, BarEnds ends)
 	{
-		return flat ? FLAT_RISE : scaledCapRise(barHeight);
+		if (flat)
+		{
+			return FLAT_RISE;
+		}
+		return ends == BarEnds.SUBTLE ? subtleCapRise(barHeight) : scaledCapRise(barHeight);
+	}
+
+	static int subtleCapWidth(int barHeight)
+	{
+		return (int) Math.ceil(SUBTLE_CAP_WIDTH * capScale(barHeight));
+	}
+
+	static int subtleCapRise(int barHeight)
+	{
+		// The frame line's centre sits half a pixel below the bar's top edge.
+		return (int) Math.ceil(SUBTLE_TIP_REACH * capScale(barHeight) - 0.5f);
 	}
 
 	static float capScale(int barHeight)
@@ -372,21 +409,22 @@ class BarPainter
 		graphics.drawLine(x + 1, y, x + width - 2, y);
 	}
 
-	private void updateBarImages(int width, int height, Color frameColor)
+	private void updateBarImages(int width, int height, Color frameColor, BarEnds ends)
 	{
 		if (backdropImage != null && width == barImageWidth && height == barImageHeight
-			&& frameColor.equals(barImageFrameColor))
+			&& frameColor.equals(barImageFrameColor) && ends == barImageEnds)
 		{
 			return;
 		}
 
-		final int barX = scaledCapWidth(height);
-		final int barWidth = width - scaledCapWidth(height) * 2;
+		final int barX = capWidth(height, false, ends);
+		final int barWidth = width - barX * 2;
 		backdropImage = barImage(width, height, g -> drawBackdrop(g, barX, BAR_IMAGE_PAD, barWidth, height));
-		endsImage = barImage(width, height, g -> drawEnds(g, barX, BAR_IMAGE_PAD, barWidth, height, frameColor));
+		endsImage = barImage(width, height, g -> drawEnds(g, barX, BAR_IMAGE_PAD, barWidth, height, frameColor, ends));
 		barImageWidth = width;
 		barImageHeight = height;
 		barImageFrameColor = frameColor;
+		barImageEnds = ends;
 	}
 
 	private static BufferedImage barImage(int width, int height, Consumer<Graphics2D> painter)
@@ -418,10 +456,73 @@ class BarPainter
 		}
 	}
 
-	private static void drawEnds(Graphics2D graphics, int barX, int y, int barWidth, int height, Color frameColor)
+	private static void drawEnds(Graphics2D graphics, int barX, int y, int barWidth, int height, Color frameColor,
+		BarEnds ends)
 	{
+		if (ends == BarEnds.SUBTLE)
+		{
+			drawBrackets(graphics, barX, y, barWidth, height, frameColor);
+			return;
+		}
 		drawFinials(graphics, barX, y, barWidth, height, frameColor);
 		drawUnderline(graphics, barX, y + height + 1, barWidth, frameColor);
+	}
+
+	private static void drawBrackets(Graphics2D graphics, int barX, int y, int barWidth, int height, Color frameColor)
+	{
+		final float s = capScale(height);
+		final int rightEdge = barX + barWidth;
+		final float leftVx = barX - 2.2f * s;
+		final float rightVx = rightEdge + 2.2f * s;
+
+		// The bracket replaces the bar's end lines, so cover them and the outline beside them, up to the fill.
+		// Unantialiased strokes are shifted a quarter pixel right, so a wide right end line also takes the
+		// fill's last column.
+		final int rightCover = (int) Math.ceil(scaledFrameStroke(height) / 2f + 0.25f);
+		graphics.setPaint(new GradientPaint(0, y, BRACKET_FILL_TOP, 0, y + height, BRACKET_FILL_BOTTOM));
+		graphics.fill(new Rectangle2D.Float(leftVx, y + 1, barX + 1 - leftVx, height - 2));
+		graphics.fill(new Rectangle2D.Float(rightEdge - rightCover, y + 1, rightVx - (rightEdge - rightCover), height - 2));
+
+		final Path2D.Float path = new Path2D.Float();
+		appendBracket(path, barX, 1, y, height, s);
+		appendBracket(path, rightEdge, -1, y, height, s);
+
+		graphics.setStroke(new BasicStroke(2.4f * s, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		graphics.setColor(BRACKET_OUTLINE);
+		graphics.draw(path);
+
+		graphics.setStroke(new BasicStroke(1.1f * s, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		graphics.setPaint(new LinearGradientPaint(
+			0, y - 2 * s, 0, y + height + 2 * s,
+			new float[]{0f, 0.5f, 1f},
+			new Color[]{brighten(frameColor, 0.45f), frameColor, darken(frameColor, 0.25f)}));
+		graphics.draw(path);
+	}
+
+	// dir is 1 for the left end and -1 for the right end.
+	private static void appendBracket(Path2D.Float path, float ex, float dir, int y, int height, float s)
+	{
+		final float top = y + 0.5f;
+		final float bot = y + height - 0.5f;
+		final float my = y + height / 2f;
+		final float vx = ex - dir * 2.2f * s;
+		final float run = 1.5f * s;
+		final float rad = Math.min(2.6f * s, height / 2f - 1.5f);
+
+		path.moveTo(ex + dir * run, top);
+		path.lineTo(vx + dir * rad, top);
+		path.quadTo(vx, top, vx, top + rad);
+		path.lineTo(vx, my - 1.3f * s);
+		path.lineTo(vx - dir * 1.4f * s, my);
+		path.lineTo(vx, my + 1.3f * s);
+		path.lineTo(vx, bot - rad);
+		path.quadTo(vx, bot, vx + dir * rad, bot);
+		path.lineTo(ex + dir * run, bot);
+
+		path.moveTo(ex - dir * 0.6f * s, top - 2.4f * s);
+		path.quadTo(ex - dir * 0.2f * s, top, ex + dir * 1.2f * s, top);
+		path.moveTo(ex + dir * 1.2f * s, bot);
+		path.quadTo(ex - dir * 0.2f * s, bot, ex - dir * 0.6f * s, bot + 2.4f * s);
 	}
 
 	private static LinearGradientPaint verticalSheen(int y, int height, Color base, float lift, float shade)

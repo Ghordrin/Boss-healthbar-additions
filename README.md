@@ -43,6 +43,7 @@ Appearance
 - Theme, and Choose fill texture, which opens a picker with the game's own textures to lay over the fill. It's in the bar's right-click menu too
 - Use Oldschool theme (off by default) switches to the plain Oldschool bar. The Theme dropdown isn't used while it's on. See [Oldschool theme](#oldschool-theme)
 - Bar width and Bar height, in pixels. Fit to game view makes the bar narrower when the game view is small
+- Bar ends picks the ornament at each end of the bar. Classic (the default) has an end piece with a diamond. Subtle curves the frame into a small bracket with curled tips, and leaves more room for the bar. The ends only show with Show icons off, since the icon crests cover them
 - Show icons (on by default) shows the icon in a crest at both bar ends, or small before the name with Use Oldschool theme on. Turn it off for a plain bar without the crests
 - Use boss icon (on by default) swaps the icon for the boss's hiscores icon, on any theme. Raid bosses show their pet instead. With Use Oldschool theme on, the icon is shown small before the boss's name. Needs Show icons
 - Match boss colors (off by default) gives each boss its own bar colors, on any theme. A boss keeps the same colors in every form. Ticking it turns off Use Oldschool theme
@@ -95,7 +96,7 @@ Tick Use Oldschool theme in the Appearance section for a simpler bar in the styl
 These don't apply to it:
 
 - Fill texture and the Custom colors section. They stay saved and come back when you untick it. Picking Custom in the Theme dropdown while it's on starts the Custom colours from the theme the dropdown had before
-- The end pieces, crest and shine
+- The end pieces (whichever Bar ends is set to), crest and shine
 
 Match boss colors and Rare gold bars don't fit this bar, so ticking Use Oldschool theme turns them off, and unticking it turns them back on as you had them. If you tick either of them while it's on, Use Oldschool theme turns off instead, and the other one goes back to how you had it. RuneLite's settings panel can't grey out settings, so the plugin changes these checkboxes itself.
 

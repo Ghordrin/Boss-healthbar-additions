@@ -64,9 +64,13 @@ public class OldschoolThemeTest
 	{
 		for (int height = 4; height <= 24; height++)
 		{
-			assertEquals(1, BarPainter.capWidth(height, true));
-			assertEquals(BarPainter.scaledCapWidth(height), BarPainter.capWidth(height, false));
-			assertEquals(BarPainter.scaledCapRise(height), BarPainter.capRise(height, false));
+			for (BarEnds ends : BarEnds.values())
+			{
+				assertEquals(1, BarPainter.capWidth(height, true, ends));
+				assertEquals(2, BarPainter.capRise(height, true, ends));
+			}
+			assertEquals(BarPainter.scaledCapWidth(height), BarPainter.capWidth(height, false, BarEnds.CLASSIC));
+			assertEquals(BarPainter.scaledCapRise(height), BarPainter.capRise(height, false, BarEnds.CLASSIC));
 		}
 	}
 }
