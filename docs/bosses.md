@@ -2,7 +2,7 @@
 
 These are the bosses the plugin recognises by name. They get their own icon and colours, and they count as bosses for "Only show for bosses". Anything the game's own boss health bar is showing also counts as a boss, so you can still get a bar for opponents that aren't on this list.
 
-The elemental weakness and defence drain limit values come from the [Old School RuneScape Wiki](https://oldschool.runescape.wiki). They are built into the plugin, so they may lag behind game updates. If a value is wrong or a boss is missing, please [open an issue](https://github.com/Ghordrin/Boss-healthbar-additions/issues).
+The elemental weakness and defence drain limit values come from the [Old School RuneScape Wiki](https://oldschool.runescape.wiki). They are built into the plugin, so they may lag behind game updates. A weekly check compares them with the wiki and flags any difference. If a value is wrong or a boss is missing, please [open an issue](https://github.com/Ghordrin/Boss-healthbar-additions/issues).
 
 "—" means the plugin has no value for that boss and shows nothing.
 

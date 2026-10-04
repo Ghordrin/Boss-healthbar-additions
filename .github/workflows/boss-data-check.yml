@@ -1,0 +1,56 @@
+name: Boss data check
+
+on:
+  schedule:
+    - cron: '0 6 * * 4'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Download the latest RuneLite API
+        run: |
+          base=https://repo.runelite.net/net/runelite/runelite-api
+          version=$(curl -fsSL "$base/maven-metadata.xml" | sed -n 's:.*<release>\(.*\)</release>.*:\1:p')
+          echo "RuneLite API $version"
+          curl -fsSL -o runelite-api.jar "$base/$version/runelite-api-$version.jar"
+
+      - name: Compare with the OSRS Wiki and the RuneLite API
+        run: node .github/scripts/check-boss-data.js runelite-api.jar --out report.md
+
+      - name: Open or update the issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -s report.md ]; then
+            echo "Everything matches."
+            exit 0
+          fi
+          {
+            echo "The weekly boss data check found differences. Fix them in the code, or add exceptions to \`.github/scripts/check-boss-data.js\`."
+            echo
+            cat report.md
+          } > body.md
+          title="Boss data check found differences"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file body.md
+          else
+            gh issue create --title "$title" --body-file body.md
+          fi
