@@ -49,6 +49,7 @@ Appearance
 - Match boss colors (off by default) gives each boss its own bar colors, on any theme. A boss keeps the same colors in every form. Ticking it turns off Use Oldschool theme
 - Rare gold bars (on by default) turns about 1 in 250 bars gold, with a shine and a few sparkles. It's rolled once per opponent and is only for looks. Ticking it turns off Use Oldschool theme
 - Show damage trail and Heal animation speed, Low health effect and its threshold, Flash on big hits, Intro animation, Defeat animation and Show phase markers
+- Burn away (off by default) changes how the bar goes after "Defeated": instead of fading out, it burns away from right to left behind a glowing edge, throwing off a few sparks, while the text around it fades out. Only used with Defeat animation on
 
 Custom colors
 
@@ -91,7 +92,7 @@ Tick Use Oldschool theme in the Appearance section for a simpler bar in the styl
 - A flat green bar over red with a thin dark outline, and plain text
 - The boss's icon, small before its name, with Show icons and Use boss icon on
 - The damage trail, heals, the low health pulse (without the glow), flash on big hits, phase markers and Boss Health Indicators lines
-- The intro and defeat animations, and every text and footer option
+- The intro and defeat animations, Burn away included, and every text and footer option
 
 These don't apply to it:
 

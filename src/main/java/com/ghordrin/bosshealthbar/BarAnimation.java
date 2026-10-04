@@ -16,8 +16,8 @@ final class BarAnimation
 	private static final Duration INTRO_FILL_DURATION = Duration.ofMillis(450);
 	private static final Duration INTRO_TEXT_DELAY = Duration.ofMillis(400);
 	private static final Duration INTRO_TEXT_DURATION = Duration.ofMillis(250);
-	private static final Duration DEFEAT_HOLD = Duration.ofMillis(1600);
-	private static final Duration DEFEAT_FADE = Duration.ofMillis(700);
+	static final Duration DEFEAT_HOLD = Duration.ofMillis(1600);
+	static final Duration DEFEAT_FADE = Duration.ofMillis(700);
 	private static final Duration LOW_HEALTH_PULSE_PERIOD = Duration.ofMillis(1100);
 
 	private float displayedFraction = -1f;
@@ -133,7 +133,8 @@ final class BarAnimation
 		defeatStartNanos = 0;
 	}
 
-	float defeatOpacity(long now)
+	// The whole bar's opacity, or -1 once the defeat animation is over. Burn away doesn't fade the whole bar.
+	float defeatOpacity(long now, boolean burnAway)
 	{
 		if (defeatStartNanos == 0)
 		{
@@ -142,13 +143,33 @@ final class BarAnimation
 
 		final long elapsed = now - defeatStartNanos;
 		final long hold = DEFEAT_HOLD.toNanos();
-		final long fade = DEFEAT_FADE.toNanos();
-		if (elapsed >= hold + fade)
+		final long duration = (burnAway ? BarEffects.BURN_DURATION : DEFEAT_FADE).toNanos();
+		if (elapsed >= hold + duration)
 		{
 			return -1f;
 		}
 
-		return elapsed > hold ? 1f - (elapsed - hold) / (float) fade : 1f;
+		return !burnAway && elapsed > hold ? 1f - (elapsed - hold) / (float) duration : 1f;
+	}
+
+	// Burn away fades the text around the bar on its own, as fast as the fade does.
+	float defeatTextOpacity(long now, boolean burnAway)
+	{
+		if (defeatStartNanos == 0 || !burnAway)
+		{
+			return 1f;
+		}
+		return 1f - progress(now - defeatStartNanos, DEFEAT_HOLD, DEFEAT_FADE);
+	}
+
+	// Time since the "Defeated" hold ended, negative before then or when no defeat is playing.
+	long defeatEffectMillis(long now)
+	{
+		if (defeatStartNanos == 0)
+		{
+			return -1;
+		}
+		return (now - defeatStartNanos - DEFEAT_HOLD.toNanos()) / 1_000_000L;
 	}
 
 	private long introElapsed(long now)

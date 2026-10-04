@@ -45,6 +45,10 @@ class BarPainter
 	// Cached images are drawn at twice their size and scaled down, so they stay sharp in stretched mode.
 	static final float RASTER_SCALE = 2f;
 	private static final int BAR_IMAGE_PAD = 10;
+	private static final int BURN_EDGE_WIDTH = 12;
+	private static final int BURN_EDGE_IMAGE_LENGTH = 32;
+	private static final Color BURN_EDGE_DIM = new Color(255, 120, 30, 0);
+	private static final Color BURN_EDGE_BRIGHT = new Color(255, 190, 90, 242);
 
 	private static final Color TRACK_TOP = new Color(6, 5, 5, 225);
 	private static final Color TRACK_BOTTOM = new Color(26, 22, 22, 225);
@@ -68,6 +72,9 @@ class BarPainter
 	private Color healColor;
 	private Color frameHighlightColor;
 	private Color markerColor;
+
+	private final BarEffects.Particle particle = new BarEffects.Particle();
+	private BufferedImage burnEdgeImage;
 
 	private BufferedImage backdropImage;
 	private BufferedImage endsImage;
@@ -281,6 +288,43 @@ class BarPainter
 				}
 			}
 		}
+	}
+
+	// The glowing edge the bar burns away behind, and the sparks it throws off. x runs from left to right
+	// over the whole bar, crests included.
+	void drawBurn(Graphics2D graphics, float burn, long burnMillis, int left, int right, int top, int bottom, float midY)
+	{
+		if (burnEdgeImage == null)
+		{
+			burnEdgeImage = horizontalGradient(BURN_EDGE_DIM, BURN_EDGE_BRIGHT);
+		}
+
+		final float edgeX = right - (right - left) * burn;
+		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		graphics.drawImage(burnEdgeImage, Math.round(edgeX) - BURN_EDGE_WIDTH + 2, top, BURN_EDGE_WIDTH, bottom - top, null);
+
+		for (int i = 0; i < BarEffects.BURN_SPARK_COUNT; i++)
+		{
+			if (BarEffects.burnSpark(i, burnMillis, particle))
+			{
+				final int size = Math.round(particle.size);
+				final float startX = right - (right - left) * particle.along;
+				graphics.setColor(BarEffects.sparkColor(particle.progress));
+				graphics.fillRect(Math.round(startX + particle.x), Math.round(midY + particle.y), size, size);
+			}
+		}
+	}
+
+	// Made once and stretched into place when drawn.
+	private static BufferedImage horizontalGradient(Color from, Color to)
+	{
+		final int length = Math.round(BURN_EDGE_IMAGE_LENGTH * RASTER_SCALE);
+		final BufferedImage image = new BufferedImage(length, 1, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = image.createGraphics();
+		g.setPaint(new LinearGradientPaint(0, 0, length, 0, new float[]{0f, 1f}, new Color[]{from, to}));
+		g.fillRect(0, 0, length, 1);
+		g.dispose();
+		return image;
 	}
 
 	private void updateDerivedColors(ThemeColors colors)

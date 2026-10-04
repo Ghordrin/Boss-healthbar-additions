@@ -7,6 +7,7 @@
 - Damage number counts no longer has Everyone, since other players' hits made the number jump around. It's now Me or Party, and anyone who had Everyone is back on Me. Party keeps a running total of the party's hits while they keep coming
 - New Bar ends option in Appearance. Subtle swaps the end pieces for a small bracket with curled tips that the frame curves into, which leaves more room for the bar. Classic (the default) keeps the current ends. The ends only show with Show icons off, and the option does nothing with Use Oldschool theme on
 - Fixed the Dagannoth Kings showing a leftover Echo name instead of their own names
+- New Burn away option in Appearance (off by default): after "Defeated", the bar burns away from right to left behind a glowing edge instead of fading out. Only used with Defeat animation on
 
 ## 1.3.0 (2026-10-03)
 

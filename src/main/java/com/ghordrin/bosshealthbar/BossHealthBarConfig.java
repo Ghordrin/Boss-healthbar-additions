@@ -328,10 +328,22 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "burnAwayDefeat",
+		name = "Burn away",
+		description = "After the \"Defeated\" label, burn the bar away from right to left behind a glowing edge instead of fading it out. Only used with Defeat animation on.",
+		position = 18,
+		section = appearanceSection
+	)
+	default boolean burnAwayDefeat()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "showPhaseMarkers",
 		name = "Show phase markers",
 		description = "While the game's own boss health bar shows the opponent, show the same phase markers it shows.",
-		position = 18,
+		position = 19,
 		section = appearanceSection
 	)
 	default boolean showPhaseMarkers()

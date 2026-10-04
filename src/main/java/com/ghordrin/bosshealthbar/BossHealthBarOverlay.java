@@ -12,6 +12,8 @@ import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.time.Duration;
 import java.util.Arrays;
@@ -53,6 +55,7 @@ class BossHealthBarOverlay extends Overlay
 	private static final int MIN_FITTED_BAR_WIDTH = 160;
 	private static final int CREST_OVERLAP = 2;
 	private static final Duration SWITCH_HOLD = Duration.ofSeconds(3);
+	private static final float CLIP_REACH = 4096f;
 
 	private final Client client;
 	private final BossHealthBarConfig config;
@@ -72,6 +75,7 @@ class BossHealthBarOverlay extends Overlay
 	private final PartyDefence partyDefence;
 	private final SpecialAttackCounts specialAttackCounts;
 	private final BarAnimation animation = new BarAnimation();
+	private final Rectangle2D.Float burnClipShape = new Rectangle2D.Float();
 
 	private Actor trackedOpponent;
 	private BarState lastState;
@@ -268,9 +272,9 @@ class BossHealthBarOverlay extends Overlay
 		return null;
 	}
 
-	private float defeatOpacity(Actor opponent, long now)
+	private float defeatOpacity(Actor opponent, long now, boolean burnAway)
 	{
-		final float opacity = animation.defeatOpacity(now);
+		final float opacity = animation.defeatOpacity(now, burnAway);
 		if (opacity < 0f && opponent == null)
 		{
 			trackedOpponent = null;
@@ -292,11 +296,14 @@ class BossHealthBarOverlay extends Overlay
 		}
 
 		final boolean defeated = animation.isDefeatPlaying();
-		final float defeatOpacity = defeatOpacity(opponent, now);
+		final boolean burnAway = config.burnAwayDefeat();
+		final float defeatOpacity = defeatOpacity(opponent, now, burnAway);
 		if (defeatOpacity < 0f)
 		{
 			return null;
 		}
+		final long defeatMillis = animation.defeatEffectMillis(now);
+		final float burn = burnAway ? BarEffects.burnProgress(defeatMillis) : 0f;
 
 		animation.tick(defeated ? 0f : clamp01(state.ratio / (float) state.scale),
 			config.animationSpeed(), config.showDamageTrail(), damageTracker.getLastHitMillis());
@@ -345,10 +352,11 @@ class BossHealthBarOverlay extends Overlay
 		final int slideOffset = animation.slideOffset(intro, now);
 		final float expandProgress = animation.expandProgress(intro, now);
 		final float fillProgress = animation.fillProgress(intro, now);
-		final float textOpacity = animation.textOpacity(intro, now);
+		final float textOpacity = animation.textOpacity(intro, now) * animation.defeatTextOpacity(now, burnAway);
 		final int minShownWidth = Math.min(width, capWidth * 2 + 4);
 		final int shownWidth = Math.round(minShownWidth + (width - minShownWidth) * expandProgress);
 		final int shownInset = (width - shownWidth) / 2;
+		final int totalWidth = leftExtent + width + rightExtent;
 
 		final Composite originalComposite = graphics.getComposite();
 		final float opacity = animation.fadeInOpacity(now) * defeatOpacity;
@@ -371,12 +379,21 @@ class BossHealthBarOverlay extends Overlay
 		}
 
 		graphics.translate(shownInset, 0);
+		final Shape barClip = burn > 0f ? graphics.getClip() : null;
+		if (burn > 0f)
+		{
+			graphics.clip(burnClip(burn, totalWidth, leftExtent + shownInset));
+		}
 		barPainter.drawBar(graphics, colors, state, animation, defeated, barY, shownWidth, barHeight, fillProgress,
 			shownWidth == width, flat, ends);
 		if (gold)
 		{
 			goldBar.drawShine(graphics, capWidth - 1, barY - 1, shownWidth - capWidth * 2 + 2, barHeight + 2,
 				animation.introElapsedMillis(now));
+		}
+		if (burn > 0f)
+		{
+			graphics.setClip(barClip);
 		}
 		graphics.translate(-shownInset, 0);
 
@@ -388,6 +405,12 @@ class BossHealthBarOverlay extends Overlay
 
 		int totalHeight = topOffset + barY + barHeight + capRise + footerHeight;
 		final int centerY = topOffset + headerHeight + barCenterOffset;
+		// Crests and sparkles burn away with the bar.
+		final Shape clip = burn > 0f ? graphics.getClip() : null;
+		if (burn > 0f)
+		{
+			graphics.clip(burnClip(burn, totalWidth, 0));
+		}
 		if (crest != null)
 		{
 			totalHeight = Math.max(totalHeight, drawCrest(graphics, crest, icon, leftExtent + shownInset + CREST_OVERLAP,
@@ -404,10 +427,29 @@ class BossHealthBarOverlay extends Overlay
 			goldBar.drawSparkles(graphics, leftX, sparkleY, radius, false, nowMillis);
 			goldBar.drawSparkles(graphics, rightX, sparkleY, radius, true, nowMillis);
 		}
+		if (burn > 0f)
+		{
+			graphics.setClip(clip);
+		}
+
+		if (burn > 0f && burn < 1f)
+		{
+			final int barTop = topOffset + slideOffset + barY;
+			barPainter.drawBurn(graphics, burn, defeatMillis, 0, totalWidth, barTop - capRise - 1,
+				barTop + barHeight + capRise + 1, centerY + slideOffset);
+		}
 
 		graphics.setComposite(originalComposite);
 
 		return new Dimension(leftExtent + width + rightExtent, totalHeight);
+	}
+
+	// Everything left of the burning edge. originX is where the current origin is across the overlay.
+	private Shape burnClip(float burn, int totalWidth, int originX)
+	{
+		final float edge = totalWidth * (1f - burn) - originX;
+		burnClipShape.setRect(-CLIP_REACH, -CLIP_REACH, edge + CLIP_REACH, CLIP_REACH * 2);
+		return burnClipShape;
 	}
 
 	static ThemeColors barColors(ThemeColors themeColors, ThemeColors bossColors, boolean flat)
