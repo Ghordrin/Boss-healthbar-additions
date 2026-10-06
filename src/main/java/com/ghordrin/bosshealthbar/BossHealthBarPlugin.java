@@ -19,6 +19,7 @@ import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.FontType;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginChanged;
@@ -103,6 +104,7 @@ public class BossHealthBarPlugin extends Plugin
 	protected void startUp()
 	{
 		migrateReplaceNativeBossBar();
+		migrateDefaultFont();
 		overlay.reset();
 		healthIndicatorMarkers.invalidate();
 		killCounts.invalidate();
@@ -144,6 +146,22 @@ public class BossHealthBarPlugin extends Plugin
 			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.NATIVE_BOSS_BAR_MODE_KEY, mode);
 		}
 		configManager.unsetConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.OLD_REPLACE_NATIVE_BOSS_BAR_KEY);
+	}
+
+	private void migrateDefaultFont()
+	{
+		if (savedBoolean(BossHealthBarConfig.FONT_DEFAULT_MIGRATED_KEY) != null)
+		{
+			return;
+		}
+
+		final FontType saved = configManager.getConfiguration(
+			BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, FontType.class);
+		if (FontDefaultMigration.isOldDefault(saved))
+		{
+			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, FontType.REGULAR);
+		}
+		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_DEFAULT_MIGRATED_KEY, true);
 	}
 
 	// Reset can walk the settings in any order, so put these back to their defaults once it's done.

@@ -4,6 +4,8 @@
 
 - Party defence (was Party Defence Tracker defence) now also reads the Better Party Defence plugin's info box. If both plugins are on, Better Party Defence is used
 - New Magic defence option (on by default) shows the magic defence from Better Party Defence's Magic defence info box, right after Party defence
+- The default font is now the RuneScape font instead of Serif, so the text stays sharp when the game is scaled up. If you were still on the old default (Serif 17), you're switched over once
+- New Smooth text option in Text (on by default). Turn it off for sharp text with other fonts when the game is scaled up. The RuneScape fonts are never smoothed
 
 ## 1.4.0 (2026-10-04)
 

@@ -102,6 +102,7 @@ class BarTextPainter
 	private Font smallFont;
 	private int layoutFontSize = REFERENCE_FONT_SIZE;
 	private boolean pixelFont;
+	private boolean smoothText = true;
 
 	private String ellipsizedSource;
 	private Font ellipsizedFont;
@@ -123,6 +124,7 @@ class BarTextPainter
 
 	void updateFonts()
 	{
+		smoothText = config.smoothText();
 		final FontType fontType = config.font();
 		final String family = fontType.getFamily() != null ? fontType.getFamily() : BossHealthBarConfig.DEFAULT_FONT.getFamily();
 		final int size = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, fontType.getSize()));
@@ -193,9 +195,9 @@ class BarTextPainter
 
 	void applyTextHints(Graphics2D graphics)
 	{
-		graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, pixelFont
-			? RenderingHints.VALUE_TEXT_ANTIALIAS_OFF
-			: RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, smoothText && !pixelFont
+			? RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+			: RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 		// Fractional metrics place glyphs between pixels, which makes smoothed text look soft.
 		graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);

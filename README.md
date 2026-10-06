@@ -54,7 +54,8 @@ Look
 
 Text
 
-- Font, Show name, Show combat level and Hitpoints text (percentage, value, or both)
+- Font, Show name, Show combat level and Hitpoints text (percentage, value, or both). The default font is the game's RuneScape font
+- Smooth text (on by default) smooths the edges of the text. Turn it off for sharp text when the game is scaled up, for example with xBR. The RuneScape fonts are never smoothed
 - Show damage number shows the damage of your latest attack. Hits that land together, like a multi-hit special attack, are added up
 - Damage number counts picks whose hits it adds up. Me (the default) shows your latest attack. Party keeps a running total of your RuneLite party's hits while they keep coming, and starts over after 2.5 seconds without one. It only counts members who also have this plugin. Outside a party, Party works like Me
 

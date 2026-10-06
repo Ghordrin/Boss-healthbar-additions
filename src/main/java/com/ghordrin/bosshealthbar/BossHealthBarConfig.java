@@ -1,7 +1,6 @@
 package com.ghordrin.bosshealthbar;
 
 import java.awt.Color;
-import java.awt.Font;
 import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
@@ -29,7 +28,9 @@ public interface BossHealthBarConfig extends Config
 	String SAVED_MATCH_BOSS_COLORS_KEY = "oldschoolSavedMatchBossColors";
 	String SAVED_RARE_GOLD_BARS_KEY = "oldschoolSavedRareGoldBars";
 	String FONT_KEY = "font";
-	FontType DEFAULT_FONT = new FontType().withFamily(Font.SERIF).withSize(17);
+	FontType DEFAULT_FONT = FontType.REGULAR;
+	// Set once the old default font has been checked for a switch to the new one. Not a config item, so Reset keeps it.
+	String FONT_DEFAULT_MIGRATED_KEY = "fontDefaultMigrated";
 	String NATIVE_BOSS_BAR_MODE_KEY = "nativeBossBarMode";
 	// The checkbox nativeBossBarMode replaced. Its saved value is moved over on startup.
 	String OLD_REPLACE_NATIVE_BOSS_BAR_KEY = "replaceNativeBossBar";
@@ -283,10 +284,22 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "smoothText",
+		name = "Smooth text",
+		description = "Smooth the edges of the text. Turn off for sharp text when the game is scaled up (for example with xBR). The RuneScape fonts are never smoothed.",
+		position = 1,
+		section = textSection
+	)
+	default boolean smoothText()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "showBossName",
 		name = "Show name",
 		description = "Show the opponent's name.",
-		position = 1,
+		position = 2,
 		section = textSection
 	)
 	default boolean showBossName()
@@ -298,7 +311,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showCombatLevel",
 		name = "Show combat level",
 		description = "Show the opponent's combat level next to its name.",
-		position = 2,
+		position = 3,
 		section = textSection
 	)
 	default boolean showCombatLevel()
@@ -310,7 +323,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "hitpointsTextMode",
 		name = "Hitpoints text",
 		description = "Show the hitpoints as a percentage, a value, or both. Shows a percentage when the max hitpoints aren't known.",
-		position = 3,
+		position = 4,
 		section = textSection
 	)
 	default HitpointsTextMode hitpointsTextMode()
@@ -322,7 +335,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDamageNumber",
 		name = "Show damage number",
 		description = "Show the damage of the latest attack. Hits that land together are added up.",
-		position = 4,
+		position = 5,
 		section = textSection
 	)
 	default boolean showDamageNumber()
@@ -334,7 +347,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "damageNumberSource",
 		name = "Damage number counts",
 		description = "Me shows your latest attack. Party adds up your party's hits while they keep coming, for members who also use this plugin.",
-		position = 5,
+		position = 6,
 		section = textSection
 	)
 	default DamageNumberSource damageNumberSource()
