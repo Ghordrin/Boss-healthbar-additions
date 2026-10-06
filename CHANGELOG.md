@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Party defence (was Party Defence Tracker defence) now also reads the Better Party Defence plugin's info box. If both plugins are on, Better Party Defence is used
+- New Magic defence option (on by default) shows the magic defence from Better Party Defence's Magic defence info box, right after Party defence
+
 ## 1.4.0 (2026-10-04)
 
 - New Layout section: pick where each item around the bar goes, in one of three spots above or below it. Items in the same spot line up next to each other. The defaults keep the classic layout, and Preview now shows a sample damage number too

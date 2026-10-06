@@ -49,6 +49,7 @@ class BossHealthBarOverlay extends Overlay
 	private static final String PREVIEW_KILL_COUNT = KillCounts.text(128);
 	private static final int PREVIEW_DAMAGE = 37;
 	private static final PartyDefence.Reading PREVIEW_DEFENCE = new PartyDefence.Reading("42", Color.WHITE);
+	private static final PartyDefence.Reading PREVIEW_MAGIC_DEFENCE = new PartyDefence.Reading("60", Color.WHITE);
 	private static final BossStats.Info PREVIEW_STATS = new BossStats.Info(BossStats.Element.FIRE,
 		BossStats.weaknessText(new BossStats.Weakness(BossStats.Element.FIRE, 40)), BossStats.drainCapText(20));
 	private static final float MAX_VIEWPORT_FRACTION = 0.85f;
@@ -315,13 +316,15 @@ class BossHealthBarOverlay extends Overlay
 			: showingPreview ? PREVIEW_KILL_COUNT : killCounts.textFor(state.killCountKey);
 		final PartyDefence.Reading defence = defeated || !partyDefence.isAvailable() ? null
 			: showingPreview ? PREVIEW_DEFENCE : partyDefence.readingFor(opponent);
+		final PartyDefence.Reading magicDefence = defeated || !partyDefence.isMagicAvailable() ? null
+			: showingPreview ? PREVIEW_MAGIC_DEFENCE : partyDefence.magicReadingFor(opponent);
 		final List<SpecialAttackCounts.Reading> specialAttacks = specialAttackCounts.isAvailable()
 			? state.specialAttacks : Collections.emptyList();
 		final BossStats.Info stats = state.stats;
 		final String weaknessText = stats != null && config.showWeakness() ? stats.getWeaknessText() : null;
 		final String drainCapText = stats != null && config.showDrainCap() ? stats.getDrainCapText() : null;
-		textPainter.updateRows(partyDefence.isAvailable(), specialAttackCounts.isAvailable(), weaknessText != null,
-			drainCapText != null);
+		textPainter.updateRows(partyDefence.isAvailable(), partyDefence.isMagicAvailable(),
+			specialAttackCounts.isAvailable(), weaknessText != null, drainCapText != null);
 		final int headerHeight = textPainter.topRowHeight();
 		final int footerHeight = textPainter.bottomRowHeight();
 		final BarTheme theme = BarTheme.of(config);
@@ -365,7 +368,8 @@ class BossHealthBarOverlay extends Overlay
 		textPainter.applyTextHints(graphics);
 		textPainter.layoutText(graphics, state.name, state.combatLevel, flat ? icon : null, hitpointsText, defeated,
 			showingPreview ? PREVIEW_DAMAGE : 0, killCountText, defence,
-			defence != null || drainCapText != null ? partyDefence.icon() : null, specialAttacks, weaknessText,
+			defence != null || drainCapText != null ? partyDefence.icon() : null,
+			magicDefence, magicDefence != null ? partyDefence.magicIcon() : null, specialAttacks, weaknessText,
 			weaknessText != null ? itemManager.getImage(stats.getWeaknessElement().getRuneItemId()) : null, drainCapText,
 			width, capWidth, barY + barHeight + capRise);
 

@@ -392,12 +392,24 @@ public interface BossHealthBarConfig extends Config
 
 	@ConfigItem(
 		keyName = "showPartyDefence",
-		name = "Party Defence Tracker defence",
-		description = "Show the defence from the Party Defence Tracker plugin's info box. Needs that plugin installed and on.",
+		name = "Party defence",
+		description = "Show the defence from the Party Defence Tracker or Better Party Defence plugin's info box. Needs one of them installed and on.",
 		position = 4,
 		section = bossInfoSection
 	)
 	default boolean showPartyDefence()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showMagicDefence",
+		name = "Magic defence",
+		description = "Show the magic defence from the Better Party Defence plugin's Magic defence info box. Needs that plugin with its Magic defence info box on.",
+		position = 5,
+		section = bossInfoSection
+	)
+	default boolean showMagicDefence()
 	{
 		return true;
 	}
@@ -551,8 +563,8 @@ public interface BossHealthBarConfig extends Config
 
 	@ConfigItem(
 		keyName = "partyDefencePosition",
-		name = "Party Defence Tracker",
-		description = "Where the Party Defence Tracker defence goes.",
+		name = "Party defence",
+		description = "Where the party defence and magic defence go.",
 		position = 4,
 		section = layoutSection
 	)

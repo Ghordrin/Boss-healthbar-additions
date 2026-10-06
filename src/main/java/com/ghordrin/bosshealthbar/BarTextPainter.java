@@ -46,10 +46,11 @@ class BarTextPainter
 	static final int DAMAGE_NUMBER = 2;
 	static final int KILL_COUNT = 3;
 	static final int PARTY_DEFENCE = 4;
-	static final int SPECIAL_ATTACKS = 5;
-	static final int WEAKNESS = 6;
-	static final int DRAIN_CAP = 7;
-	static final int ITEM_COUNT = 8;
+	static final int MAGIC_DEFENCE = 5;
+	static final int SPECIAL_ATTACKS = 6;
+	static final int WEAKNESS = 7;
+	static final int DRAIN_CAP = 8;
+	static final int ITEM_COUNT = 9;
 
 	private final DamageTracker damageTracker;
 	private final BossHealthBarConfig config;
@@ -79,6 +80,9 @@ class BarTextPainter
 	private PartyDefence.Reading defence;
 	private BufferedImage scaledDefenceIcon;
 	private int defenceIconWidth;
+	private PartyDefence.Reading magicDefence;
+	private BufferedImage scaledMagicIcon;
+	private int magicIconWidth;
 	private int arrowWidth;
 	private List<SpecialAttackCounts.Reading> specialAttacks;
 	private int itemIconSize;
@@ -104,9 +108,8 @@ class BarTextPainter
 	private int ellipsizedWidth;
 	private String ellipsizedName;
 
-	private BufferedImage defenceIconSource;
-	private int defenceIconHeight;
-	private BufferedImage defenceIconScaled;
+	private final ScaledIcon defenceIconCache = new ScaledIcon();
+	private final ScaledIcon magicIconCache = new ScaledIcon();
 
 	private final Map<BufferedImage, BufferedImage> itemIcons = new IdentityHashMap<>();
 	private int itemIconHeight;
@@ -198,19 +201,21 @@ class BarTextPainter
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 	}
 
-	void updateRows(boolean partyDefenceAvailable, boolean specialAttacksAvailable, boolean hasWeakness,
-		boolean hasDrainCap)
+	void updateRows(boolean partyDefenceAvailable, boolean magicDefenceAvailable, boolean specialAttacksAvailable,
+		boolean hasWeakness, boolean hasDrainCap)
 	{
 		positions[NAME] = config.namePosition();
 		positions[HITPOINTS] = config.hitpointsPosition();
 		positions[DAMAGE_NUMBER] = config.damageNumberPosition();
 		positions[KILL_COUNT] = config.killCountPosition();
 		positions[PARTY_DEFENCE] = config.partyDefencePosition();
+		positions[MAGIC_DEFENCE] = config.partyDefencePosition();
 		positions[SPECIAL_ATTACKS] = config.specialAttackCountsPosition();
 		positions[WEAKNESS] = config.weaknessPosition();
 		positions[DRAIN_CAP] = config.drainCapPosition();
 
-		itemsAvailable(config, partyDefenceAvailable, specialAttacksAvailable, hasWeakness, hasDrainCap, available);
+		itemsAvailable(config, partyDefenceAvailable, magicDefenceAvailable, specialAttacksAvailable, hasWeakness,
+			hasDrainCap, available);
 		topLarge = rowLarge(positions, available, true);
 		bottomLarge = rowLarge(positions, available, false);
 		topHeight = rowHeight(positions, available, true, headerHeight(), footerHeight());
@@ -219,7 +224,7 @@ class BarTextPainter
 
 	// Rows are sized from the settings rather than what's showing, so they don't jump during a fight.
 	@VisibleForTesting
-	static void itemsAvailable(BossHealthBarConfig config, boolean partyDefenceAvailable,
+	static void itemsAvailable(BossHealthBarConfig config, boolean partyDefenceAvailable, boolean magicDefenceAvailable,
 		boolean specialAttacksAvailable, boolean hasWeakness, boolean hasDrainCap, boolean[] available)
 	{
 		available[NAME] = config.showBossName();
@@ -227,6 +232,7 @@ class BarTextPainter
 		available[DAMAGE_NUMBER] = config.showDamageNumber();
 		available[KILL_COUNT] = config.showKillCount();
 		available[PARTY_DEFENCE] = partyDefenceAvailable;
+		available[MAGIC_DEFENCE] = magicDefenceAvailable;
 		available[SPECIAL_ATTACKS] = specialAttacksAvailable;
 		available[WEAKNESS] = hasWeakness;
 		available[DRAIN_CAP] = hasDrainCap;
@@ -268,7 +274,8 @@ class BarTextPainter
 
 	void layoutText(Graphics2D graphics, String name, int combatLevel, BufferedImage nameIcon, String hitpointsText,
 		boolean defeated, int previewDamage, String killCountText, PartyDefence.Reading defence,
-		BufferedImage defenceIcon, List<SpecialAttackCounts.Reading> specialAttacks, String weaknessText,
+		BufferedImage defenceIcon, PartyDefence.Reading magicDefence, BufferedImage magicIcon,
+		List<SpecialAttackCounts.Reading> specialAttacks, String weaknessText,
 		BufferedImage weaknessIcon, String drainCapText, int width, int capWidth, int bottomTop)
 	{
 		graphics.setFont(textFont);
@@ -285,6 +292,7 @@ class BarTextPainter
 		this.previewDamage = previewDamage;
 		this.killCountText = killCountText;
 		this.defence = defence;
+		this.magicDefence = magicDefence;
 		this.specialAttacks = specialAttacks;
 		this.weaknessText = weaknessText;
 		this.weaknessIcon = weaknessIcon;
@@ -328,12 +336,19 @@ class BarTextPainter
 			add(KILL_COUNT, smallMetrics.stringWidth(killCountText));
 		}
 
-		scaledDefenceIcon = defence != null || drainCapText != null ? scaledDefenceIcon(defenceIcon, ascent + 1) : null;
+		scaledDefenceIcon = defence != null || drainCapText != null ? defenceIconCache.get(defenceIcon, ascent + 1) : null;
 		defenceIconWidth = scaledDefenceIcon != null ? scaledDefenceIcon.getWidth() + DEFENCE_GAP : 0;
 		arrowWidth = Math.max(5, Math.round(ascent * 0.6f));
 		if (defence != null)
 		{
 			add(PARTY_DEFENCE, defenceIconWidth + arrowWidth + DEFENCE_GAP + smallMetrics.stringWidth(defence.getText()));
+		}
+
+		scaledMagicIcon = magicDefence != null ? magicIconCache.get(magicIcon, ascent + 1) : null;
+		magicIconWidth = scaledMagicIcon != null ? scaledMagicIcon.getWidth() + DEFENCE_GAP : 0;
+		if (magicDefence != null)
+		{
+			add(MAGIC_DEFENCE, magicIconWidth + arrowWidth + DEFENCE_GAP + smallMetrics.stringWidth(magicDefence.getText()));
 		}
 
 		// Item images have a transparent border around the rune or weapon, so draw them larger to match the skill icon.
@@ -426,6 +441,12 @@ class BarTextPainter
 		if (onRow(PARTY_DEFENCE, top))
 		{
 			drawDefence(graphics, defence, scaledDefenceIcon, defenceIconWidth, arrowWidth, ascent, x(PARTY_DEFENCE),
+				baseline, colors);
+		}
+
+		if (onRow(MAGIC_DEFENCE, top))
+		{
+			drawDefence(graphics, magicDefence, scaledMagicIcon, magicIconWidth, arrowWidth, ascent, x(MAGIC_DEFENCE),
 				baseline, colors);
 		}
 
@@ -631,20 +652,27 @@ class BarTextPainter
 			? interpolation : RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 	}
 
-	private BufferedImage scaledDefenceIcon(BufferedImage icon, int height)
+	private static final class ScaledIcon
 	{
-		if (icon == null || icon.getWidth() <= 0 || icon.getHeight() <= 0)
+		private BufferedImage source;
+		private int height;
+		private BufferedImage scaled;
+
+		BufferedImage get(BufferedImage icon, int height)
 		{
-			return null;
+			if (icon == null || icon.getWidth() <= 0 || icon.getHeight() <= 0)
+			{
+				return null;
+			}
+			if (icon != source || height != this.height)
+			{
+				final int width = Math.max(1, Math.round(icon.getWidth() * height / (float) icon.getHeight()));
+				scaled = icon.getHeight() == height ? icon : ImageUtil.resizeImage(icon, width, height);
+				source = icon;
+				this.height = height;
+			}
+			return scaled;
 		}
-		if (icon != defenceIconSource || height != defenceIconHeight)
-		{
-			final int width = Math.max(1, Math.round(icon.getWidth() * height / (float) icon.getHeight()));
-			defenceIconScaled = icon.getHeight() == height ? icon : ImageUtil.resizeImage(icon, width, height);
-			defenceIconSource = icon;
-			defenceIconHeight = height;
-		}
-		return defenceIconScaled;
 	}
 
 	private String ellipsizeName(String name, FontMetrics metrics, int maxWidth)

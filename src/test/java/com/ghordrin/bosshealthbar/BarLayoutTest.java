@@ -10,6 +10,7 @@ import static com.ghordrin.bosshealthbar.BarTextPainter.HITPOINTS;
 import static com.ghordrin.bosshealthbar.BarTextPainter.ITEM_COUNT;
 import static com.ghordrin.bosshealthbar.BarTextPainter.KILL_COUNT;
 import static com.ghordrin.bosshealthbar.BarTextPainter.LEVEL_GAP;
+import static com.ghordrin.bosshealthbar.BarTextPainter.MAGIC_DEFENCE;
 import static com.ghordrin.bosshealthbar.BarTextPainter.NAME;
 import static com.ghordrin.bosshealthbar.BarTextPainter.PARTY_DEFENCE;
 import static com.ghordrin.bosshealthbar.BarTextPainter.SPECIAL_ATTACKS;
@@ -313,12 +314,13 @@ public class BarLayoutTest
 		{
 		};
 		final int hitpointsWidth = 80;
-		final int[] widths = {0, hitpointsWidth, 0, 40, 50, 70, 35, 30};
+		final int[] widths = {0, hitpointsWidth, 0, 40, 50, 45, 70, 35, 30};
 
 		final BarLayout footer = new BarLayout(ITEM_COUNT);
 		footer.add(HITPOINTS, defaults.hitpointsPosition().getSpot(), hitpointsWidth);
 		footer.add(KILL_COUNT, defaults.killCountPosition().getSpot(), widths[KILL_COUNT]);
 		footer.add(PARTY_DEFENCE, defaults.partyDefencePosition().getSpot(), widths[PARTY_DEFENCE]);
+		footer.add(MAGIC_DEFENCE, defaults.partyDefencePosition().getSpot(), widths[MAGIC_DEFENCE]);
 		footer.add(SPECIAL_ATTACKS, defaults.specialAttackCountsPosition().getSpot(), widths[SPECIAL_ATTACKS]);
 		footer.add(WEAKNESS, defaults.weaknessPosition().getSpot(), widths[WEAKNESS]);
 		footer.add(DRAIN_CAP, defaults.drainCapPosition().getSpot(), widths[DRAIN_CAP]);
@@ -456,7 +458,7 @@ public class BarLayoutTest
 	private static int[] rowHeights(BossHealthBarConfig config, BarPosition[] positions, boolean others)
 	{
 		final boolean[] available = new boolean[ITEM_COUNT];
-		BarTextPainter.itemsAvailable(config, others, others, others, others, available);
+		BarTextPainter.itemsAvailable(config, others, others, others, others, others, available);
 		return new int[]{
 			BarTextPainter.rowHeight(positions, available, true, LARGE_ROW, SMALL_ROW),
 			BarTextPainter.rowHeight(positions, available, false, LARGE_ROW, SMALL_ROW)};
