@@ -886,7 +886,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showSuperiors",
 		name = "Superior slayer monsters",
-		description = "With Only show for bosses on, also show the bar for superior slayer monsters you spawn.",
+		description = "With Only show for bosses on, also show the bar for superior slayer monsters.",
 		position = 3,
 		section = whenToShowSection
 	)

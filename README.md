@@ -32,7 +32,7 @@ The bar stays while the fight is going on, even if you stop attacking to move or
 
 Switching between opponents that both get a bar, like the NPCs of a boss fought as a group, moves the bar over without playing the intro again. The game only shows an NPC's health once it's been hit, so until then the bar keeps showing the previous one, for up to 3 seconds.
 
-Superior slayer monsters are found by watching for the chat message when one spawns and taking the closest NPC that spawned around the same time. Works fine in practice, but it is a guess.
+Superior slayer monsters are recognised by their NPC ID, from a list the plugin keeps. For a superior that isn't on the list yet, the plugin watches for the chat message when one spawns and uses the NPC that spawned near you at the same time. If more than one did, it doesn't guess and none gets the bar.
 
 ## Settings
 

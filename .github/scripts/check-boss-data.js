@@ -23,6 +23,15 @@ const IGNORED_SPRITES = new Set([
 const IGNORED_WEAKNESS_PAGES = new Set(['maggot king']);
 // Forms in our tables that the wiki's infoboxes don't list.
 const UNLISTED_IDS = new Set(['TOA_KEPHRI_BOSS_WEAK', 'NIGHTMARE_CHALLENGE_INITIAL']);
+// NpcID constants with SUPERIOR in the name that SuperiorIds leaves out on purpose: thralls, a quest
+// monster, the death spawns a superior summons, and a wilderness monster that isn't tied to a slayer task.
+const IGNORED_SUPERIORS = new Set([
+	'ARCEUUS_THRALL_GHOST_SUPERIOR', 'ARCEUUS_THRALL_SKELETON_SUPERIOR', 'ARCEUUS_THRALL_ZOMBIE_SUPERIOR',
+	'THRALL_IMP_MAGIC_SUPERIOR', 'THRALL_IMP_RANGED_SUPERIOR', 'THRALL_IMP_MELEE_SUPERIOR',
+	'VIKINGEXILE_BASILISK_SUPERIOR', 'VIKINGEXILE_BASILISK_SUPERIOR_HUNTPLAYER',
+	'SUPERIOR_NECHRYAEL_MELEE_SPAWN', 'SUPERIOR_NECHRYAEL_RANGED_SPAWN', 'SUPERIOR_NECHRYAEL_MAGIC_SPAWN',
+	'WILD_CAVE_SUPERIOR',
+]);
 // Besides the boss page and its /Strategies page, where the drain limit is written down.
 const RAID_STRATEGIES = 'Tombs of Amascut/Strategies';
 const EXTRA_DRAIN_SOURCES = {
@@ -130,6 +139,19 @@ function parseKnownBosses()
 	return { sprites, names };
 }
 
+function parseSuperiorIds(npcIds)
+{
+	const names = new Set([...read('SuperiorIds.java').matchAll(/NpcID\.(\w+)/g)].map(m => m[1]));
+	for (const name of names)
+	{
+		if (!(name in npcIds))
+		{
+			throw new Error(`SuperiorIds uses NpcID.${name}, which the RuneLite API no longer has`);
+		}
+	}
+	return names;
+}
+
 // The sentences of a page that talk about lowering defence, so unrelated edits don't count as a change.
 function drainSentences(wikitext)
 {
@@ -182,6 +204,7 @@ async function main()
 	const spriteIds = javapConstants('net.runelite.api.gameval.SpriteID$IconBoss25x25');
 	const { weakness, drainCap } = parseBossStats(npcIds);
 	const known = parseKnownBosses();
+	const superiorIds = parseSuperiorIds(npcIds);
 	const rows = await monsterRows();
 	const npcName = id => Object.keys(npcIds).find(k => npcIds[k] === id) || '?';
 
@@ -325,6 +348,12 @@ async function main()
 		}
 	}
 	section('docs/bosses.md out of date', docProblems);
+
+	// 6. Superior NPC IDs in the RuneLite API that SuperiorIds doesn't have: usually a new superior.
+	const newSuperiors = Object.keys(npcIds)
+		.filter(name => /SUPERIOR/.test(name) && !superiorIds.has(name) && !IGNORED_SUPERIORS.has(name))
+		.map(name => `\`NpcID.${name}\` (${npcIds[name]}): add it to SuperiorIds, or to IGNORED_SUPERIORS in this script`);
+	section('New superior NPC IDs in the RuneLite API', newSuperiors);
 
 	if (update)
 	{

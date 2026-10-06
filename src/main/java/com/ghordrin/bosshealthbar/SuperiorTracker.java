@@ -1,11 +1,14 @@
 package com.ghordrin.bosshealthbar;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
@@ -22,6 +25,21 @@ class SuperiorTracker
 	private static final int MATCH_TICKS = 2;
 	private static final int SEARCH_DISTANCE = 15;
 
+	@Value
+	static class Spawn<T>
+	{
+		T npc;
+		boolean knownSuperior;
+		boolean eligible;
+	}
+
+	@Value
+	static class Match<T>
+	{
+		boolean decided;
+		T superior;
+	}
+
 	private final Client client;
 	private final Map<NPC, Integer> recentSpawnTicks = new HashMap<>();
 	private final Set<NPC> superiors = new HashSet<>();
@@ -35,7 +53,8 @@ class SuperiorTracker
 
 	boolean isSuperior(Actor actor)
 	{
-		return superiors.contains(actor);
+		return actor instanceof NPC
+			&& (superiors.contains(actor) || SuperiorIds.contains(NpcUtil.currentId((NPC) actor)));
 	}
 
 	void onNpcSpawned(NPC npc)
@@ -59,8 +78,8 @@ class SuperiorTracker
 		}
 	}
 
-	// The game only announces a superior in chat, so pick the attackable NPC that spawned closest to
-	// the player around the same tick. The spawn and the message can arrive in either order.
+	// Superiors in SuperiorIds are known by their ID. For any other, the chat message is matched to the
+	// one attackable NPC that spawned near the player around the same tick, in either order.
 	void onGameTick()
 	{
 		final int tick = client.getTickCount();
@@ -72,33 +91,60 @@ class SuperiorTracker
 		}
 
 		final Player player = client.getLocalPlayer();
-		NPC nearest = null;
-		int nearestDistance = Integer.MAX_VALUE;
-		if (player != null)
+		final List<Spawn<NPC>> spawns = new ArrayList<>();
+		for (NPC npc : recentSpawnTicks.keySet())
 		{
-			for (NPC npc : recentSpawnTicks.keySet())
-			{
-				final int distance = npc.getWorldLocation().distanceTo(player.getWorldLocation());
-				if (!npc.isDead() && !superiors.contains(npc) && NpcUtil.isAttackable(npc)
-					&& distance <= SEARCH_DISTANCE && distance < nearestDistance)
-				{
-					nearest = npc;
-					nearestDistance = distance;
-				}
-			}
+			final boolean known = SuperiorIds.contains(NpcUtil.currentId(npc));
+			spawns.add(new Spawn<>(npc, known, !known && player != null && isEligible(npc, player)));
 		}
 
-		if (nearest != null)
+		final Match<NPC> match = match(spawns);
+		if (match.isDecided())
 		{
-			superiors.add(nearest);
 			messageTick = -1;
-			log.debug("Marked {} as a superior", nearest.getName());
+			if (match.getSuperior() != null)
+			{
+				superiors.add(match.getSuperior());
+				log.debug("Marked {} as a superior", match.getSuperior().getName());
+			}
 		}
 		else if (tick - messageTick >= MATCH_TICKS)
 		{
 			messageTick = -1;
 			log.debug("No spawned NPC found for the superior spawn message");
 		}
+	}
+
+	private boolean isEligible(NPC npc, Player player)
+	{
+		return !npc.isDead() && !superiors.contains(npc) && NpcUtil.isAttackable(npc)
+			&& npc.getWorldLocation().distanceTo(player.getWorldLocation()) <= SEARCH_DISTANCE;
+	}
+
+	// A known superior takes the message. Otherwise a single eligible spawn is marked; with several it
+	// would be a guess, so none is.
+	static <T> Match<T> match(List<Spawn<T>> spawns)
+	{
+		T only = null;
+		int eligible = 0;
+		for (Spawn<T> spawn : spawns)
+		{
+			if (spawn.isKnownSuperior())
+			{
+				return new Match<>(true, null);
+			}
+			if (spawn.isEligible())
+			{
+				only = spawn.getNpc();
+				eligible++;
+			}
+		}
+		if (eligible > 1)
+		{
+			log.debug("{} NPCs spawned with the superior spawn message, marking none", eligible);
+			return new Match<>(true, null);
+		}
+		return new Match<>(eligible == 1, only);
 	}
 
 	void reset()
