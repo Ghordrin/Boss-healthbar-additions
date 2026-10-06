@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.5.0 (2026-10-06)
 
 - Party defence (was Party Defence Tracker defence) now also reads the Better Party Defence plugin's info box. If both plugins are on, Better Party Defence is used
 - New Magic defence option (on by default) shows the magic defence from Better Party Defence's Magic defence info box, right after Party defence
