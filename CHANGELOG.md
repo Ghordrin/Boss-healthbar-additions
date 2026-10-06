@@ -6,6 +6,8 @@
 - New Magic defence option (on by default) shows the magic defence from Better Party Defence's Magic defence info box, right after Party defence
 - The default font is now the RuneScape font instead of Serif, so the text stays sharp when the game is scaled up. If you were still on the old default (Serif 17), you're switched over once
 - New Smooth text option in Text (on by default). Turn it off for sharp text with other fonts when the game is scaled up. The RuneScape fonts are never smoothed
+- Each label part has its own font setting under Text: name, damage number, combat level, hitpoints, kill count, party defence, special attack counts, elemental weakness and defence drain limit. Icons next to the text scale with it. If you used a font other than RuneScape, the new settings are set once to match your old look
+- The RuneScape fonts now use the size you set, instead of always 16. Your saved size for the name font is reset to 16 once, since it was ignored before
 
 ## 1.4.0 (2026-10-04)
 

@@ -105,6 +105,8 @@ public class BossHealthBarPlugin extends Plugin
 	{
 		migrateReplaceNativeBossBar();
 		migrateDefaultFont();
+		migratePixelFontSize();
+		migrateItemFonts();
 		overlay.reset();
 		healthIndicatorMarkers.invalidate();
 		killCounts.invalidate();
@@ -162,6 +164,37 @@ public class BossHealthBarPlugin extends Plugin
 			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, FontType.REGULAR);
 		}
 		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_DEFAULT_MIGRATED_KEY, true);
+	}
+
+	private void migratePixelFontSize()
+	{
+		if (savedBoolean(BossHealthBarConfig.PIXEL_FONT_SIZE_MIGRATED_KEY) != null)
+		{
+			return;
+		}
+
+		final FontType migrated = FontDefaultMigration.withNativePixelSize(configManager.getConfiguration(
+			BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, FontType.class));
+		if (migrated != null)
+		{
+			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, migrated);
+		}
+		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.PIXEL_FONT_SIZE_MIGRATED_KEY, true);
+	}
+
+	// The item fonts are new, so their saved values are only the defaults and can be overwritten.
+	private void migrateItemFonts()
+	{
+		if (savedBoolean(BossHealthBarConfig.ITEM_FONTS_MIGRATED_KEY) != null)
+		{
+			return;
+		}
+
+		final FontType name = configManager.getConfiguration(
+			BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, FontType.class);
+		FontDefaultMigration.itemFontWrites(name)
+			.forEach((key, font) -> configManager.setConfiguration(BossHealthBarConfig.GROUP, key, font));
+		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.ITEM_FONTS_MIGRATED_KEY, true);
 	}
 
 	// Reset can walk the settings in any order, so put these back to their defaults once it's done.

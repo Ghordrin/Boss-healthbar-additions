@@ -31,9 +31,21 @@ public interface BossHealthBarConfig extends Config
 	FontType DEFAULT_FONT = FontType.REGULAR;
 	// Set once the old default font has been checked for a switch to the new one. Not a config item, so Reset keeps it.
 	String FONT_DEFAULT_MIGRATED_KEY = "fontDefaultMigrated";
+	// Set once a RuneScape font's saved size has been put back to its native size. Not a config item either.
+	String PIXEL_FONT_SIZE_MIGRATED_KEY = "pixelFontSizeMigrated";
 	String NATIVE_BOSS_BAR_MODE_KEY = "nativeBossBarMode";
 	// The checkbox nativeBossBarMode replaced. Its saved value is moved over on startup.
 	String OLD_REPLACE_NATIVE_BOSS_BAR_KEY = "replaceNativeBossBar";
+	String DAMAGE_NUMBER_FONT_KEY = "damageNumberFont";
+	String COMBAT_LEVEL_FONT_KEY = "combatLevelFont";
+	String HITPOINTS_FONT_KEY = "hitpointsFont";
+	String KILL_COUNT_FONT_KEY = "killCountFont";
+	String PARTY_DEFENCE_FONT_KEY = "partyDefenceFont";
+	String SPECIAL_ATTACK_COUNTS_FONT_KEY = "specialAttackCountsFont";
+	String WEAKNESS_FONT_KEY = "weaknessFont";
+	String DRAIN_CAP_FONT_KEY = "drainCapFont";
+	// Set once the item fonts have been given the look they had with the name's font. Not a config item either.
+	String ITEM_FONTS_MIGRATED_KEY = "itemFontsMigrated";
 
 	@ConfigSection(
 		name = "Look",
@@ -273,8 +285,8 @@ public interface BossHealthBarConfig extends Config
 
 	@ConfigItem(
 		keyName = FONT_KEY,
-		name = "Font",
-		description = "The font of the name and damage number. The smaller text uses a smaller version of it.",
+		name = "Name font",
+		description = "The font and size of the name.",
 		position = 0,
 		section = textSection
 	)
@@ -284,10 +296,106 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = DAMAGE_NUMBER_FONT_KEY,
+		name = "Damage number font",
+		description = "The font and size of the damage number.",
+		position = 1,
+		section = textSection
+	)
+	default FontType damageNumberFont()
+	{
+		return FontType.REGULAR;
+	}
+
+	@ConfigItem(
+		keyName = COMBAT_LEVEL_FONT_KEY,
+		name = "Combat level font",
+		description = "The font and size of the combat level next to the name.",
+		position = 2,
+		section = textSection
+	)
+	default FontType combatLevelFont()
+	{
+		return FontType.SMALL;
+	}
+
+	@ConfigItem(
+		keyName = HITPOINTS_FONT_KEY,
+		name = "Hitpoints font",
+		description = "The font and size of the hitpoints text and the \"Defeated\" label.",
+		position = 3,
+		section = textSection
+	)
+	default FontType hitpointsFont()
+	{
+		return FontType.SMALL;
+	}
+
+	@ConfigItem(
+		keyName = KILL_COUNT_FONT_KEY,
+		name = "Kill count font",
+		description = "The font and size of the kill count.",
+		position = 4,
+		section = textSection
+	)
+	default FontType killCountFont()
+	{
+		return FontType.SMALL;
+	}
+
+	@ConfigItem(
+		keyName = PARTY_DEFENCE_FONT_KEY,
+		name = "Party defence font",
+		description = "The font and size of the party defence and magic defence. Their icons follow the size.",
+		position = 5,
+		section = textSection
+	)
+	default FontType partyDefenceFont()
+	{
+		return FontType.SMALL;
+	}
+
+	@ConfigItem(
+		keyName = SPECIAL_ATTACK_COUNTS_FONT_KEY,
+		name = "Special attack counts font",
+		description = "The font and size of the special attack counts. The weapon icons follow the size.",
+		position = 6,
+		section = textSection
+	)
+	default FontType specialAttackCountsFont()
+	{
+		return FontType.SMALL;
+	}
+
+	@ConfigItem(
+		keyName = WEAKNESS_FONT_KEY,
+		name = "Elemental weakness font",
+		description = "The font and size of the elemental weakness. The rune icon follows the size.",
+		position = 7,
+		section = textSection
+	)
+	default FontType weaknessFont()
+	{
+		return FontType.SMALL;
+	}
+
+	@ConfigItem(
+		keyName = DRAIN_CAP_FONT_KEY,
+		name = "Defence drain limit font",
+		description = "The font and size of the defence drain limit. The icon follows the size.",
+		position = 8,
+		section = textSection
+	)
+	default FontType drainCapFont()
+	{
+		return FontType.SMALL;
+	}
+
+	@ConfigItem(
 		keyName = "smoothText",
 		name = "Smooth text",
 		description = "Smooth the edges of the text. Turn off for sharp text when the game is scaled up (for example with xBR). The RuneScape fonts are never smoothed.",
-		position = 1,
+		position = 9,
 		section = textSection
 	)
 	default boolean smoothText()
@@ -299,7 +407,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showBossName",
 		name = "Show name",
 		description = "Show the opponent's name.",
-		position = 2,
+		position = 10,
 		section = textSection
 	)
 	default boolean showBossName()
@@ -311,7 +419,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showCombatLevel",
 		name = "Show combat level",
 		description = "Show the opponent's combat level next to its name.",
-		position = 3,
+		position = 11,
 		section = textSection
 	)
 	default boolean showCombatLevel()
@@ -323,7 +431,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "hitpointsTextMode",
 		name = "Hitpoints text",
 		description = "Show the hitpoints as a percentage, a value, or both. Shows a percentage when the max hitpoints aren't known.",
-		position = 4,
+		position = 12,
 		section = textSection
 	)
 	default HitpointsTextMode hitpointsTextMode()
@@ -335,7 +443,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDamageNumber",
 		name = "Show damage number",
 		description = "Show the damage of the latest attack. Hits that land together are added up.",
-		position = 5,
+		position = 13,
 		section = textSection
 	)
 	default boolean showDamageNumber()
@@ -347,7 +455,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "damageNumberSource",
 		name = "Damage number counts",
 		description = "Me shows your latest attack. Party adds up your party's hits while they keep coming, for members who also use this plugin.",
-		position = 6,
+		position = 14,
 		section = textSection
 	)
 	default DamageNumberSource damageNumberSource()

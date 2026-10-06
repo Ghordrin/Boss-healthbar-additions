@@ -459,9 +459,17 @@ public class BarLayoutTest
 	{
 		final boolean[] available = new boolean[ITEM_COUNT];
 		BarTextPainter.itemsAvailable(config, others, others, others, others, others, available);
+		// The default RuneScape fonts: the name and damage number reach 18 above the baseline and 6 below,
+		// the small text 12 above and 4 below.
+		final int[] above = new int[ITEM_COUNT];
+		final int[] below = new int[ITEM_COUNT];
+		Arrays.fill(above, 12);
+		Arrays.fill(below, SMALL_ROW - 12);
+		above[NAME] = above[DAMAGE_NUMBER] = 18;
+		below[NAME] = below[DAMAGE_NUMBER] = LARGE_ROW - 18;
 		return new int[]{
-			BarTextPainter.rowHeight(positions, available, true, LARGE_ROW, SMALL_ROW),
-			BarTextPainter.rowHeight(positions, available, false, LARGE_ROW, SMALL_ROW)};
+			BarTextPainter.rowHeight(positions, available, true, above, below),
+			BarTextPainter.rowHeight(positions, available, false, above, below)};
 	}
 
 	@Test

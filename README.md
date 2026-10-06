@@ -54,7 +54,9 @@ Look
 
 Text
 
-- Font, Show name, Show combat level and Hitpoints text (percentage, value, or both). The default font is the game's RuneScape font
+- Name font, Damage number font, Combat level font, Hitpoints font, Kill count font, Party defence font, Special attack counts font, Elemental weakness font and Defence drain limit font each pick the font, size, bold and italic of that text. Hitpoints font also sets "Defeated", and Party defence font also sets Magic defence. Icons next to an item grow and shrink with its font, and a row gets taller to fit its largest text. The defaults are the game's RuneScape font, with RuneScape Small for the smaller text. The RuneScape fonts are drawn at any size you set, but at some sizes they can look a little uneven
+- If you used another font before these settings existed, the new ones are set once to match the look you had
+- Show name, Show combat level and Hitpoints text (percentage, value, or both)
 - Smooth text (on by default) smooths the edges of the text. Turn it off for sharp text when the game is scaled up, for example with xBR. The RuneScape fonts are never smoothed
 - Show damage number shows the damage of your latest attack. Hits that land together, like a multi-hit special attack, are added up
 - Damage number counts picks whose hits it adds up. Me (the default) shows your latest attack. Party keeps a running total of your RuneLite party's hits while they keep coming, and starts over after 2.5 seconds without one. It only counts members who also have this plugin. Outside a party, Party works like Me

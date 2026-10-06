@@ -59,14 +59,18 @@ class BarTextPainter
 	private final boolean[] available = new boolean[ITEM_COUNT];
 	private final BarLayout topRow = new BarLayout(ITEM_COUNT);
 	private final BarLayout bottomRow = new BarLayout(ITEM_COUNT);
-	private boolean topLarge;
-	private boolean bottomLarge;
+	private final int[] rowAbove = new int[ITEM_COUNT];
+	private final int[] rowBelow = new int[ITEM_COUNT];
 	private int topHeight;
 	private int bottomHeight;
+	private int topRowBaseline;
+	private int bottomRowBaseline;
 
-	// What layoutText measured and placed, for drawRow in the same frame.
-	private FontMetrics textMetrics;
-	private FontMetrics smallMetrics;
+	// Each font's metrics, measured with its own smoothing, which changes the glyph widths.
+	private final FontMetrics[] metrics = new FontMetrics[ITEM_COUNT];
+	private FontMetrics levelMetrics;
+
+	// What layoutText placed, for drawRow in the same frame.
 	private int topBaseline;
 	private int bottomBaseline;
 	private String nameText;
@@ -85,7 +89,9 @@ class BarTextPainter
 	private int magicIconWidth;
 	private int arrowWidth;
 	private List<SpecialAttackCounts.Reading> specialAttacks;
-	private int itemIconSize;
+	private int specialAttackIconSize;
+	private BufferedImage scaledDrainIcon;
+	private int drainIconWidth;
 	private String weaknessText;
 	private BufferedImage weaknessIcon;
 	private int weaknessIconWidth;
@@ -94,15 +100,20 @@ class BarTextPainter
 	private int weaknessIconAdvance;
 	private String drainCapText;
 
-	private String cachedFontFamily;
-	private int cachedFontSize;
-	private boolean cachedFontBold;
-	private boolean cachedFontItalic;
-	private Font textFont;
-	private Font smallFont;
-	private int layoutFontSize = REFERENCE_FONT_SIZE;
-	private boolean pixelFont;
-	private boolean smoothText = true;
+	private final FontType[] requestedFonts = new FontType[ITEM_COUNT];
+	private final ItemFont[] itemFonts = new ItemFont[ITEM_COUNT];
+	private final ItemFont levelItemFont = new ItemFont();
+	private final Font[] fonts = new Font[ITEM_COUNT];
+	private final boolean[] pixelFonts = new boolean[ITEM_COUNT];
+	private Font levelFont;
+	private boolean smoothText;
+	private boolean measured;
+
+	// How far each item's text reaches above and below the shared baseline of its row.
+	private final int[] itemAbove = new int[ITEM_COUNT];
+	private final int[] itemBelow = new int[ITEM_COUNT];
+	private int levelAbove;
+	private int levelBelow;
 
 	private String ellipsizedSource;
 	private Font ellipsizedFont;
@@ -111,6 +122,7 @@ class BarTextPainter
 
 	private final ScaledIcon defenceIconCache = new ScaledIcon();
 	private final ScaledIcon magicIconCache = new ScaledIcon();
+	private final ScaledIcon drainIconCache = new ScaledIcon();
 
 	private final Map<BufferedImage, BufferedImage> itemIcons = new IdentityHashMap<>();
 	private int itemIconHeight;
@@ -120,84 +132,228 @@ class BarTextPainter
 	{
 		this.damageTracker = damageTracker;
 		this.config = config;
+		for (int item = 0; item < ITEM_COUNT; item++)
+		{
+			itemFonts[item] = new ItemFont();
+		}
+		itemFonts[MAGIC_DEFENCE] = itemFonts[PARTY_DEFENCE];
 	}
 
 	void updateFonts()
 	{
-		smoothText = config.smoothText();
-		final FontType fontType = config.font();
-		final String family = fontType.getFamily() != null ? fontType.getFamily() : BossHealthBarConfig.DEFAULT_FONT.getFamily();
-		final int size = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, fontType.getSize()));
-		if (family.equals(cachedFontFamily) && size == cachedFontSize
-			&& fontType.isBold() == cachedFontBold && fontType.isItalic() == cachedFontItalic)
+		final boolean smooth = config.smoothText();
+		readItemFonts(config, requestedFonts);
+		boolean changed = !measured || smooth != smoothText;
+		for (int item = 0; item < ITEM_COUNT; item++)
+		{
+			if (item != MAGIC_DEFENCE)
+			{
+				changed |= itemFonts[item].update(requestedFonts[item], defaultFont(item));
+			}
+		}
+		changed |= levelItemFont.update(config.combatLevelFont(), FontType.SMALL);
+		if (!changed)
 		{
 			return;
 		}
 
-		// The RuneScape fonts are bitmaps made for one size and blur when resized, so they keep their
-		// own size and the small text uses RuneScape Small.
-		final Font pixelBase = runescapeFont(family);
-		pixelFont = pixelBase != null;
-
-		final int italic = fontType.isItalic() ? Font.ITALIC : Font.PLAIN;
-		final int style = (fontType.isBold() ? Font.BOLD : Font.PLAIN) | italic;
-		textFont = FontManager.getFallbackFont(family, style, pixelFont ? pixelBase.getSize() : size);
-
-		if (pixelFont)
+		smoothText = smooth;
+		for (int item = 0; item < ITEM_COUNT; item++)
 		{
-			final Font runescapeSmall = FontManager.getRunescapeSmallFont();
-			smallFont = FontManager.getFallbackFont(runescapeSmall.getFamily(), Font.PLAIN, runescapeSmall.getSize());
+			fonts[item] = itemFonts[item].font;
+			pixelFonts[item] = itemFonts[item].pixel;
 		}
-		else
+		levelFont = levelItemFont.font;
+		measureItems();
+		measured = true;
+	}
+
+	@VisibleForTesting
+	static void readItemFonts(BossHealthBarConfig config, FontType[] fonts)
+	{
+		fonts[NAME] = config.font();
+		fonts[HITPOINTS] = config.hitpointsFont();
+		fonts[DAMAGE_NUMBER] = config.damageNumberFont();
+		fonts[KILL_COUNT] = config.killCountFont();
+		fonts[PARTY_DEFENCE] = config.partyDefenceFont();
+		fonts[MAGIC_DEFENCE] = fonts[PARTY_DEFENCE];
+		fonts[SPECIAL_ATTACKS] = config.specialAttackCountsFont();
+		fonts[WEAKNESS] = config.weaknessFont();
+		fonts[DRAIN_CAP] = config.drainCapFont();
+	}
+
+	private static FontType defaultFont(int item)
+	{
+		switch (item)
 		{
-			smallFont = FontManager.getFallbackFont(family, italic,
-				Math.max(MIN_FONT_SIZE, Math.round(size * SMALL_TEXT_SCALE)));
+			case NAME:
+				return BossHealthBarConfig.DEFAULT_FONT;
+			case DAMAGE_NUMBER:
+				return FontType.REGULAR;
+			default:
+				return FontType.SMALL;
 		}
-
-		layoutFontSize = textFont.getSize();
-		cachedFontFamily = family;
-		cachedFontSize = size;
-		cachedFontBold = fontType.isBold();
-		cachedFontItalic = fontType.isItalic();
 	}
 
-	private static Font runescapeFont(String family)
+	// The RuneScape fonts are bitmaps, so they're never smoothed.
+	static boolean isRunescapeFont(String family)
 	{
-		final Font regular = FontManager.getRunescapeFont();
-		if (family.equals(regular.getFamily()))
+		return family.equals(FontManager.getRunescapeFont().getFamily())
+			|| family.equals(FontManager.getRunescapeSmallFont().getFamily())
+			|| family.equals(FontManager.getRunescapeBoldFont().getFamily());
+	}
+
+	static int clampFontSize(int size)
+	{
+		return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, size));
+	}
+
+	// What the smaller text used to be with other fonts, before each item had its own font.
+	static int smallTextSize(int nameSize)
+	{
+		return Math.max(MIN_FONT_SIZE, Math.round(clampFontSize(nameSize) * SMALL_TEXT_SCALE));
+	}
+
+	@VisibleForTesting
+	static int scaledToFont(int height, int fontSize)
+	{
+		return Math.round(height * (fontSize / (float) REFERENCE_FONT_SIZE));
+	}
+
+	// The name and damage number get a taller row with a gap under the baseline.
+	@VisibleForTesting
+	static int largeAbove(int fontSize)
+	{
+		return scaledToFont(HEADER_HEIGHT, fontSize) - largeBelow(fontSize);
+	}
+
+	@VisibleForTesting
+	static int largeBelow(int fontSize)
+	{
+		return scaledToFont(HEADER_BASELINE_GAP, fontSize);
+	}
+
+	// Other fonts keep the row height they had when the small text was sized from the name font: as tall as
+	// the name font when it's still the name's small text, else about that.
+	@VisibleForTesting
+	static int smallRowHeight(int fontSize, boolean pixel, String family, String nameFamily, int nameSize)
+	{
+		if (pixel)
 		{
-			return regular;
+			return scaledToFont(FOOTER_HEIGHT, fontSize);
 		}
-
-		final Font small = FontManager.getRunescapeSmallFont();
-		return family.equals(small.getFamily()) ? small : null;
+		if (family.equals(nameFamily) && fontSize == smallTextSize(nameSize))
+		{
+			return clampFontSize(nameSize);
+		}
+		return Math.round(fontSize / SMALL_TEXT_SCALE);
 	}
 
-	private float textScale()
+	private int smallRowHeight(ItemFont font)
 	{
-		return layoutFontSize / (float) REFERENCE_FONT_SIZE;
+		final ItemFont name = itemFonts[NAME];
+		return smallRowHeight(font.size, font.pixel, font.family, name.family, name.size);
 	}
 
-	private int headerHeight()
+	@VisibleForTesting
+	static int smallBelow(int rowHeight, int above)
 	{
-		return Math.round(HEADER_HEIGHT * textScale());
+		return Math.max(0, rowHeight - above);
 	}
 
-	private int headerBaselineGap()
+	// Measured off screen with the same hints as the overlay, which only translates, so the metrics are
+	// known before the overlay lays out its frame and are reused for every frame.
+	private void measureItems()
 	{
-		return Math.round(HEADER_BASELINE_GAP * textScale());
+		final Graphics2D scratch = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
+		try
+		{
+			applyTextHints(scratch);
+			for (int item = 0; item < ITEM_COUNT; item++)
+			{
+				setTextAntialiasing(scratch, pixelFonts[item]);
+				metrics[item] = scratch.getFontMetrics(fonts[item]);
+				final int size = fonts[item].getSize();
+				if (item == NAME || item == DAMAGE_NUMBER)
+				{
+					itemAbove[item] = largeAbove(size);
+					itemBelow[item] = largeBelow(size);
+				}
+				else
+				{
+					itemAbove[item] = metrics[item].getAscent() + 1;
+					itemBelow[item] = smallBelow(smallRowHeight(itemFonts[item]), itemAbove[item]);
+				}
+			}
+			setTextAntialiasing(scratch, levelItemFont.pixel);
+			levelMetrics = scratch.getFontMetrics(levelFont);
+			levelAbove = levelMetrics.getAscent() + 1;
+			levelBelow = smallBelow(smallRowHeight(levelItemFont), levelAbove);
+		}
+		finally
+		{
+			scratch.dispose();
+		}
 	}
 
-	private int footerHeight()
+	@VisibleForTesting
+	Font font(int item)
 	{
-		return Math.round(FOOTER_HEIGHT * textScale());
+		return fonts[item];
+	}
+
+	@VisibleForTesting
+	Font levelFont()
+	{
+		return levelFont;
+	}
+
+	private void setTextAntialiasing(Graphics2D graphics, boolean pixel)
+	{
+		graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, smoothText && !pixel
+			? RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+			: RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+	}
+
+	private void useFont(Graphics2D graphics, int item)
+	{
+		graphics.setFont(fonts[item]);
+		setTextAntialiasing(graphics, pixelFonts[item]);
+	}
+
+	private static final class ItemFont
+	{
+		private String family;
+		private int size;
+		private boolean bold;
+		private boolean italic;
+		private Font font;
+		private boolean pixel;
+
+		boolean update(FontType type, FontType fallback)
+		{
+			final FontType setting = type != null ? type : fallback;
+			final String newFamily = setting.getFamily() != null ? setting.getFamily() : fallback.getFamily();
+			final int newSize = clampFontSize(setting.getSize());
+			if (font != null && newFamily.equals(family) && newSize == size
+				&& setting.isBold() == bold && setting.isItalic() == italic)
+			{
+				return false;
+			}
+
+			family = newFamily;
+			size = newSize;
+			bold = setting.isBold();
+			italic = setting.isItalic();
+			pixel = isRunescapeFont(family);
+			font = FontManager.getFallbackFont(family, (bold ? Font.BOLD : Font.PLAIN) | (italic ? Font.ITALIC : Font.PLAIN), size);
+			return true;
+		}
 	}
 
 	void applyTextHints(Graphics2D graphics)
 	{
-		graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, smoothText && !pixelFont
-			? RenderingHints.VALUE_TEXT_ANTIALIAS_ON
-			: RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+		setTextAntialiasing(graphics, pixelFonts[NAME]);
 		// Fractional metrics place glyphs between pixels, which makes smoothed text look soft.
 		graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
@@ -218,10 +374,17 @@ class BarTextPainter
 
 		itemsAvailable(config, partyDefenceAvailable, magicDefenceAvailable, specialAttacksAvailable, hasWeakness,
 			hasDrainCap, available);
-		topLarge = rowLarge(positions, available, true);
-		bottomLarge = rowLarge(positions, available, false);
-		topHeight = rowHeight(positions, available, true, headerHeight(), footerHeight());
-		bottomHeight = rowHeight(positions, available, false, headerHeight(), footerHeight());
+		System.arraycopy(itemAbove, 0, rowAbove, 0, ITEM_COUNT);
+		System.arraycopy(itemBelow, 0, rowBelow, 0, ITEM_COUNT);
+		if (config.showCombatLevel())
+		{
+			rowAbove[NAME] = Math.max(rowAbove[NAME], levelAbove);
+			rowBelow[NAME] = Math.max(rowBelow[NAME], levelBelow);
+		}
+		topRowBaseline = rowBaseline(positions, available, true, rowAbove);
+		bottomRowBaseline = rowBaseline(positions, available, false, rowAbove);
+		topHeight = rowHeight(positions, available, true, rowAbove, rowBelow);
+		bottomHeight = rowHeight(positions, available, false, rowAbove, rowBelow);
 	}
 
 	// Rows are sized from the settings rather than what's showing, so they don't jump during a fight.
@@ -240,28 +403,50 @@ class BarTextPainter
 		available[DRAIN_CAP] = hasDrainCap;
 	}
 
+	// Everything on a row shares one baseline, low enough for the tallest text.
 	@VisibleForTesting
-	static boolean rowLarge(BarPosition[] positions, boolean[] available, boolean top)
+	static int rowBaseline(BarPosition[] positions, boolean[] available, boolean top, int[] above)
 	{
-		return available[NAME] && positions[NAME].isTop() == top
-			|| available[DAMAGE_NUMBER] && positions[DAMAGE_NUMBER].isTop() == top;
-	}
-
-	@VisibleForTesting
-	static int rowHeight(BarPosition[] positions, boolean[] available, boolean top, int largeHeight, int smallHeight)
-	{
-		if (rowLarge(positions, available, top))
-		{
-			return largeHeight;
-		}
+		int baseline = 0;
 		for (int item = 0; item < ITEM_COUNT; item++)
 		{
 			if (available[item] && positions[item].isTop() == top)
 			{
-				return smallHeight;
+				baseline = Math.max(baseline, above[item]);
 			}
 		}
-		return 0;
+		return baseline;
+	}
+
+	@VisibleForTesting
+	static int rowHeight(BarPosition[] positions, boolean[] available, boolean top, int[] above, int[] below)
+	{
+		final int baseline = rowBaseline(positions, available, top, above);
+		if (baseline == 0)
+		{
+			return 0;
+		}
+		int descent = 0;
+		for (int item = 0; item < ITEM_COUNT; item++)
+		{
+			if (available[item] && positions[item].isTop() == top)
+			{
+				descent = Math.max(descent, below[item]);
+			}
+		}
+		return baseline + descent;
+	}
+
+	@VisibleForTesting
+	int topRowBaseline()
+	{
+		return topRowBaseline;
+	}
+
+	@VisibleForTesting
+	int bottomRowBaseline()
+	{
+		return bottomRowBaseline;
 	}
 
 	int topRowHeight()
@@ -274,17 +459,13 @@ class BarTextPainter
 		return bottomHeight;
 	}
 
-	void layoutText(Graphics2D graphics, String name, int combatLevel, BufferedImage nameIcon, String hitpointsText,
+	void layoutText(String name, int combatLevel, BufferedImage nameIcon, String hitpointsText,
 		boolean defeated, int previewDamage, String killCountText, PartyDefence.Reading defence,
 		BufferedImage defenceIcon, PartyDefence.Reading magicDefence, BufferedImage magicIcon,
 		List<SpecialAttackCounts.Reading> specialAttacks, String weaknessText,
 		BufferedImage weaknessIcon, String drainCapText, int width, int capWidth, int bottomTop)
 	{
-		graphics.setFont(textFont);
-		textMetrics = graphics.getFontMetrics();
-		graphics.setFont(smallFont);
-		smallMetrics = graphics.getFontMetrics();
-		final int ascent = smallMetrics.getAscent();
+		final FontMetrics textMetrics = metrics[NAME];
 		final int left = capWidth + TEXT_INSET;
 		final int right = width - capWidth - TEXT_INSET;
 
@@ -317,62 +498,67 @@ class BarTextPainter
 			if (config.showCombatLevel() && combatLevel > 0)
 			{
 				levelText = "LV " + combatLevel;
-				nameFixedWidth += LEVEL_GAP + smallMetrics.stringWidth(levelText);
+				nameFixedWidth += LEVEL_GAP + levelMetrics.stringWidth(levelText);
 			}
 			row(NAME).addKept(NAME, positions[NAME].getSpot(), nameFixedWidth + ellipsisWidth);
 		}
 
 		if (config.showDamageNumber())
 		{
-			add(DAMAGE_NUMBER, textMetrics.stringWidth(DAMAGE_NUMBER_SIZING));
+			add(DAMAGE_NUMBER, metrics[DAMAGE_NUMBER].stringWidth(DAMAGE_NUMBER_SIZING));
 		}
 
 		// While "Defeated" shows, the hitpoints keep their slot so the other items stay where they were.
 		if (hitpointsText != null)
 		{
-			add(HITPOINTS, smallMetrics.stringWidth(hitpointsText));
+			add(HITPOINTS, metrics[HITPOINTS].stringWidth(hitpointsText));
 		}
 
 		if (killCountText != null)
 		{
-			add(KILL_COUNT, smallMetrics.stringWidth(killCountText));
+			add(KILL_COUNT, metrics[KILL_COUNT].stringWidth(killCountText));
 		}
 
-		scaledDefenceIcon = defence != null || drainCapText != null ? defenceIconCache.get(defenceIcon, ascent + 1) : null;
+		final int defenceIconSize = metrics[PARTY_DEFENCE].getAscent() + 1;
+		scaledDefenceIcon = defence != null ? defenceIconCache.get(defenceIcon, defenceIconSize) : null;
 		defenceIconWidth = scaledDefenceIcon != null ? scaledDefenceIcon.getWidth() + DEFENCE_GAP : 0;
-		arrowWidth = Math.max(5, Math.round(ascent * 0.6f));
+		arrowWidth = Math.max(5, Math.round(metrics[PARTY_DEFENCE].getAscent() * 0.6f));
 		if (defence != null)
 		{
-			add(PARTY_DEFENCE, defenceIconWidth + arrowWidth + DEFENCE_GAP + smallMetrics.stringWidth(defence.getText()));
+			add(PARTY_DEFENCE, defenceIconWidth + arrowWidth + DEFENCE_GAP
+				+ metrics[PARTY_DEFENCE].stringWidth(defence.getText()));
 		}
 
-		scaledMagicIcon = magicDefence != null ? magicIconCache.get(magicIcon, ascent + 1) : null;
+		scaledMagicIcon = magicDefence != null ? magicIconCache.get(magicIcon, defenceIconSize) : null;
 		magicIconWidth = scaledMagicIcon != null ? scaledMagicIcon.getWidth() + DEFENCE_GAP : 0;
 		if (magicDefence != null)
 		{
-			add(MAGIC_DEFENCE, magicIconWidth + arrowWidth + DEFENCE_GAP + smallMetrics.stringWidth(magicDefence.getText()));
+			add(MAGIC_DEFENCE, magicIconWidth + arrowWidth + DEFENCE_GAP
+				+ metrics[MAGIC_DEFENCE].stringWidth(magicDefence.getText()));
 		}
 
-		// Item images have a transparent border around the rune or weapon, so draw them larger to match the skill icon.
-		itemIconSize = Math.round((ascent + 1) * RUNE_ICON_SCALE);
+		specialAttackIconSize = itemIconSize(metrics[SPECIAL_ATTACKS]);
 		if (!specialAttacks.isEmpty())
 		{
-			add(SPECIAL_ATTACKS, specialAttacksEnd(specialAttacks, smallMetrics, 0, itemIconSize));
+			add(SPECIAL_ATTACKS, specialAttacksEnd(specialAttacks, metrics[SPECIAL_ATTACKS], 0, specialAttackIconSize));
 		}
 
-		weaknessIconHeight = weaknessIcon != null && weaknessIcon.getHeight() > 0 ? itemIconSize : 0;
+		weaknessIconHeight = weaknessIcon != null && weaknessIcon.getHeight() > 0 ? itemIconSize(metrics[WEAKNESS]) : 0;
 		weaknessIconWidth = weaknessIconHeight > 0
 			? Math.round(weaknessIcon.getWidth() * weaknessIconHeight / (float) weaknessIcon.getHeight()) : 0;
 		weaknessIconPadding = (weaknessIconWidth - Math.round(weaknessIconWidth / RUNE_ICON_SCALE)) / 2;
 		weaknessIconAdvance = weaknessIconWidth > 0 ? weaknessIconWidth - weaknessIconPadding * 2 + DEFENCE_GAP : 0;
 		if (weaknessText != null)
 		{
-			add(WEAKNESS, weaknessIconAdvance + smallMetrics.stringWidth(weaknessText));
+			add(WEAKNESS, weaknessIconAdvance + metrics[WEAKNESS].stringWidth(weaknessText));
 		}
 
+		// The drain limit shows the Defence icon too, at its own size.
+		scaledDrainIcon = drainCapText != null ? drainIconCache.get(defenceIcon, metrics[DRAIN_CAP].getAscent() + 1) : null;
+		drainIconWidth = scaledDrainIcon != null ? scaledDrainIcon.getWidth() + DEFENCE_GAP : 0;
 		if (drainCapText != null)
 		{
-			add(DRAIN_CAP, defenceIconWidth + smallMetrics.stringWidth(drainCapText));
+			add(DRAIN_CAP, drainIconWidth + metrics[DRAIN_CAP].stringWidth(drainCapText));
 		}
 
 		topRow.layout(width, left, right, LEVEL_GAP);
@@ -389,29 +575,37 @@ class BarTextPainter
 		}
 
 		defeatedX = defeated
-			? row(HITPOINTS).centredX(smallMetrics.stringWidth(DEFEATED_TEXT), HITPOINTS) : BarLayout.NOT_PLACED;
+			? row(HITPOINTS).centredX(metrics[HITPOINTS].stringWidth(DEFEATED_TEXT), HITPOINTS) : BarLayout.NOT_PLACED;
 
-		topBaseline = topLarge ? headerHeight() - headerBaselineGap() : ascent + 1;
-		bottomBaseline = bottomTop + (bottomLarge ? headerHeight() - headerBaselineGap() : ascent + 1);
+		topBaseline = topRowBaseline;
+		bottomBaseline = bottomTop + bottomRowBaseline;
+	}
+
+	// Item images have a transparent border around the rune or weapon, so draw them larger to match the skill icon.
+	@VisibleForTesting
+	static int itemIconSize(FontMetrics metrics)
+	{
+		return Math.round((metrics.getAscent() + 1) * RUNE_ICON_SCALE);
 	}
 
 	void drawRow(Graphics2D graphics, boolean top, ThemeColors colors)
 	{
 		final int baseline = top ? topBaseline : bottomBaseline;
-		final int ascent = smallMetrics.getAscent();
 
 		if (onRow(NAME, top))
 		{
+			final FontMetrics textMetrics = metrics[NAME];
 			int x = x(NAME);
 			if (nameIcon != null)
 			{
 				x = drawHeaderIcon(graphics, nameIcon, textMetrics, x, baseline);
 			}
-			graphics.setFont(textFont);
+			useFont(graphics, NAME);
 			drawShadowedText(graphics, nameText, x, baseline, colors.getText(), 1f);
 			if (levelText != null)
 			{
-				graphics.setFont(smallFont);
+				graphics.setFont(levelFont);
+				setTextAntialiasing(graphics, levelItemFont.pixel);
 				drawShadowedText(graphics, levelText, x + textMetrics.stringWidth(nameText) + LEVEL_GAP, baseline,
 					colors.getLevelText(), 0.9f);
 			}
@@ -419,10 +613,10 @@ class BarTextPainter
 
 		if (onRow(DAMAGE_NUMBER, top))
 		{
-			drawDamageNumber(graphics, textMetrics, row(DAMAGE_NUMBER), baseline, previewDamage, colors.getText());
+			drawDamageNumber(graphics, metrics[DAMAGE_NUMBER], row(DAMAGE_NUMBER), baseline, previewDamage, colors.getText());
 		}
 
-		graphics.setFont(smallFont);
+		useFont(graphics, HITPOINTS);
 		if (defeated)
 		{
 			if (defeatedX != BarLayout.NOT_PLACED && positions[HITPOINTS].isTop() == top)
@@ -437,24 +631,30 @@ class BarTextPainter
 
 		if (onRow(KILL_COUNT, top))
 		{
+			useFont(graphics, KILL_COUNT);
 			drawShadowedText(graphics, killCountText, x(KILL_COUNT), baseline, colors.getLevelText(), 0.9f);
 		}
 
+		final int defenceAscent = metrics[PARTY_DEFENCE].getAscent();
 		if (onRow(PARTY_DEFENCE, top))
 		{
-			drawDefence(graphics, defence, scaledDefenceIcon, defenceIconWidth, arrowWidth, ascent, x(PARTY_DEFENCE),
-				baseline, colors);
+			useFont(graphics, PARTY_DEFENCE);
+			drawDefence(graphics, defence, scaledDefenceIcon, defenceIconWidth, arrowWidth, defenceAscent,
+				x(PARTY_DEFENCE), baseline, colors);
 		}
 
 		if (onRow(MAGIC_DEFENCE, top))
 		{
-			drawDefence(graphics, magicDefence, scaledMagicIcon, magicIconWidth, arrowWidth, ascent, x(MAGIC_DEFENCE),
-				baseline, colors);
+			useFont(graphics, MAGIC_DEFENCE);
+			drawDefence(graphics, magicDefence, scaledMagicIcon, magicIconWidth, arrowWidth, defenceAscent,
+				x(MAGIC_DEFENCE), baseline, colors);
 		}
 
 		if (onRow(SPECIAL_ATTACKS, top))
 		{
-			drawSpecialAttacks(graphics, specialAttacks, smallMetrics, itemIconSize, x(SPECIAL_ATTACKS), baseline, colors);
+			useFont(graphics, SPECIAL_ATTACKS);
+			drawSpecialAttacks(graphics, specialAttacks, metrics[SPECIAL_ATTACKS], specialAttackIconSize,
+				x(SPECIAL_ATTACKS), baseline, colors);
 		}
 
 		if (onRow(WEAKNESS, top))
@@ -462,21 +662,24 @@ class BarTextPainter
 			int x = x(WEAKNESS);
 			if (weaknessIconWidth > 0)
 			{
-				drawWeaknessIcon(graphics, weaknessIcon, x - weaknessIconPadding, baseline - ascent / 2 - weaknessIconHeight / 2,
-					weaknessIconWidth, weaknessIconHeight);
+				drawWeaknessIcon(graphics, weaknessIcon, x - weaknessIconPadding,
+					baseline - metrics[WEAKNESS].getAscent() / 2 - weaknessIconHeight / 2, weaknessIconWidth, weaknessIconHeight);
 				x += weaknessIconAdvance;
 			}
+			useFont(graphics, WEAKNESS);
 			drawShadowedText(graphics, weaknessText, x, baseline, colors.getLevelText(), 0.9f);
 		}
 
 		if (onRow(DRAIN_CAP, top))
 		{
 			int x = x(DRAIN_CAP);
-			if (scaledDefenceIcon != null)
+			if (scaledDrainIcon != null)
 			{
-				graphics.drawImage(scaledDefenceIcon, x, baseline - ascent / 2 - scaledDefenceIcon.getHeight() / 2, null);
-				x += defenceIconWidth;
+				graphics.drawImage(scaledDrainIcon, x,
+					baseline - metrics[DRAIN_CAP].getAscent() / 2 - scaledDrainIcon.getHeight() / 2, null);
+				x += drainIconWidth;
 			}
+			useFont(graphics, DRAIN_CAP);
 			drawShadowedText(graphics, drainCapText, x, baseline, colors.getLevelText(), 0.9f);
 		}
 	}
@@ -734,7 +937,7 @@ class BarTextPainter
 		}
 
 		final String text = String.valueOf(damage);
-		graphics.setFont(textFont);
+		useFont(graphics, DAMAGE_NUMBER);
 		drawShadowedText(graphics, text, damageNumberX(row.spot(DAMAGE_NUMBER), row.x(DAMAGE_NUMBER),
 			row.width(DAMAGE_NUMBER), metrics.stringWidth(text)), baseline, color, alpha);
 	}

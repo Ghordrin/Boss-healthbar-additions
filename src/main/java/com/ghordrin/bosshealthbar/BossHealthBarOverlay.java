@@ -366,7 +366,7 @@ class BossHealthBarOverlay extends Overlay
 		setOpacity(graphics, originalComposite, opacity);
 
 		textPainter.applyTextHints(graphics);
-		textPainter.layoutText(graphics, state.name, state.combatLevel, flat ? icon : null, hitpointsText, defeated,
+		textPainter.layoutText(state.name, state.combatLevel, flat ? icon : null, hitpointsText, defeated,
 			showingPreview ? PREVIEW_DAMAGE : 0, killCountText, defence,
 			defence != null || drainCapText != null ? partyDefence.icon() : null,
 			magicDefence, magicDefence != null ? partyDefence.magicIcon() : null, specialAttacks, weaknessText,
