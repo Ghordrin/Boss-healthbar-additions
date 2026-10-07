@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fixed the game's pillar health bars being hidden along with its boss health bar, and the game's boss health bar sometimes staying hidden after turning the plugin off
+- New Also show for and Never show for options in When to show: list NPC names or IDs, separated by commas or one per line (the box grows as you add lines), to give them the bar or keep it off them. * matches anything. Never show for wins over everything else, and the game's own boss health bar stays up for those NPCs
 
 ## 1.5.0 (2026-10-06)
 

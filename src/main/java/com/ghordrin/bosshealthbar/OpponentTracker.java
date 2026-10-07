@@ -37,6 +37,11 @@ class OpponentTracker
 	private String knownBossName;
 	private boolean knownBoss;
 
+	private NpcFilter alsoShowFor = NpcFilter.EMPTY;
+	private NpcFilter neverShowFor = NpcFilter.EMPTY;
+	private final NpcFilter.LastMatch opponentListMatch = new NpcFilter.LastMatch();
+	private final NpcFilter.LastMatch gameBarListMatch = new NpcFilter.LastMatch();
+
 	@Inject
 	OpponentTracker(Client client, BossHealthBarConfig config, GameBossBar gameBossBar, TobBossBar tobBossBar,
 		SuperiorTracker superiors, DamageTracker damage)
@@ -86,7 +91,7 @@ class OpponentTracker
 	{
 		final NPC nativeBarBoss = gameBossBar.findNpc(opponent);
 		final NPC gameBarBoss = nativeBarBoss != null ? nativeBarBoss : tobBossBar.findBoss();
-		if (gameBarBoss != null && !gameBarBoss.isDead() && gameBarBoss != opponent)
+		if (gameBarBoss != null && !gameBarBoss.isDead() && gameBarBoss != opponent && !isNeverShown(gameBarBoss))
 		{
 			setOpponent(gameBarBoss);
 			interactionLostMillis = 0;
@@ -195,9 +200,15 @@ class OpponentTracker
 
 	boolean shouldShowBarFor(Actor actor)
 	{
-		return actor != null
-			&& actor.getName() != null
-			&& (!config.bossOnly()
+		if (actor == null || actor.getName() == null)
+		{
+			return false;
+		}
+
+		final NpcFilter.Match match = listMatch(opponentListMatch, actor);
+		return match != NpcFilter.Match.NEVER
+			&& (match == NpcFilter.Match.ALSO
+				|| !config.bossOnly()
 				|| isKnownBoss(actor)
 				|| isGameBarBoss(actor)
 				|| (config.showAboveCombatLevel() && actor.getCombatLevel() >= config.minimumCombatLevel())
@@ -212,6 +223,16 @@ class OpponentTracker
 		lastOpponentHitMillis = 0;
 		knownBossActor = null;
 		knownBossName = null;
+		opponentListMatch.clear();
+		gameBarListMatch.clear();
+	}
+
+	void loadLists()
+	{
+		alsoShowFor = NpcFilter.parse(config.alsoShowFor());
+		neverShowFor = NpcFilter.parse(config.neverShowFor());
+		opponentListMatch.clear();
+		gameBarListMatch.clear();
 	}
 
 	private void setOpponent(Actor target)
@@ -229,11 +250,11 @@ class OpponentTracker
 		{
 			return -1;
 		}
-		if (gameBossBar.isTracking(actor) || tobBossBar.isTracking(actor))
+		if (!shouldShowBarFor(actor))
 		{
-			return 2;
+			return 0;
 		}
-		return shouldShowBarFor(actor) ? 1 : 0;
+		return gameBossBar.isTracking(actor) || tobBossBar.isTracking(actor) ? 2 : 1;
 	}
 
 	private boolean isGameBarBoss(Actor actor)
@@ -252,5 +273,20 @@ class OpponentTracker
 			knownBoss = KnownBosses.contains(name);
 		}
 		return knownBoss;
+	}
+
+	// Kept apart from the opponent's cached answer, so checking both each frame doesn't redo the match.
+	private boolean isNeverShown(NPC npc)
+	{
+		return npc.getName() != null && listMatch(gameBarListMatch, npc) == NpcFilter.Match.NEVER;
+	}
+
+	private NpcFilter.Match listMatch(NpcFilter.LastMatch last, Actor actor)
+	{
+		if (!(actor instanceof NPC) || (alsoShowFor.isEmpty() && neverShowFor.isEmpty()))
+		{
+			return NpcFilter.Match.NONE;
+		}
+		return last.get((NPC) actor, neverShowFor, alsoShowFor);
 	}
 }

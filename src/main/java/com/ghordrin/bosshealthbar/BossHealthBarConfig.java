@@ -34,6 +34,8 @@ public interface BossHealthBarConfig extends Config
 	// Set once a RuneScape font's saved size has been put back to its native size. Not a config item either.
 	String PIXEL_FONT_SIZE_MIGRATED_KEY = "pixelFontSizeMigrated";
 	String NATIVE_BOSS_BAR_MODE_KEY = "nativeBossBarMode";
+	String ALSO_SHOW_FOR_KEY = "alsoShowFor";
+	String NEVER_SHOW_FOR_KEY = "neverShowFor";
 	// The checkbox nativeBossBarMode replaced. Its saved value is moved over on startup.
 	String OLD_REPLACE_NATIVE_BOSS_BAR_KEY = "replaceNativeBossBar";
 	String DAMAGE_NUMBER_FONT_KEY = "damageNumberFont";
@@ -895,13 +897,37 @@ public interface BossHealthBarConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = ALSO_SHOW_FOR_KEY,
+		name = "Also show for",
+		description = "Also show the bar for these NPCs. Names or IDs, separated by commas or one per line. * matches anything.",
+		position = 4,
+		section = whenToShowSection
+	)
+	default String alsoShowFor()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = NEVER_SHOW_FOR_KEY,
+		name = "Never show for",
+		description = "Never show the bar for these NPCs, even bosses. Names or IDs, separated by commas or one per line. * matches anything.",
+		position = 5,
+		section = whenToShowSection
+	)
+	default String neverShowFor()
+	{
+		return "";
+	}
+
 	@Range(min = 1, max = 60)
 	@Units(Units.SECONDS)
 	@ConfigItem(
 		keyName = "hideDelay",
 		name = "Hide after",
 		description = "How long the bar stays once the fight goes quiet. It stays while the game's boss health bar shows the opponent.",
-		position = 4,
+		position = 6,
 		section = whenToShowSection
 	)
 	default int hideDelay()
@@ -913,7 +939,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = NATIVE_BOSS_BAR_MODE_KEY,
 		name = "Game's boss health bar",
 		description = "For bosses with the game's own health bar: replace it with this bar, show both, or hide this bar.",
-		position = 5,
+		position = 7,
 		section = whenToShowSection
 	)
 	default NativeBossBarMode nativeBossBarMode()
@@ -925,7 +951,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = HIDE_VANILLA_OVERLAY_KEY,
 		name = "Hide Opponent Information bar",
 		description = "Turn off the health bar of RuneLite's Opponent Information plugin while this plugin is on.",
-		position = 6,
+		position = 8,
 		section = whenToShowSection
 	)
 	default boolean hideVanillaOverlay()
@@ -937,7 +963,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showHealthIndicatorMarkers",
 		name = "Boss Health Indicators lines",
 		description = "Draw the health lines from the Boss Health Indicators plugin on this bar too.",
-		position = 7,
+		position = 9,
 		section = whenToShowSection
 	)
 	default boolean showHealthIndicatorMarkers()

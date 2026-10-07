@@ -24,7 +24,7 @@ It only shows what the game already tells you. No timers, attack prediction or a
 
 ## Which opponents get a bar
 
-By default only bosses do. The plugin has a [list of commonly fought bosses](docs/bosses.md), and it also picks up anything the game's own boss health bar is showing, plus superior slayer monsters. If a boss is missing, turn on "Also show above combat level", or turn off "Only show for bosses" to get the bar on everything.
+By default only bosses do. The plugin has a [list of commonly fought bosses](docs/bosses.md), and it also picks up anything the game's own boss health bar is showing, plus superior slayer monsters. If a boss is missing, turn on "Also show above combat level", or turn off "Only show for bosses" to get the bar on everything. "Also show for" and "Never show for" add or leave out NPCs by name or ID.
 
 If you attack something smaller during a boss fight, like the minions some bosses spawn, the bar stays on the boss.
 
@@ -95,6 +95,7 @@ Custom colors (folded by default)
 When to show (folded by default)
 
 - Only show for bosses, Also show above combat level, Minimum combat level and Superior slayer monsters pick which opponents get a bar (see above)
+- Also show for gives the bar to the NPCs you list, even with Only show for bosses on. Never show for keeps the bar off the NPCs you list, even bosses, and the game's own boss health bar stays up for them. Hide Opponent Information bar still applies, so they get neither bar. List names or NPC IDs, separated by commas or one per line (press Enter for a new line, and the box grows with the list). Names ignore upper and lower case, and * matches anything, so "*giant" covers every giant. An NPC on both lists gets no bar
 - Hide after sets how long the bar stays once the fight goes quiet
 - Game's boss health bar decides what happens for bosses that show the game's own health bar at the top of the screen. Replace it (the default) hides the game's bar and uses its numbers on this one. Show both keeps the game's bar and shows this one too. Hide this bar keeps the game's bar and leaves this one out of those fights
 - Hide Opponent Information bar (on by default) turns off the health bar from RuneLite's Opponent Information plugin so you don't see two. Your own setting comes back when you turn this plugin off

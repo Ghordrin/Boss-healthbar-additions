@@ -140,9 +140,10 @@ class GameBossBar
 		boolean replace = false;
 		if (replaceEnabled)
 		{
-			if (opponentGetsBar && isTracking(opponent))
+			// An opponent without our bar, such as one on the Never show for list, keeps the game's bar.
+			if (isTracking(opponent))
 			{
-				replace = true;
+				replace = opponentGetsBar;
 				replacedId = trackedNpcId();
 			}
 			else

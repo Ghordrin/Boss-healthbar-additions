@@ -107,6 +107,7 @@ public class BossHealthBarPlugin extends Plugin
 		migrateDefaultFont();
 		migratePixelFontSize();
 		migrateItemFonts();
+		opponentTracker.loadLists();
 		overlay.reset();
 		healthIndicatorMarkers.invalidate();
 		killCounts.invalidate();
@@ -308,6 +309,12 @@ public class BossHealthBarPlugin extends Plugin
 		{
 			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.CHOOSE_CUSTOM_ICON_KEY, false);
 			pickers.openIconPickerIfLoggedIn();
+		}
+
+		if (BossHealthBarConfig.ALSO_SHOW_FOR_KEY.equals(event.getKey())
+			|| BossHealthBarConfig.NEVER_SHOW_FOR_KEY.equals(event.getKey()))
+		{
+			clientThread.invoke(opponentTracker::loadLists);
 		}
 
 		if (BossHealthBarConfig.HIDE_VANILLA_OVERLAY_KEY.equals(event.getKey()))
