@@ -71,6 +71,9 @@ public class BossHealthBarPlugin extends Plugin
 	private DamageTracker damageTracker;
 
 	@Inject
+	private FightTimer fightTimer;
+
+	@Inject
 	private OpponentInfoOverride opponentInfoOverride;
 
 	@Inject
@@ -107,6 +110,7 @@ public class BossHealthBarPlugin extends Plugin
 		migrateDefaultFont();
 		migratePixelFontSize();
 		migrateItemFonts();
+		migrateFightTimerFont();
 		opponentTracker.loadLists();
 		overlay.reset();
 		healthIndicatorMarkers.invalidate();
@@ -195,6 +199,23 @@ public class BossHealthBarPlugin extends Plugin
 		FontDefaultMigration.itemFontWrites(name)
 			.forEach((key, font) -> configManager.setConfiguration(BossHealthBarConfig.GROUP, key, font));
 		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.ITEM_FONTS_MIGRATED_KEY, true);
+	}
+
+	// Newer than the item fonts, so it gets its own one-time copy of the kill count font, which that migration set.
+	private void migrateFightTimerFont()
+	{
+		if (savedBoolean(BossHealthBarConfig.FIGHT_TIMER_FONT_MIGRATED_KEY) != null)
+		{
+			return;
+		}
+
+		final FontType killCount = configManager.getConfiguration(
+			BossHealthBarConfig.GROUP, BossHealthBarConfig.KILL_COUNT_FONT_KEY, FontType.class);
+		if (killCount != null)
+		{
+			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FIGHT_TIMER_FONT_KEY, killCount);
+		}
+		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FIGHT_TIMER_FONT_MIGRATED_KEY, true);
 	}
 
 	// Reset can walk the settings in any order, so put these back to their defaults once it's done.
@@ -357,6 +378,10 @@ public class BossHealthBarPlugin extends Plugin
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
 		opponentTracker.onHitsplatApplied(event.getActor(), event.getHitsplat());
+		if (OpponentTracker.isCombatHit(event.getHitsplat().getHitsplatType()))
+		{
+			fightTimer.onCombatHit(event.getActor(), client.getTickCount());
+		}
 		if (event.getActor() == opponentTracker.getOpponent())
 		{
 			final Hitsplat hitsplat = event.getHitsplat();
@@ -409,6 +434,8 @@ public class BossHealthBarPlugin extends Plugin
 		tobBossBar.onGameTick();
 		superiorTracker.onGameTick();
 		opponentTracker.onGameTick();
+		final Actor opponent = opponentTracker.getOpponent();
+		fightTimer.onGameTick(opponent, opponent != null && opponentTracker.isDefeated(opponent), client.getTickCount());
 		partyDefence.update(opponentTracker.getOpponent());
 		specialAttackCounts.update(opponentTracker.getOpponent());
 	}

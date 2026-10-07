@@ -6,6 +6,7 @@ import static com.ghordrin.bosshealthbar.BarLayout.Spot.LEFT;
 import static com.ghordrin.bosshealthbar.BarLayout.Spot.RIGHT;
 import static com.ghordrin.bosshealthbar.BarTextPainter.DAMAGE_NUMBER;
 import static com.ghordrin.bosshealthbar.BarTextPainter.DRAIN_CAP;
+import static com.ghordrin.bosshealthbar.BarTextPainter.FIGHT_TIMER;
 import static com.ghordrin.bosshealthbar.BarTextPainter.HITPOINTS;
 import static com.ghordrin.bosshealthbar.BarTextPainter.ITEM_COUNT;
 import static com.ghordrin.bosshealthbar.BarTextPainter.KILL_COUNT;
@@ -263,6 +264,7 @@ public class BarLayoutTest
 		assertEquals(BarPosition.BOTTOM_LEFT, defaults.specialAttackCountsPosition());
 		assertEquals(BarPosition.BOTTOM_LEFT, defaults.weaknessPosition());
 		assertEquals(BarPosition.BOTTOM_LEFT, defaults.drainCapPosition());
+		assertEquals(BarPosition.TOP_CENTER, defaults.fightTimerPosition());
 		assertTrue(defaults.namePosition().isTop());
 		assertFalse(defaults.hitpointsPosition().isTop());
 	}
@@ -308,13 +310,33 @@ public class BarLayoutTest
 	}
 
 	@Test
+	public void defaultFightTimerSitsCentredAboveTheBarAndLimitsTheName()
+	{
+		final BossHealthBarConfig defaults = new BossHealthBarConfig()
+		{
+		};
+		final int ellipsisWidth = 14;
+		final int timerWidth = 30;
+
+		final BarLayout header = new BarLayout(ITEM_COUNT);
+		header.addKept(NAME, defaults.namePosition().getSpot(), ellipsisWidth);
+		header.add(DAMAGE_NUMBER, defaults.damageNumberPosition().getSpot(), 36);
+		header.add(FIGHT_TIMER, defaults.fightTimerPosition().getSpot(), timerWidth);
+		layOutDefaults(header);
+
+		final int timerX = (BAR_WIDTH - timerWidth) / 2;
+		assertEquals(timerX, header.x(FIGHT_TIMER));
+		assertEquals(timerX - LEVEL_GAP - BAR_LEFT - ellipsisWidth, header.room(NAME));
+	}
+
+	@Test
 	public void defaultFooterMatchesTheClassicLayout()
 	{
 		final BossHealthBarConfig defaults = new BossHealthBarConfig()
 		{
 		};
 		final int hitpointsWidth = 80;
-		final int[] widths = {0, hitpointsWidth, 0, 40, 50, 45, 70, 35, 30};
+		final int[] widths = {0, hitpointsWidth, 0, 0, 40, 50, 45, 70, 35, 30};
 
 		final BarLayout footer = new BarLayout(ITEM_COUNT);
 		footer.add(HITPOINTS, defaults.hitpointsPosition().getSpot(), hitpointsWidth);
@@ -441,6 +463,7 @@ public class BarLayoutTest
 		positions[NAME] = BarPosition.TOP_LEFT;
 		positions[DAMAGE_NUMBER] = BarPosition.TOP_RIGHT;
 		positions[HITPOINTS] = BarPosition.BOTTOM_RIGHT;
+		positions[FIGHT_TIMER] = BarPosition.TOP_CENTER;
 		for (int item = KILL_COUNT; item <= DRAIN_CAP; item++)
 		{
 			positions[item] = BarPosition.BOTTOM_LEFT;

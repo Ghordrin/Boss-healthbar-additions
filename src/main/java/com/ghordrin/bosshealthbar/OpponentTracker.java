@@ -26,6 +26,7 @@ class OpponentTracker
 	private final TobBossBar tobBossBar;
 	private final SuperiorTracker superiors;
 	private final DamageTracker damage;
+	private final FightTimer fightTimer;
 
 	@Getter(AccessLevel.PACKAGE)
 	private Actor opponent;
@@ -44,7 +45,7 @@ class OpponentTracker
 
 	@Inject
 	OpponentTracker(Client client, BossHealthBarConfig config, GameBossBar gameBossBar, TobBossBar tobBossBar,
-		SuperiorTracker superiors, DamageTracker damage)
+		SuperiorTracker superiors, DamageTracker damage, FightTimer fightTimer)
 	{
 		this.client = client;
 		this.config = config;
@@ -52,6 +53,7 @@ class OpponentTracker
 		this.tobBossBar = tobBossBar;
 		this.superiors = superiors;
 		this.damage = damage;
+		this.fightTimer = fightTimer;
 	}
 
 	void onInteractingChanged(InteractingChanged event)
@@ -106,6 +108,7 @@ class OpponentTracker
 		}
 
 		log.debug("Opponent {} despawned, clearing", opponent);
+		fightTimer.opponentDespawned(isDefeated(npc), client.getTickCount());
 		opponent = null;
 		interactionLostMillis = 0;
 		lastOpponentHitMillis = 0;
@@ -149,6 +152,7 @@ class OpponentTracker
 		{
 			log.debug("Opponent {} timed out after {}s with no combat, clearing", opponent, config.hideDelay());
 			opponent = null;
+			fightTimer.reset();
 		}
 	}
 
@@ -215,6 +219,26 @@ class OpponentTracker
 				|| (config.showSuperiors() && superiors.isSuperior(actor)));
 	}
 
+	// Matches the bar's Defeated: some bosses on the game's bar never set isDead() while they die, so 0 health counts too.
+	boolean isDefeated(Actor actor)
+	{
+		if (actor.isDead())
+		{
+			return true;
+		}
+		final int nativeMaxHealth = gameBossBar.isTracking(actor) ? gameBossBar.maxHealth() : 0;
+		if (nativeMaxHealth > 0)
+		{
+			return gameBossBar.health() <= 0;
+		}
+		final int tobMaxHealth = tobBossBar.isTracking(actor) ? tobBossBar.maxHealth() : 0;
+		if (tobMaxHealth > 0)
+		{
+			return tobBossBar.health(tobMaxHealth) <= 0;
+		}
+		return actor.getHealthScale() > 0 && actor.getHealthRatio() == 0;
+	}
+
 	void reset()
 	{
 		opponent = null;
@@ -225,6 +249,7 @@ class OpponentTracker
 		knownBossName = null;
 		opponentListMatch.clear();
 		gameBarListMatch.clear();
+		fightTimer.reset();
 	}
 
 	void loadLists()
@@ -238,6 +263,7 @@ class OpponentTracker
 	private void setOpponent(Actor target)
 	{
 		damage.resetCombo();
+		fightTimer.opponentChanged(target, opponent != null && isDefeated(opponent), client.getTickCount());
 		opponent = target;
 		lastOpponentHitMillis = 0;
 		log.debug("New opponent: {} (combat level {}, known boss: {}, game boss bar: {})",

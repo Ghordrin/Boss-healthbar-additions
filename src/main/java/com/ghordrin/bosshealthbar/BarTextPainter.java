@@ -32,6 +32,7 @@ class BarTextPainter
 	static final int LEVEL_GAP = 12;
 	private static final int HEADER_ICON_GAP = 4;
 	private static final String DAMAGE_NUMBER_SIZING = "9999";
+	private static final String EMPTY_FIGHT_TIME = "0:00";
 	private static final Color TEXT_SHADOW = new Color(0, 0, 0, 200);
 	private static final Color DEFENCE_ARROW = new Color(220, 40, 40);
 	private static final int DEFENCE_GAP = 3;
@@ -44,13 +45,14 @@ class BarTextPainter
 	static final int NAME = 0;
 	static final int HITPOINTS = 1;
 	static final int DAMAGE_NUMBER = 2;
-	static final int KILL_COUNT = 3;
-	static final int PARTY_DEFENCE = 4;
-	static final int MAGIC_DEFENCE = 5;
-	static final int SPECIAL_ATTACKS = 6;
-	static final int WEAKNESS = 7;
-	static final int DRAIN_CAP = 8;
-	static final int ITEM_COUNT = 9;
+	static final int FIGHT_TIMER = 3;
+	static final int KILL_COUNT = 4;
+	static final int PARTY_DEFENCE = 5;
+	static final int MAGIC_DEFENCE = 6;
+	static final int SPECIAL_ATTACKS = 7;
+	static final int WEAKNESS = 8;
+	static final int DRAIN_CAP = 9;
+	static final int ITEM_COUNT = 10;
 
 	private final DamageTracker damageTracker;
 	private final BossHealthBarConfig config;
@@ -80,6 +82,12 @@ class BarTextPainter
 	private boolean defeated;
 	private int defeatedX;
 	private int previewDamage;
+	private String fightTimeText;
+	private int fightTimeWidth;
+	private int fightTimeSlotWidth;
+	private String sizedFightTime;
+	private FontMetrics sizedFightTimeMetrics;
+	private char widestDigit;
 	private String killCountText;
 	private PartyDefence.Reading defence;
 	private BufferedImage scaledDefenceIcon;
@@ -174,6 +182,7 @@ class BarTextPainter
 		fonts[NAME] = config.font();
 		fonts[HITPOINTS] = config.hitpointsFont();
 		fonts[DAMAGE_NUMBER] = config.damageNumberFont();
+		fonts[FIGHT_TIMER] = config.fightTimerFont();
 		fonts[KILL_COUNT] = config.killCountFont();
 		fonts[PARTY_DEFENCE] = config.partyDefenceFont();
 		fonts[MAGIC_DEFENCE] = fonts[PARTY_DEFENCE];
@@ -365,6 +374,7 @@ class BarTextPainter
 		positions[NAME] = config.namePosition();
 		positions[HITPOINTS] = config.hitpointsPosition();
 		positions[DAMAGE_NUMBER] = config.damageNumberPosition();
+		positions[FIGHT_TIMER] = config.fightTimerPosition();
 		positions[KILL_COUNT] = config.killCountPosition();
 		positions[PARTY_DEFENCE] = config.partyDefencePosition();
 		positions[MAGIC_DEFENCE] = config.partyDefencePosition();
@@ -395,6 +405,7 @@ class BarTextPainter
 		available[NAME] = config.showBossName();
 		available[HITPOINTS] = config.hitpointsTextMode() != HitpointsTextMode.NONE || config.showDefeatAnimation();
 		available[DAMAGE_NUMBER] = config.showDamageNumber();
+		available[FIGHT_TIMER] = config.showFightTimer();
 		available[KILL_COUNT] = config.showKillCount();
 		available[PARTY_DEFENCE] = partyDefenceAvailable;
 		available[MAGIC_DEFENCE] = magicDefenceAvailable;
@@ -460,7 +471,8 @@ class BarTextPainter
 	}
 
 	void layoutText(String name, int combatLevel, BufferedImage nameIcon, String hitpointsText,
-		boolean defeated, int previewDamage, String killCountText, PartyDefence.Reading defence,
+		boolean defeated, int previewDamage, boolean showFightTime, String fightTimeText, String killCountText,
+		PartyDefence.Reading defence,
 		BufferedImage defenceIcon, PartyDefence.Reading magicDefence, BufferedImage magicIcon,
 		List<SpecialAttackCounts.Reading> specialAttacks, String weaknessText,
 		BufferedImage weaknessIcon, String drainCapText, int width, int capWidth, int bottomTop)
@@ -473,6 +485,7 @@ class BarTextPainter
 		this.hitpointsText = hitpointsText;
 		this.defeated = defeated;
 		this.previewDamage = previewDamage;
+		this.fightTimeText = fightTimeText;
 		this.killCountText = killCountText;
 		this.defence = defence;
 		this.magicDefence = magicDefence;
@@ -512,6 +525,13 @@ class BarTextPainter
 		if (hitpointsText != null)
 		{
 			add(HITPOINTS, metrics[HITPOINTS].stringWidth(hitpointsText));
+		}
+
+		// The slot is kept before the first hit too, so the name doesn't get shorter when the time appears.
+		if (showFightTime)
+		{
+			sizeFightTime(fightTimeText != null ? fightTimeText : EMPTY_FIGHT_TIME, metrics[FIGHT_TIMER]);
+			add(FIGHT_TIMER, fightTimeSlotWidth);
 		}
 
 		if (killCountText != null)
@@ -627,6 +647,14 @@ class BarTextPainter
 		else if (onRow(HITPOINTS, top))
 		{
 			drawShadowedText(graphics, hitpointsText, x(HITPOINTS), baseline, colors.getHitpointsText(), 1f);
+		}
+
+		if (fightTimeText != null && onRow(FIGHT_TIMER, top))
+		{
+			useFont(graphics, FIGHT_TIMER);
+			final BarLayout row = row(FIGHT_TIMER);
+			drawShadowedText(graphics, fightTimeText, damageNumberX(row.spot(FIGHT_TIMER), row.x(FIGHT_TIMER),
+				fightTimeSlotWidth, fightTimeWidth), baseline, colors.getLevelText(), 0.9f);
 		}
 
 		if (onRow(KILL_COUNT, top))
@@ -955,6 +983,50 @@ class BarTextPainter
 			default:
 				return slotX + slotWidth - textWidth;
 		}
+	}
+
+	// The slot is sized as if every digit were the widest one, so the time doesn't shift as its digits change.
+	private void sizeFightTime(String text, FontMetrics metrics)
+	{
+		if (metrics != sizedFightTimeMetrics)
+		{
+			widestDigit = widestDigit(metrics);
+		}
+		else if (text.equals(sizedFightTime))
+		{
+			return;
+		}
+		sizedFightTime = text;
+		sizedFightTimeMetrics = metrics;
+		fightTimeWidth = metrics.stringWidth(text);
+		fightTimeSlotWidth = metrics.stringWidth(withDigits(text, widestDigit));
+	}
+
+	private static char widestDigit(FontMetrics metrics)
+	{
+		char widest = '0';
+		for (char digit = '1'; digit <= '9'; digit++)
+		{
+			if (metrics.charWidth(digit) > metrics.charWidth(widest))
+			{
+				widest = digit;
+			}
+		}
+		return widest;
+	}
+
+	@VisibleForTesting
+	static String withDigits(String text, char digit)
+	{
+		final char[] chars = text.toCharArray();
+		for (int i = 0; i < chars.length; i++)
+		{
+			if (chars[i] >= '0' && chars[i] <= '9')
+			{
+				chars[i] = digit;
+			}
+		}
+		return new String(chars);
 	}
 
 	private static void drawShadowedText(Graphics2D graphics, String text, int x, int y, Color color, float alpha)

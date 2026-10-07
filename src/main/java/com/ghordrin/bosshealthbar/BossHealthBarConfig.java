@@ -48,6 +48,9 @@ public interface BossHealthBarConfig extends Config
 	String DRAIN_CAP_FONT_KEY = "drainCapFont";
 	// Set once the item fonts have been given the look they had with the name's font. Not a config item either.
 	String ITEM_FONTS_MIGRATED_KEY = "itemFontsMigrated";
+	String FIGHT_TIMER_FONT_KEY = "fightTimerFont";
+	// Set once the fight timer font has been given the kill count's font. Not a config item either.
+	String FIGHT_TIMER_FONT_MIGRATED_KEY = "fightTimerFontMigrated";
 
 	@ConfigSection(
 		name = "Look",
@@ -394,10 +397,22 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = FIGHT_TIMER_FONT_KEY,
+		name = "Fight timer font",
+		description = "The font and size of the fight timer.",
+		position = 9,
+		section = textSection
+	)
+	default FontType fightTimerFont()
+	{
+		return FontType.SMALL;
+	}
+
+	@ConfigItem(
 		keyName = "smoothText",
 		name = "Smooth text",
 		description = "Smooth the edges of the text. Turn off for sharp text when the game is scaled up (for example with xBR). The RuneScape fonts are never smoothed.",
-		position = 9,
+		position = 10,
 		section = textSection
 	)
 	default boolean smoothText()
@@ -409,7 +424,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showBossName",
 		name = "Show name",
 		description = "Show the opponent's name.",
-		position = 10,
+		position = 11,
 		section = textSection
 	)
 	default boolean showBossName()
@@ -421,7 +436,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showCombatLevel",
 		name = "Show combat level",
 		description = "Show the opponent's combat level next to its name.",
-		position = 11,
+		position = 12,
 		section = textSection
 	)
 	default boolean showCombatLevel()
@@ -433,7 +448,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "hitpointsTextMode",
 		name = "Hitpoints text",
 		description = "Show the hitpoints as a percentage, a value, or both. Shows a percentage when the max hitpoints aren't known.",
-		position = 12,
+		position = 13,
 		section = textSection
 	)
 	default HitpointsTextMode hitpointsTextMode()
@@ -445,7 +460,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDamageNumber",
 		name = "Show damage number",
 		description = "Show the damage of the latest attack. Hits that land together are added up.",
-		position = 13,
+		position = 14,
 		section = textSection
 	)
 	default boolean showDamageNumber()
@@ -457,7 +472,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "damageNumberSource",
 		name = "Damage number counts",
 		description = "Me shows your latest attack. Party adds up your party's hits while they keep coming, for members who also use this plugin.",
-		position = 14,
+		position = 15,
 		section = textSection
 	)
 	default DamageNumberSource damageNumberSource()
@@ -533,6 +548,18 @@ public interface BossHealthBarConfig extends Config
 		section = bossInfoSection
 	)
 	default boolean showMagicDefence()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showFightTimer",
+		name = "Fight timer",
+		description = "Show how long the fight has lasted, from the first hit on the opponent. It stops when the opponent is defeated.",
+		position = 6,
+		section = bossInfoSection
+	)
+	default boolean showFightTimer()
 	{
 		return true;
 	}
@@ -730,6 +757,18 @@ public interface BossHealthBarConfig extends Config
 	default BarPosition drainCapPosition()
 	{
 		return BarPosition.BOTTOM_LEFT;
+	}
+
+	@ConfigItem(
+		keyName = "fightTimerPosition",
+		name = "Fight timer",
+		description = "Where the fight timer goes.",
+		position = 8,
+		section = layoutSection
+	)
+	default BarPosition fightTimerPosition()
+	{
+		return BarPosition.TOP_CENTER;
 	}
 
 	@ConfigItem(

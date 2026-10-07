@@ -4,6 +4,7 @@
 
 - Fixed the game's pillar health bars being hidden along with its boss health bar, and the game's boss health bar sometimes staying hidden after turning the plugin off
 - New Also show for and Never show for options in When to show: list NPC names or IDs, separated by commas or one per line (the box grows as you add lines), to give them the bar or keep it off them. * matches anything. Never show for wins over everything else, and the game's own boss health bar stays up for those NPCs
+- New Fight timer option in Boss info (on by default) shows how long the fight has lasted, from the first hit on the opponent until it's defeated. It goes top centre by default, with its own Layout spot and font
 
 ## 1.5.0 (2026-10-06)
 

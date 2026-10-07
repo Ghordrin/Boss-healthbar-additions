@@ -206,6 +206,7 @@ public class ItemFontsTest
 		assertSame(SERIF_12, fonts[PARTY_DEFENCE]);
 		assertSame(SERIF_12, fonts[MAGIC_DEFENCE]);
 		assertSame(FontType.SMALL, fonts[DRAIN_CAP]);
+		assertSame(FontType.SMALL, fonts[BarTextPainter.FIGHT_TIMER]);
 	}
 
 	@Test

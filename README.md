@@ -20,7 +20,7 @@ See the [changelog](CHANGELOG.md) for what's new in each version.
 - Use Oldschool theme switches to a plain green bar over red with a thin dark outline, closer to the game's own health bars. See [Oldschool theme](#oldschool-theme) for what applies to it
 - You can lay one of the game's own textures over the fill, on any theme, but not with Use Oldschool theme on
 
-It only shows what the game already tells you. No timers, attack prediction or anything like that.
+Apart from a timer for how long the fight has lasted, it only shows what the game already tells you. No attack timers, attack prediction or anything like that.
 
 ## Which opponents get a bar
 
@@ -54,8 +54,8 @@ Look
 
 Text
 
-- Name font, Damage number font, Combat level font, Hitpoints font, Kill count font, Party defence font, Special attack counts font, Elemental weakness font and Defence drain limit font each pick the font, size, bold and italic of that text. Hitpoints font also sets "Defeated", and Party defence font also sets Magic defence. Icons next to an item grow and shrink with its font, and a row gets taller to fit its largest text. The defaults are the game's RuneScape font, with RuneScape Small for the smaller text. The RuneScape fonts are drawn at any size you set, but at some sizes they can look a little uneven
-- If you used another font before these settings existed, the new ones are set once to match the look you had
+- Name font, Damage number font, Combat level font, Hitpoints font, Kill count font, Party defence font, Special attack counts font, Elemental weakness font, Defence drain limit font and Fight timer font each pick the font, size, bold and italic of that text. Hitpoints font also sets "Defeated", and Party defence font also sets Magic defence. Icons next to an item grow and shrink with its font, and a row gets taller to fit its largest text. The defaults are the game's RuneScape font, with RuneScape Small for the smaller text. The RuneScape fonts are drawn at any size you set, but at some sizes they can look a little uneven
+- If you used another font before these settings existed, the new ones are set once to match the look you had. Fight timer font starts out the same as your Kill count font
 - Show name, Show combat level and Hitpoints text (percentage, value, or both)
 - Smooth text (on by default) smooths the edges of the text. Turn it off for sharp text when the game is scaled up, for example with xBR. The RuneScape fonts are never smoothed
 - Show damage number shows the damage of your latest attack. Hits that land together, like a multi-hit special attack, are added up
@@ -69,6 +69,7 @@ Boss info (folded by default)
 - Special attack counts (on by default) shows the counts from RuneLite's Special Attack Counter plugin with each weapon's icon. Some weapons count damage instead of hits. Needs that plugin on with its info boxes. If the weapons don't all fit, none are shown. They don't show while the Better Party Defence plugin is on, since it hides those info boxes
 - Party defence (on by default) shows the defence from the Party Defence Tracker or Better Party Defence plugin's info box, with the Defence icon and a red down arrow. With Party Defence Tracker it shows once that plugin has an info box for your opponent. If both are on, Better Party Defence is used, since it hides the other plugin's info box. Better Party Defence's info box doesn't say which NPC it's for, so it shows the defence of the boss that plugin is tracking, which may not be the NPC you're attacking (for example a minion during a boss fight)
 - Magic defence (on by default) shows the magic defence from the Better Party Defence plugin's Magic defence info box, with the Magic icon and a red down arrow, right after Party defence and in the same Layout spot. It only shows with that plugin's Magic defence info box turned on, and that box usually only appears after a special attack that lowers magic defence, unless that plugin is set to always show it. Like Party defence, it's for the NPC that plugin is tracking. The two boxes are told apart by their icon. In the rare case that a resource pack's Magic icon isn't recognised, Magic defence shows nothing and Party defence may show the magic value
+- Fight timer (on by default) shows how long the fight has lasted, from the first hit on the boss by anyone, including the hit that brings up the game's own boss health bar. Blocked hits count, poison and other damage over time don't. It stops when the boss is defeated or its health reaches 0, and the "Defeated" bar keeps that time. It starts over when you switch to a different opponent or the bar times out. If the boss turns into a new NPC with the same name partway through the fight, it keeps counting, also when the new one appears within a few seconds after the old one disappears. Nothing shows before the first hit, but its space is kept so the other text doesn't move
 
 Animations (folded by default)
 
@@ -81,8 +82,8 @@ Animations (folded by default)
 
 Layout (folded by default)
 
-- Each item around the bar has a dropdown for where it goes: top left, top centre or top right above the bar, or the same three below it. The Text and Boss info settings still decide whether an item shows, these only decide where. The defaults are the classic layout: name top left, damage number top right, hitpoints bottom right, everything else bottom left
-- Items in the same spot line up next to each other. The more important item sits closer to the edge, in this order: name, hitpoints, damage number, kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit. A centre spot reads left to right in that order
+- Each item around the bar has a dropdown for where it goes: top left, top centre or top right above the bar, or the same three below it. The Text and Boss info settings still decide whether an item shows, these only decide where. The defaults are the classic layout: name top left, damage number top right, hitpoints bottom right, fight timer top centre, everything else bottom left
+- Items in the same spot line up next to each other. The more important item sits closer to the edge, in this order: name, hitpoints, damage number, fight timer, kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit. A centre spot reads left to right in that order
 - When a row gets full, space goes to the more important items first. An item that doesn't fit is left out, along with the less important items after it in the same spot, so nothing jumps into its place. The name is never left out, it's shortened instead
 - "Defeated" shows centred on whichever row Hitpoints is on. The hitpoints keep their space meanwhile, so nothing moves, and "Defeated" is left out if something else is already in the middle of that row
 - If nothing is set to go above or below the bar, that row takes up no space

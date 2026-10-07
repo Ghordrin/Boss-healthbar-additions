@@ -18,10 +18,11 @@ final class BarState
 	final String killCountKey;
 	final BossStats.Info stats;
 	final List<SpecialAttackCounts.Reading> specialAttacks;
+	final String fightTime;
 
 	BarState(String name, int combatLevel, Integer maxHealth, int ratio, int scale,
 		boolean exactHealth, boolean percentOnly, float[] phaseMarkers, HealthIndicatorMarkers.Marker[] userMarkers,
-		String killCountKey, BossStats.Info stats, List<SpecialAttackCounts.Reading> specialAttacks)
+		String killCountKey, BossStats.Info stats, List<SpecialAttackCounts.Reading> specialAttacks, String fightTime)
 	{
 		this.name = name;
 		this.combatLevel = combatLevel;
@@ -35,5 +36,6 @@ final class BarState
 		this.killCountKey = killCountKey;
 		this.stats = stats;
 		this.specialAttacks = specialAttacks;
+		this.fightTime = fightTime;
 	}
 }

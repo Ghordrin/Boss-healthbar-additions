@@ -48,6 +48,7 @@ class BossHealthBarOverlay extends Overlay
 	private static final float[] PREVIEW_PHASE_MARKERS = {0.5f};
 	private static final String PREVIEW_KILL_COUNT = KillCounts.text(128);
 	private static final int PREVIEW_DAMAGE = 37;
+	private static final String PREVIEW_FIGHT_TIME = "1:23";
 	private static final PartyDefence.Reading PREVIEW_DEFENCE = new PartyDefence.Reading("42", Color.WHITE);
 	private static final PartyDefence.Reading PREVIEW_MAGIC_DEFENCE = new PartyDefence.Reading("60", Color.WHITE);
 	private static final BossStats.Info PREVIEW_STATS = new BossStats.Info(BossStats.Element.FIRE,
@@ -75,6 +76,7 @@ class BossHealthBarOverlay extends Overlay
 	private final KillCounts killCounts;
 	private final PartyDefence partyDefence;
 	private final SpecialAttackCounts specialAttackCounts;
+	private final FightTimer fightTimer;
 	private final BarAnimation animation = new BarAnimation();
 	private final Rectangle2D.Float burnClipShape = new Rectangle2D.Float();
 
@@ -122,6 +124,7 @@ class BossHealthBarOverlay extends Overlay
 		KillCounts killCounts,
 		PartyDefence partyDefence,
 		SpecialAttackCounts specialAttackCounts,
+		FightTimer fightTimer,
 		Pickers pickers)
 	{
 		super(plugin);
@@ -142,6 +145,7 @@ class BossHealthBarOverlay extends Overlay
 		this.killCounts = killCounts;
 		this.partyDefence = partyDefence;
 		this.specialAttackCounts = specialAttackCounts;
+		this.fightTimer = fightTimer;
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -314,6 +318,8 @@ class BossHealthBarOverlay extends Overlay
 		final String hitpointsText = textPainter.hitpointsText(state);
 		final String killCountText = !config.showKillCount() ? null
 			: showingPreview ? PREVIEW_KILL_COUNT : killCounts.textFor(state.killCountKey);
+		final boolean showFightTime = config.showFightTimer();
+		final String fightTimeText = showFightTime ? state.fightTime : null;
 		final PartyDefence.Reading defence = defeated || !partyDefence.isAvailable() ? null
 			: showingPreview ? PREVIEW_DEFENCE : partyDefence.readingFor(opponent);
 		final PartyDefence.Reading magicDefence = defeated || !partyDefence.isMagicAvailable() ? null
@@ -367,7 +373,7 @@ class BossHealthBarOverlay extends Overlay
 
 		textPainter.applyTextHints(graphics);
 		textPainter.layoutText(state.name, state.combatLevel, flat ? icon : null, hitpointsText, defeated,
-			showingPreview ? PREVIEW_DAMAGE : 0, killCountText, defence,
+			showingPreview ? PREVIEW_DAMAGE : 0, showFightTime, fightTimeText, killCountText, defence,
 			defence != null || drainCapText != null ? partyDefence.icon() : null,
 			magicDefence, magicDefence != null ? partyDefence.magicIcon() : null, specialAttacks, weaknessText,
 			weaknessText != null ? itemManager.getImage(stats.getWeaknessElement().getRuneItemId()) : null, drainCapText,
@@ -560,6 +566,7 @@ class BossHealthBarOverlay extends Overlay
 		final String killCountKey = infoKillCountKey;
 		final BossStats.Info stats = infoStats;
 		final List<SpecialAttackCounts.Reading> specialAttacks = specialAttackCounts.readings();
+		final String fightTime = fightTimer.getText();
 
 		// The game's bars have exact hitpoints, and some bosses stop sending overhead health updates
 		// while they're shown, so prefer them.
@@ -570,21 +577,21 @@ class BossHealthBarOverlay extends Overlay
 				? gameBossBar.phaseMarkers(nativeMaxHealth) : BarState.NO_PHASE_MARKERS;
 			return new BarState(name, opponent.getCombatLevel(), nativeMaxHealth,
 				gameBossBar.health(), nativeMaxHealth, true, gameBossBar.isPercentOnly(), markers, userMarkers,
-				killCountKey, stats, specialAttacks);
+				killCountKey, stats, specialAttacks, fightTime);
 		}
 
 		final int tobMax = tobBar ? tobBossBar.maxHealth() : 0;
 		if (tobMax > 0)
 		{
 			return new BarState(name, opponent.getCombatLevel(), maxHealth, tobBossBar.health(tobMax), tobMax,
-				false, false, BarState.NO_PHASE_MARKERS, userMarkers, killCountKey, stats, specialAttacks);
+				false, false, BarState.NO_PHASE_MARKERS, userMarkers, killCountKey, stats, specialAttacks, fightTime);
 		}
 
 		if (opponent.getHealthScale() > 0)
 		{
 			return new BarState(name, opponent.getCombatLevel(), maxHealth,
 				opponent.getHealthRatio(), opponent.getHealthScale(), false, false, BarState.NO_PHASE_MARKERS, userMarkers,
-				killCountKey, stats, specialAttacks);
+				killCountKey, stats, specialAttacks, fightTime);
 		}
 
 		return null;
@@ -604,7 +611,7 @@ class BossHealthBarOverlay extends Overlay
 		return new BarState(PREVIEW_NAME, PREVIEW_COMBAT_LEVEL, PREVIEW_MAX_HEALTH, PREVIEW_HEALTH[step],
 			PREVIEW_MAX_HEALTH, true, false, config.showPhaseMarkers() ? PREVIEW_PHASE_MARKERS : BarState.NO_PHASE_MARKERS,
 			HealthIndicatorMarkers.NONE, null, PREVIEW_STATS,
-			specialAttackCounts.isAvailable() ? previewSpecialAttacks() : Collections.emptyList());
+			specialAttackCounts.isAvailable() ? previewSpecialAttacks() : Collections.emptyList(), PREVIEW_FIGHT_TIME);
 	}
 
 	private List<SpecialAttackCounts.Reading> previewSpecialAttacks()
