@@ -1,0 +1,38 @@
+name: Issue ping
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          USER_ID: ${{ vars.DISCORD_USER_ID }}
+          NUMBER: ${{ github.event.issue.number }}
+          TITLE: ${{ github.event.issue.title }}
+          URL: ${{ github.event.issue.html_url }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "DISCORD_WEBHOOK_URL is not set"
+            exit 1
+          fi
+          mention=""
+          if [ -n "$USER_ID" ]; then
+            mention="<@$USER_ID> "
+          fi
+          if [ -z "$NUMBER" ]; then
+            msg="${mention}Test ping from $GITHUB_REPOSITORY"
+          else
+            msg=$(printf '%sNew issue #%s by %s: %s\n%s' "$mention" "$NUMBER" "$AUTHOR" "$TITLE" "$URL")
+          fi
+          jq -n --arg content "$msg" --arg id "$USER_ID" \
+            '{content: $content, allowed_mentions: {parse: [], users: (if $id == "" then [] else [$id] end)}}' \
+            | curl -fsS -H "Content-Type: application/json" -d @- "$WEBHOOK"
