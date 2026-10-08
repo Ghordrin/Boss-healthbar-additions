@@ -54,21 +54,24 @@ Look
 
 Text
 
-- Name font, Damage number font, Combat level font, Hitpoints font, Kill count font, Party defence font, Special attack counts font, Elemental weakness font, Defence drain limit font and Fight timer font each pick the font, size, bold and italic of that text. Hitpoints font also sets "Defeated", and Party defence font also sets Magic defence. Icons next to an item grow and shrink with its font, and a row gets taller to fit its largest text. The defaults are the game's RuneScape font, with RuneScape Small for the smaller text. The RuneScape fonts are drawn at any size you set, but at some sizes they can look a little uneven
-- If you used another font before these settings existed, the new ones are set once to match the look you had. Fight timer font starts out the same as your Kill count font
-- Show name, Show combat level and Hitpoints text (percentage, value, or both)
-- Smooth text (on by default) smooths the edges of the text. Turn it off for sharp text when the game is scaled up, for example with xBR. The RuneScape fonts are never smoothed
+- Show name, Show combat level and Hitpoints text (percentage, value, both, or none)
 - Show damage number shows the damage of your latest attack. Hits that land together, like a multi-hit special attack, are added up
 - Damage number counts picks whose hits it adds up. Me (the default) shows your latest attack. Party keeps a running total of your RuneLite party's hits while they keep coming, and starts over after 2.5 seconds without one. It only counts members who also have this plugin. Outside a party, Party works like Me
+
+Fonts (folded by default)
+
+- Name font, Damage number font, Combat level font, Hitpoints font, Kill count font, Party defence font, Special attack counts font, Elemental weakness font, Defence drain limit font and Fight timer font each pick the font, size, bold and italic of that text. Hitpoints font also sets "Defeated", and Party defence font also sets Magic defence. Icons next to an item grow and shrink with its font, and a row gets taller to fit its largest text. The defaults are the game's RuneScape font, with RuneScape Small for the smaller text. The RuneScape fonts are drawn at any size you set, but at some sizes they can look a little uneven
+- If you used another font before these settings existed, the new ones are set once to match the look you had. Fight timer font starts out the same as your Kill count font
+- Smooth text (on by default) smooths the edges of the text. Turn it off for sharp text when the game is scaled up, for example with xBR. The RuneScape fonts are never smoothed
 
 Boss info (folded by default)
 
 - Kill count (off by default) shows your kill count for the boss. It uses the counts RuneLite's Chat Commands plugin saves, so that plugin needs to be on, and a boss shows nothing until it has seen a kill count message for it. Raid bosses show nothing, since the count belongs to the whole raid
-- Elemental weakness (on by default) shows the element's rune and the extra damage the boss takes from it, for example +40%
-- Defence drain limit (on by default) shows how far the boss's defence can be lowered in total, for example -20, or "no drain". It's a fixed value per boss form
-- Special attack counts (on by default) shows the counts from RuneLite's Special Attack Counter plugin with each weapon's icon. Some weapons count damage instead of hits. Needs that plugin on with its info boxes. If the weapons don't all fit, none are shown. They don't show while the Better Party Defence plugin is on, since it hides those info boxes
 - Party defence (on by default) shows the defence from the Party Defence Tracker or Better Party Defence plugin's info box, with the Defence icon and a red down arrow. With Party Defence Tracker it shows once that plugin has an info box for your opponent. If both are on, Better Party Defence is used, since it hides the other plugin's info box. Better Party Defence's info box doesn't say which NPC it's for, so it shows the defence of the boss that plugin is tracking, which may not be the NPC you're attacking (for example a minion during a boss fight)
 - Magic defence (on by default) shows the magic defence from the Better Party Defence plugin's Magic defence info box, with the Magic icon and a red down arrow, right after Party defence and in the same Layout spot. It only shows with that plugin's Magic defence info box turned on, and that box usually only appears after a special attack that lowers magic defence, unless that plugin is set to always show it. Like Party defence, it's for the NPC that plugin is tracking. The two boxes are told apart by their icon. In the rare case that a resource pack's Magic icon isn't recognised, Magic defence shows nothing and Party defence may show the magic value
+- Special attack counts (on by default) shows the counts from RuneLite's Special Attack Counter plugin with each weapon's icon. Some weapons count damage instead of hits. Needs that plugin on with its info boxes. If the weapons don't all fit, none are shown. They don't show while the Better Party Defence plugin is on, since it hides those info boxes
+- Elemental weakness (on by default) shows the element's rune and the extra damage the boss takes from it, for example +40%
+- Defence drain limit (on by default) shows how far the boss's defence can be lowered in total, for example -20, or "no drain". It's a fixed value per boss form
 - Fight timer (on by default) shows how long the fight has lasted, from the first hit on the boss by anyone, including the hit that brings up the game's own boss health bar. Blocked hits count, poison and other damage over time don't. It stops when the boss is defeated or its health reaches 0, and the "Defeated" bar keeps that time. It starts over when you switch to a different opponent or the bar times out. If the boss turns into a new NPC with the same name partway through the fight, it keeps counting, also when the new one appears within a few seconds after the old one disappears. Nothing shows before the first hit, but its space is kept so the other text doesn't move
 
 Animations (folded by default)
@@ -91,7 +94,7 @@ Layout (folded by default)
 Custom colors (folded by default)
 
 - Choose custom icon picks the item shown at the bar ends on the Custom theme. It's in the bar's right-click menu too. The search opens in your chatbox, so you need to be logged in
-- The colors the Custom theme uses
+- The colors the Custom theme uses. Combat level text also colors the fight timer, kill count, elemental weakness and defence drain limit
 
 When to show (folded by default)
 
@@ -111,7 +114,7 @@ Tick Use Oldschool theme in the Look section for a simpler bar in the style of t
 - A flat green bar over red with a thin dark outline, and plain text
 - The boss's icon, small before its name, with Show icons and Use boss icon on
 - The damage trail, heals, the low health pulse (without the glow), flash on big hits, phase markers and Boss Health Indicators lines
-- The intro and defeat animations, Burn away included, and every Text, Boss info and Layout option
+- The intro and defeat animations, Burn away included, and every Text, Fonts, Boss info and Layout option
 
 These don't apply to it:
 

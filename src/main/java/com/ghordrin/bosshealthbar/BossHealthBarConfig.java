@@ -67,9 +67,17 @@ public interface BossHealthBarConfig extends Config
 	String textSection = "text";
 
 	@ConfigSection(
+		name = "Fonts",
+		description = "The font and size of each text around the bar.",
+		position = 2,
+		closedByDefault = true
+	)
+	String fontsSection = "fonts";
+
+	@ConfigSection(
 		name = "Boss info",
 		description = "Extra details about the boss shown around the bar.",
-		position = 2,
+		position = 3,
 		closedByDefault = true
 	)
 	String bossInfoSection = "bossInfo";
@@ -77,7 +85,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigSection(
 		name = "Animations",
 		description = "How the bar moves when health changes, appears and goes.",
-		position = 3,
+		position = 4,
 		closedByDefault = true
 	)
 	String animationsSection = "animations";
@@ -85,7 +93,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigSection(
 		name = "Layout",
 		description = "Where each item goes around the bar.",
-		position = 4,
+		position = 5,
 		closedByDefault = true
 	)
 	String layoutSection = "layout";
@@ -93,7 +101,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigSection(
 		name = "Custom colors",
 		description = "The icon and colors of the Custom theme.",
-		position = 5,
+		position = 6,
 		closedByDefault = true
 	)
 	String customColorsSection = "customColors";
@@ -101,7 +109,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigSection(
 		name = "When to show",
 		description = "Which opponents get a bar, and how it works with other health bars.",
-		position = 6,
+		position = 7,
 		closedByDefault = true
 	)
 	String whenToShowSection = "whenToShow";
@@ -293,7 +301,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Name font",
 		description = "The font and size of the name.",
 		position = 0,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType font()
 	{
@@ -305,7 +313,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Damage number font",
 		description = "The font and size of the damage number.",
 		position = 1,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType damageNumberFont()
 	{
@@ -317,7 +325,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Combat level font",
 		description = "The font and size of the combat level next to the name.",
 		position = 2,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType combatLevelFont()
 	{
@@ -329,7 +337,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Hitpoints font",
 		description = "The font and size of the hitpoints text and the \"Defeated\" label.",
 		position = 3,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType hitpointsFont()
 	{
@@ -341,7 +349,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Kill count font",
 		description = "The font and size of the kill count.",
 		position = 4,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType killCountFont()
 	{
@@ -353,7 +361,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Party defence font",
 		description = "The font and size of the party defence and magic defence. Their icons follow the size.",
 		position = 5,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType partyDefenceFont()
 	{
@@ -365,7 +373,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Special attack counts font",
 		description = "The font and size of the special attack counts. The weapon icons follow the size.",
 		position = 6,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType specialAttackCountsFont()
 	{
@@ -377,7 +385,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Elemental weakness font",
 		description = "The font and size of the elemental weakness. The rune icon follows the size.",
 		position = 7,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType weaknessFont()
 	{
@@ -389,7 +397,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Defence drain limit font",
 		description = "The font and size of the defence drain limit. The icon follows the size.",
 		position = 8,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType drainCapFont()
 	{
@@ -401,7 +409,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Fight timer font",
 		description = "The font and size of the fight timer.",
 		position = 9,
-		section = textSection
+		section = fontsSection
 	)
 	default FontType fightTimerFont()
 	{
@@ -413,7 +421,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Smooth text",
 		description = "Smooth the edges of the text. Turn off for sharp text when the game is scaled up (for example with xBR). The RuneScape fonts are never smoothed.",
 		position = 10,
-		section = textSection
+		section = fontsSection
 	)
 	default boolean smoothText()
 	{
@@ -424,7 +432,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showBossName",
 		name = "Show name",
 		description = "Show the opponent's name.",
-		position = 11,
+		position = 0,
 		section = textSection
 	)
 	default boolean showBossName()
@@ -436,7 +444,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showCombatLevel",
 		name = "Show combat level",
 		description = "Show the opponent's combat level next to its name.",
-		position = 12,
+		position = 1,
 		section = textSection
 	)
 	default boolean showCombatLevel()
@@ -447,8 +455,8 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "hitpointsTextMode",
 		name = "Hitpoints text",
-		description = "Show the hitpoints as a percentage, a value, or both. Shows a percentage when the max hitpoints aren't known.",
-		position = 13,
+		description = "Show the hitpoints as a percentage, a value, both, or not at all. Shows a percentage when the max hitpoints aren't known.",
+		position = 2,
 		section = textSection
 	)
 	default HitpointsTextMode hitpointsTextMode()
@@ -460,7 +468,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDamageNumber",
 		name = "Show damage number",
 		description = "Show the damage of the latest attack. Hits that land together are added up.",
-		position = 14,
+		position = 3,
 		section = textSection
 	)
 	default boolean showDamageNumber()
@@ -472,7 +480,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "damageNumberSource",
 		name = "Damage number counts",
 		description = "Me shows your latest attack. Party adds up your party's hits while they keep coming, for members who also use this plugin.",
-		position = 15,
+		position = 4,
 		section = textSection
 	)
 	default DamageNumberSource damageNumberSource()
@@ -496,7 +504,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showWeakness",
 		name = "Elemental weakness",
 		description = "Show the boss's elemental weakness and extra damage, for example +40%. Values from the OSRS Wiki.",
-		position = 1,
+		position = 4,
 		section = bossInfoSection
 	)
 	default boolean showWeakness()
@@ -508,7 +516,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showDrainCap",
 		name = "Defence drain limit",
 		description = "Show how far the boss's defence can be lowered in total, or \"no drain\". Values from the OSRS Wiki.",
-		position = 2,
+		position = 5,
 		section = bossInfoSection
 	)
 	default boolean showDrainCap()
@@ -532,7 +540,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showPartyDefence",
 		name = "Party defence",
 		description = "Show the defence from the Party Defence Tracker or Better Party Defence plugin's info box. Needs one of them installed and on.",
-		position = 4,
+		position = 1,
 		section = bossInfoSection
 	)
 	default boolean showPartyDefence()
@@ -544,7 +552,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showMagicDefence",
 		name = "Magic defence",
 		description = "Show the magic defence from the Better Party Defence plugin's Magic defence info box. Needs that plugin with its Magic defence info box on.",
-		position = 5,
+		position = 2,
 		section = bossInfoSection
 	)
 	default boolean showMagicDefence()
@@ -839,7 +847,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "customTextColor",
 		name = "Name and damage text",
-		description = "The color of the name and the damage number.",
+		description = "The color of the name and the damage number, and of the party and magic defence and special attack counts when they have no color of their own.",
 		position = 5,
 		section = customColorsSection
 	)
@@ -852,7 +860,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "customLevelTextColor",
 		name = "Combat level text",
-		description = "The color of the combat level next to the name.",
+		description = "The color of the combat level, fight timer, kill count, elemental weakness and defence drain limit.",
 		position = 6,
 		section = customColorsSection
 	)

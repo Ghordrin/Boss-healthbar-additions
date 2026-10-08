@@ -12,6 +12,9 @@
 - Fixed the fight timer starting over when a boss fought as a pair swaps between its two halves, or when the first of the two dies
 - Fixed the bar dropping to 0 for a moment when the game's boss health bar moves to another NPC of the same fight. An NPC with no health reading yet now keeps the health it last had in the fight
 - With Show icons off and Use boss icon on, the boss's icon now shows small before its name, as it does on the Oldschool theme with Show icons on
+- The font settings and Smooth text moved to their own Fonts section, folded by default. Your saved fonts are kept
+- Boss info now lists Party defence and Magic defence right after Kill count
+- The Custom colors tooltips now say which text each color applies to
 
 ## 1.5.0 (2026-10-06)
 
