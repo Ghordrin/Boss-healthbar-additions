@@ -203,7 +203,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "useBossIcon",
 		name = "Use boss icon",
-		description = "Use the icon of the boss you're fighting instead of the theme's. Raid bosses show their pet. Needs Show icons.",
+		description = "Use the icon of the boss you're fighting instead of the theme's. Raid bosses show their pet. With Show icons off, it shows small before the name instead, except with Use Oldschool theme on.",
 		position = 5,
 		section = lookSection
 	)

@@ -465,7 +465,7 @@ class BossHealthBarOverlay extends Overlay
 		setOpacity(graphics, originalComposite, opacity);
 
 		textPainter.applyTextHints(graphics);
-		textPainter.layoutText(state.name, state.combatLevel, flat ? icon : null, hitpointsText, defeated,
+		textPainter.layoutText(state.name, state.combatLevel, flat ? icon : nameBossIcon(), hitpointsText, defeated,
 			showingPreview ? PREVIEW_DAMAGE : 0, showFightTime, fightTimeText, killCountText, defence,
 			defence != null || drainCapText != null ? partyDefence.icon() : null,
 			magicDefence, magicDefence != null ? partyDefence.magicIcon() : null, specialAttacks, weaknessText,
@@ -616,6 +616,16 @@ class BossHealthBarOverlay extends Overlay
 	static boolean showsGold(boolean rolledGold, boolean flat)
 	{
 		return rolledGold && !flat;
+	}
+
+	// Without crests, the boss's icon goes small before the name, as on the Oldschool theme.
+	private BufferedImage nameBossIcon()
+	{
+		if (config.showIcons() || !config.useBossIcon() || showingPreview || infoBossIcon == null)
+		{
+			return null;
+		}
+		return bossIcon(infoBossIcon);
 	}
 
 	private BufferedImage resolveIcon(BarTheme theme)

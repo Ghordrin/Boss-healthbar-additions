@@ -45,7 +45,7 @@ Look
 - Match boss colors (off by default) gives each boss its own bar colors, on any theme. A boss keeps the same colors in every form
 - Rare gold bars (on by default) turns about 1 in 250 bars gold, with a shine and a few sparkles. It's rolled once per opponent and is only for looks
 - Show icons (on by default) shows the icon in a crest at both bar ends, or small before the name with Use Oldschool theme on
-- Use boss icon (on by default) uses the boss's hiscores icon instead of the theme's. Raid bosses show their pet. Needs Show icons
+- Use boss icon (on by default) uses the boss's hiscores icon instead of the theme's. Raid bosses show their pet. With Show icons off (and Use Oldschool theme off), the boss's icon shows small before the name instead
 - Bar ends picks the ornament at each end of the bar. Classic (the default) has an end piece with a diamond. Subtle curves the frame into a small bracket with curled tips. The ends only show with Show icons off, since the icon crests cover them
 - Choose fill texture opens a picker with the game's own textures to lay over the fill. It's in the bar's right-click menu too
 - Show phase markers shows the same phase markers as the game's own boss health bar
