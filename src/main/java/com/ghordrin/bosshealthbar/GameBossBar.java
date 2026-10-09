@@ -19,6 +19,9 @@ class GameBossBar
 	// Set to 1 on NPCs whose game boss bar only shows a percentage. No gameval constant exists for it.
 	private static final int PARAM_HP_PERCENTAGE_ONLY = 2289;
 
+	// The layer holding only the bar, since the game mounts other HUDs, like pillar health bars, in the same interface.
+	private static final int GAME_BAR = InterfaceID.HpbarHud.HPDODGER;
+
 	private static final int[] PHASE_MARKER_VARBITS = {
 		VarbitID.HPBAR_HUD_LOWER_THRESHOLD,
 		VarbitID.HPBAR_HUD_UPPER_THRESHOLD,
@@ -127,7 +130,7 @@ class GameBossBar
 
 	void update(Actor opponent, boolean replaceEnabled, boolean opponentGetsBar)
 	{
-		final Widget bar = client.getWidget(InterfaceID.HpbarHud.UNIVERSE);
+		final Widget bar = client.getWidget(GAME_BAR);
 		if (bar == null)
 		{
 			hidden = false;
@@ -171,18 +174,26 @@ class GameBossBar
 		{
 			return;
 		}
+		release();
+	}
 
-		final Widget bar = client.getWidget(InterfaceID.HpbarHud.UNIVERSE);
-		if (bar != null)
+	private void release()
+	{
+		if (hidden)
 		{
-			bar.setHidden(false);
+			final Widget bar = client.getWidget(GAME_BAR);
+			if (bar != null)
+			{
+				bar.setHidden(false);
+			}
 		}
 		hidden = false;
 	}
 
 	void reset()
 	{
-		hidden = false;
+		// Nothing else unhides the bar, so do it here even when the game no longer tracks an NPC.
+		release();
 		npc = null;
 		searchedId = -1;
 		replacedId = -1;

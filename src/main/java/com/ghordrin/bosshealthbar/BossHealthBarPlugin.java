@@ -126,7 +126,6 @@ public class BossHealthBarPlugin extends Plugin
 		pickers.close();
 		clientThread.invoke(() ->
 		{
-			gameBossBar.restore();
 			tobBossBar.restore();
 			resetState();
 		});

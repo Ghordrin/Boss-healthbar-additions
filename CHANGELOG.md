@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the game's pillar health bars being hidden along with its boss health bar, and the game's boss health bar sometimes staying hidden after turning the plugin off
+
 ## 1.5.0 (2026-10-06)
 
 - Party defence (was Party Defence Tracker defence) now also reads the Better Party Defence plugin's info box. If both plugins are on, Better Party Defence is used
