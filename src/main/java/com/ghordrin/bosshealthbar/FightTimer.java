@@ -41,16 +41,17 @@ class FightTimer
 	@Getter(AccessLevel.PACKAGE)
 	private String text;
 
-	void opponentChanged(Actor next, boolean previousDefeated, int tick)
+	void opponentChanged(Actor next, String nextName, boolean previousDefeated, boolean pairHeld, int tick)
 	{
-		opponentChanged(next.getName(), previousDefeated, next == lastHitActor ? lastHitTick : NO_TICK, tick);
+		opponentChanged(nextName, previousDefeated, pairHeld, next == lastHitActor ? lastHitTick : NO_TICK, tick);
 		opponent = next;
 	}
 
 	// earlierHitTick is the latest hit on the new opponent from before it became the opponent, if any.
-	void opponentChanged(String nextName, boolean previousDefeated, int earlierHitTick, int tick)
+	// pairHeld is whether the new opponent's pair is still being kept from before.
+	void opponentChanged(String nextName, boolean previousDefeated, boolean pairHeld, int earlierHitTick, int tick)
 	{
-		if (!keepsCounting(name, previousDefeated || endTick != NO_TICK, clearedTick, nextName, tick))
+		if (!keepsCounting(name, previousDefeated || endTick != NO_TICK, clearedTick, nextName, pairHeld, tick))
 		{
 			clearFight();
 		}
@@ -151,6 +152,15 @@ class FightTimer
 		updateText(tick);
 	}
 
+	// The pair was forgotten, so its next member starts a new fight. The time shown stays until then.
+	void pairCleared(String pair)
+	{
+		if (Objects.equals(name, pair))
+		{
+			name = null;
+		}
+	}
+
 	void reset()
 	{
 		clearFight();
@@ -202,12 +212,14 @@ class FightTimer
 	}
 
 	// A new NPC with the same name carries on the fight, unless the last one was defeated or has been gone too long.
-	static boolean keepsCounting(String previousName, boolean previousDefeated, int clearedTick, String nextName, int tick)
+	// The members of a pair can be out of reach for longer between phases, so they don't time out while the pair is kept.
+	static boolean keepsCounting(String previousName, boolean previousDefeated, int clearedTick, String nextName,
+		boolean pairHeld, int tick)
 	{
 		return previousName != null
 			&& !previousDefeated
 			&& Objects.equals(previousName, nextName)
-			&& (clearedTick == NO_TICK || tick - clearedTick <= SWAP_TICKS);
+			&& (clearedTick == NO_TICK || tick - clearedTick <= SWAP_TICKS || (pairHeld && PairBosses.isPairKey(nextName)));
 	}
 
 	static String format(int ticks)

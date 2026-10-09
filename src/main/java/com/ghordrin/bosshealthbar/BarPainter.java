@@ -112,12 +112,13 @@ class BarPainter
 	}
 
 	void drawBar(Graphics2D graphics, ThemeColors colors, BarState state, BarAnimation animation, boolean defeated,
-		int y, int width, int height, float fillProgress, boolean useImageCache, boolean flat, BarEnds ends)
+		int y, int width, int height, float fillProgress, boolean useImageCache, boolean flat, BarEnds ends, boolean flash,
+		boolean pulse)
 	{
 		updateDerivedColors(colors);
 		final float displayedFraction = animation.getDisplayedFraction();
 		final float[] phaseMarkers = defeated ? BarState.NO_PHASE_MARKERS : state.phaseMarkers;
-		final float lowHealthPulse = animation.lowHealthPulse(defeated, config.lowHealthEffect(), config.lowHealthThreshold());
+		final float lowHealthPulse = !pulse ? 0f : animation.lowHealthPulse(defeated, config.lowHealthEffect(), config.lowHealthThreshold());
 		final Color frameColor = colors.getFrame();
 		final int barX = capWidth(height, flat, ends);
 		final int barWidth = width - barX * 2;
@@ -265,7 +266,7 @@ class BarPainter
 			}
 		}
 
-		if (config.flashOnBigHits() && state.maxHealth != null)
+		if (flash && config.flashOnBigHits() && state.maxHealth != null)
 		{
 			final long lastHit = damageTracker.getLastHitMillis();
 			if (lastHit != 0 && damageTracker.getLastHitAmount() >= state.maxHealth * BIG_HIT_FRACTION)

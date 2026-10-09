@@ -81,6 +81,9 @@ public class BossHealthBarPlugin extends Plugin
 	private FightTimer fightTimer;
 
 	@Inject
+	private PairBosses pairBosses;
+
+	@Inject
 	private OpponentInfoOverride opponentInfoOverride;
 
 	@Inject
@@ -287,6 +290,7 @@ public class BossHealthBarPlugin extends Plugin
 		superiorTracker.reset();
 		opponentTracker.reset();
 		damageTracker.reset();
+		pairBosses.reset();
 		killCounts.invalidate();
 		partyDefence.reset();
 		specialAttackCounts.reset();
@@ -415,6 +419,7 @@ public class BossHealthBarPlugin extends Plugin
 		gameBossBar.onNpcSpawned();
 		tobBossBar.onNpcSpawned(event.getNpc());
 		superiorTracker.onNpcSpawned(event.getNpc());
+		pairBosses.onNpcSpawned(event.getNpc());
 		opponentTracker.onNpcSpawned(event.getNpc());
 	}
 
@@ -422,6 +427,7 @@ public class BossHealthBarPlugin extends Plugin
 	public void onNpcChanged(NpcChanged event)
 	{
 		tobBossBar.onNpcChanged(event.getNpc());
+		pairBosses.onNpcChanged(event.getNpc());
 	}
 
 	@Subscribe
@@ -431,6 +437,7 @@ public class BossHealthBarPlugin extends Plugin
 		tobBossBar.onNpcDespawned(event.getNpc());
 		superiorTracker.onNpcDespawned(event.getNpc());
 		opponentTracker.onNpcDespawned(event.getNpc());
+		pairBosses.onNpcDespawned(event.getNpc());
 	}
 
 	@Subscribe
@@ -444,9 +451,14 @@ public class BossHealthBarPlugin extends Plugin
 	{
 		tobBossBar.onGameTick();
 		superiorTracker.onGameTick();
+		for (String pair : pairBosses.onGameTick(opponentTracker.getOpponent()))
+		{
+			opponentTracker.pairCleared(pair);
+		}
 		opponentTracker.onGameTick();
 		final Actor opponent = opponentTracker.getOpponent();
-		fightTimer.onGameTick(opponent, opponentTracker.updateOpponentDefeated(), client.getTickCount());
+		fightTimer.onGameTick(opponent, opponentTracker.updateOpponentDefeated() && !pairBosses.otherMemberAlive(opponent),
+			client.getTickCount());
 		partyDefence.update(opponentTracker.getOpponent());
 		specialAttackCounts.update(opponentTracker.getOpponent());
 	}

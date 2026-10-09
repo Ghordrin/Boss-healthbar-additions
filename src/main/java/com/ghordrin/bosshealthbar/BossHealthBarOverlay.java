@@ -61,6 +61,10 @@ class BossHealthBarOverlay extends Overlay
 	private static final int CREST_OVERLAP = 2;
 	private static final Duration SWITCH_HOLD = Duration.ofSeconds(3);
 	private static final float CLIP_REACH = 4096f;
+	private static final BarState PREVIEW_PARTNER = new BarState("Partner", 0, PREVIEW_MAX_HEALTH, 300, PREVIEW_MAX_HEALTH,
+		true, false, BarState.NO_PHASE_MARKERS, HealthIndicatorMarkers.NONE, null, null, Collections.emptyList(), null);
+	private static final int PARTNER_GAP = 3;
+	private static final int PARTNER_MIN_HEIGHT = 4;
 
 	private final Client client;
 	private final BossHealthBarConfig config;
@@ -80,7 +84,9 @@ class BossHealthBarOverlay extends Overlay
 	private final PartyDefence partyDefence;
 	private final SpecialAttackCounts specialAttackCounts;
 	private final FightTimer fightTimer;
+	private final PairBosses pairs;
 	private final BarAnimation animation = new BarAnimation();
+	private final BarAnimation partnerAnimation = new BarAnimation();
 	private final Rectangle2D.Float burnClipShape = new Rectangle2D.Float();
 
 	private Actor trackedOpponent;
@@ -91,6 +97,10 @@ class BossHealthBarOverlay extends Overlay
 	private boolean rolledGold;
 	private long switchHoldUntilNanos;
 	private boolean retargetPending;
+	private PairBosses.Slot partnerSlot;
+	private BarState partnerTextState;
+	private HitpointsTextMode partnerTextMode;
+	private String partnerText;
 	private boolean resuming;
 
 	private Actor infoActor;
@@ -130,6 +140,7 @@ class BossHealthBarOverlay extends Overlay
 		PartyDefence partyDefence,
 		SpecialAttackCounts specialAttackCounts,
 		FightTimer fightTimer,
+		PairBosses pairs,
 		Pickers pickers)
 	{
 		super(plugin);
@@ -151,6 +162,7 @@ class BossHealthBarOverlay extends Overlay
 		this.partyDefence = partyDefence;
 		this.specialAttackCounts = specialAttackCounts;
 		this.fightTimer = fightTimer;
+		this.pairs = pairs;
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -179,6 +191,8 @@ class BossHealthBarOverlay extends Overlay
 		lastStateActor = null;
 		switchHoldUntilNanos = 0;
 		retargetPending = false;
+		partnerAnimation.reset();
+		partnerSlot = null;
 		resuming = false;
 	}
 
@@ -432,6 +446,13 @@ class BossHealthBarOverlay extends Overlay
 		final int shownInset = (width - shownWidth) / 2;
 		final int totalWidth = leftExtent + width + rightExtent;
 
+		// Kept for the whole fight with a pair, so the bar doesn't move when the other one's health first shows.
+		final boolean partnerArea = showingPreview || PairBosses.isPairMember(trackedOpponent);
+		final int partnerBarHeight = Math.max(PARTNER_MIN_HEIGHT, Math.round(barHeight * 0.5f));
+		final int partnerCapRise = capRise(partnerBarHeight, flat, ends);
+		final int partnerRowHeight = partnerArea ? textPainter.partnerRowHeight() : 0;
+		final int partnerHeight = partnerArea ? PARTNER_GAP + partnerRowHeight + partnerCapRise * 2 + partnerBarHeight : 0;
+
 		final Composite originalComposite = graphics.getComposite();
 		final float opacity = animation.fadeInOpacity(now) * defeatOpacity;
 		setOpacity(graphics, originalComposite, opacity);
@@ -460,7 +481,7 @@ class BossHealthBarOverlay extends Overlay
 			graphics.clip(burnClip(burn, totalWidth, leftExtent + shownInset));
 		}
 		barPainter.drawBar(graphics, colors, state, animation, defeated, barY, shownWidth, barHeight, fillProgress,
-			shownWidth == width, flat, ends);
+			shownWidth == width, flat, ends, true, true);
 		if (gold)
 		{
 			goldBar.drawShine(graphics, capWidth - 1, barY - 1, shownWidth - capWidth * 2 + 2, barHeight + 2,
@@ -476,9 +497,18 @@ class BossHealthBarOverlay extends Overlay
 		textPainter.drawRow(graphics, false, colors);
 		setOpacity(graphics, originalComposite, opacity);
 
+		if (partnerArea)
+		{
+			final int partnerTop = barY + barHeight + capRise + footerHeight + PARTNER_GAP;
+			drawPartner(graphics, originalComposite, opacity * animation.defeatTextOpacity(now, burnAway),
+				opacity * textOpacity, baseColors, partnerTop, partnerTop + partnerRowHeight + partnerCapRise, width,
+				shownWidth, shownInset, capWidth, partnerBarHeight, fillProgress, flat, ends);
+			setOpacity(graphics, originalComposite, opacity);
+		}
+
 		graphics.translate(-leftExtent, -(topOffset + slideOffset));
 
-		int totalHeight = topOffset + barY + barHeight + capRise + footerHeight;
+		int totalHeight = topOffset + barY + barHeight + capRise + footerHeight + partnerHeight;
 		final int centerY = topOffset + headerHeight + barCenterOffset;
 		// Crests and sparkles burn away with the bar.
 		final Shape clip = burn > 0f ? graphics.getClip() : null;
@@ -517,6 +547,50 @@ class BossHealthBarOverlay extends Overlay
 		graphics.setComposite(originalComposite);
 
 		return new Dimension(leftExtent + width + rightExtent, totalHeight);
+	}
+
+	// The other member of a pair, in the main bar's colours but without its extras.
+	private void drawPartner(Graphics2D graphics, Composite originalComposite, float barOpacity, float textOpacity,
+		ThemeColors colors, int rowTop, int barY, int width, int shownWidth, int shownInset, int capWidth, int barHeight,
+		float fillProgress, boolean flat, BarEnds ends)
+	{
+		final PairBosses.Slot slot = showingPreview ? null : pairs.partnerOf(trackedOpponent);
+		if (slot != partnerSlot)
+		{
+			// The bars swapped, so jump to the new partner's health instead of animating from the old one's.
+			partnerAnimation.reset();
+			partnerSlot = slot;
+		}
+		final BarState partner = showingPreview ? PREVIEW_PARTNER : slot != null ? slot.state : null;
+		if (partner == null)
+		{
+			return;
+		}
+		final boolean dead = slot != null && slot.dead;
+		partnerAnimation.tick(clamp01(partner.ratio / (float) partner.scale), config.animationSpeed(),
+			config.showDamageTrail(), 0);
+
+		setOpacity(graphics, originalComposite, textOpacity);
+		textPainter.drawPartnerRow(graphics, partner.name, partnerHitpointsText(partner), dead, colors, width, capWidth,
+			rowTop);
+
+		setOpacity(graphics, originalComposite, barOpacity);
+		graphics.translate(shownInset, 0);
+		barPainter.drawBar(graphics, colors, partner, partnerAnimation, dead, barY, shownWidth, barHeight, fillProgress,
+			false, flat, ends, false, false);
+		graphics.translate(-shownInset, 0);
+	}
+
+	private String partnerHitpointsText(BarState partner)
+	{
+		final HitpointsTextMode mode = config.hitpointsTextMode();
+		if (partner != partnerTextState || mode != partnerTextMode)
+		{
+			partnerText = textPainter.hitpointsText(partner);
+			partnerTextState = partner;
+			partnerTextMode = mode;
+		}
+		return partnerText;
 	}
 
 	// Everything left of the burning edge. originX is where the current origin is across the overlay.

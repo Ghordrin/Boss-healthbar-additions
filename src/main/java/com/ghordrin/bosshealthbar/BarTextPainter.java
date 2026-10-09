@@ -128,6 +128,11 @@ class BarTextPainter
 	private int ellipsizedWidth;
 	private String ellipsizedName;
 
+	private String partnerNameSource;
+	private Font partnerNameFont;
+	private int partnerNameWidth;
+	private String partnerName;
+
 	private final ScaledIcon defenceIconCache = new ScaledIcon();
 	private final ScaledIcon magicIconCache = new ScaledIcon();
 	private final ScaledIcon drainIconCache = new ScaledIcon();
@@ -479,6 +484,51 @@ class BarTextPainter
 	int bottomRowHeight()
 	{
 		return bottomHeight;
+	}
+
+	// The partner bar's text row, in the Hitpoints font. Sized from the settings so it doesn't jump.
+	int partnerRowHeight()
+	{
+		return partnerRowHeight(available[NAME], available[HITPOINTS], itemAbove[HITPOINTS], itemBelow[HITPOINTS]);
+	}
+
+	@VisibleForTesting
+	static int partnerRowHeight(boolean showName, boolean showHitpoints, int above, int below)
+	{
+		return showName || showHitpoints ? above + below : 0;
+	}
+
+	// Name on the left, hitpoints or "Defeated" on the right, between the bar's caps.
+	void drawPartnerRow(Graphics2D graphics, String name, String hitpointsText, boolean defeated, ThemeColors colors,
+		int width, int capWidth, int top)
+	{
+		final FontMetrics fontMetrics = metrics[HITPOINTS];
+		final int left = capWidth + TEXT_INSET;
+		final int right = width - capWidth - TEXT_INSET;
+		final int baseline = top + itemAbove[HITPOINTS];
+		useFont(graphics, HITPOINTS);
+
+		final String rightText = defeated ? (available[HITPOINTS] ? DEFEATED_TEXT : null) : hitpointsText;
+		int nameRight = right;
+		if (rightText != null)
+		{
+			final int textWidth = fontMetrics.stringWidth(rightText);
+			drawShadowedText(graphics, rightText, right - textWidth, baseline,
+				defeated ? colors.getDefeatedText() : colors.getHitpointsText(), 1f);
+			nameRight -= textWidth + LEVEL_GAP;
+		}
+
+		if (available[NAME] && name != null && nameRight > left)
+		{
+			if (!name.equals(partnerNameSource) || fontMetrics.getFont() != partnerNameFont || nameRight - left != partnerNameWidth)
+			{
+				partnerName = ellipsize(name, fontMetrics, nameRight - left);
+				partnerNameSource = name;
+				partnerNameFont = fontMetrics.getFont();
+				partnerNameWidth = nameRight - left;
+			}
+			drawShadowedText(graphics, partnerName, left, baseline, colors.getText(), 1f);
+		}
 	}
 
 	void layoutText(String name, int combatLevel, BufferedImage nameIcon, String hitpointsText,

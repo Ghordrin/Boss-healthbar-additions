@@ -8,6 +8,8 @@
 - Walking out of sight of a boss no longer shows "Defeated". When you come back and attack it, or it comes back into view within a minute, the bar carries on with the health it had and the fight timer keeps going, without the intro. The health updates on the next hit, and if the boss healed a lot while you were away, the timer starts over
 - Fixed a boss that restores its health while stunned showing "Defeated" and stopping the fight timer
 - When this bar replaces the game's boss health bar, the game's pillar bars are drawn in the same style too, in their own box you can move
+- For bosses fought as a pair, a smaller bar under the main one now shows the other one's health
+- Fixed the fight timer starting over when a boss fought as a pair swaps between its two halves, or when the first of the two dies
 
 ## 1.5.0 (2026-10-06)
 

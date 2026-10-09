@@ -56,6 +56,20 @@ public class BossMemoryTest
 	}
 
 	@Test
+	public void aForgottenPairDropsTheEntriesOfItsFight()
+	{
+		final FightTimer.Fight pairFight = new FightTimer.Fight(PairBosses.GUARDIANS, 10, NO_TICK);
+		memory.remember(1, "First", 100, pairFight);
+		memory.remember(2, "Second", 100, pairFight);
+		memory.remember(3, "Boss", 100, FIGHT);
+
+		memory.forgetFight(PairBosses.GUARDIANS);
+		assertNull(memory.find(1, "First", 101));
+		assertNull(memory.find(2, "Second", 101));
+		assertNotNull(memory.find(3, "Boss", 101));
+	}
+
+	@Test
 	public void remembersByIndexAndName()
 	{
 		memory.remember(5, "Boss", 100, FIGHT);

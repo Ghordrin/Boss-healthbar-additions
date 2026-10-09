@@ -105,6 +105,11 @@ class BossMemory
 		}
 	}
 
+	void forgetFight(String fightName)
+	{
+		entries.removeIf(entry -> entry.fight != null && Objects.equals(entry.fight.name, fightName));
+	}
+
 	void clear()
 	{
 		entries.clear();

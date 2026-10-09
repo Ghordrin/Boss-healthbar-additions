@@ -29,6 +29,7 @@ class OpponentTracker
 	private final SuperiorTracker superiors;
 	private final DamageTracker damage;
 	private final FightTimer fightTimer;
+	private final PairBosses pairs;
 	private final BossMemory memory;
 
 	@Getter(AccessLevel.PACKAGE)
@@ -55,7 +56,7 @@ class OpponentTracker
 
 	@Inject
 	OpponentTracker(Client client, BossHealthBarConfig config, GameBossBar gameBossBar, TobBossBar tobBossBar,
-		SuperiorTracker superiors, DamageTracker damage, FightTimer fightTimer, BossMemory memory)
+		SuperiorTracker superiors, DamageTracker damage, FightTimer fightTimer, PairBosses pairs, BossMemory memory)
 	{
 		this.client = client;
 		this.config = config;
@@ -64,6 +65,7 @@ class OpponentTracker
 		this.superiors = superiors;
 		this.damage = damage;
 		this.fightTimer = fightTimer;
+		this.pairs = pairs;
 		this.memory = memory;
 	}
 
@@ -148,7 +150,7 @@ class OpponentTracker
 			npc.getName(), npc.getId(), NpcUtil.currentId(npc), npc.getHealthRatio(), npc.getHealthScale(),
 			npc.isDead(), opponentSeenDefeated, playerDied, distance, outOfSight);
 		opponentSeenDefeated = false;
-		fightTimer.opponentDespawned(defeated, tick);
+		fightTimer.opponentDespawned(defeated && !pairs.otherMemberAlive(npc), tick);
 		if (outOfSight)
 		{
 			heldEntry = memory.remember(npc.getIndex(), npc.getName(), tick, fightTimer.save());
@@ -309,6 +311,12 @@ class OpponentTracker
 			&& actor.getHealthScale() > 0 && actor.getHealthRatio() > 1;
 	}
 
+	// For the fight timer, a pair's fight only ends with its last member.
+	boolean isFightOver(Actor actor)
+	{
+		return isDefeated(actor) && !pairs.otherMemberAlive(actor);
+	}
+
 	void reset()
 	{
 		opponent = null;
@@ -364,6 +372,14 @@ class OpponentTracker
 		}
 		outOfSightNpc = null;
 		outOfSightEntry = null;
+	}
+
+	// No member of the pair has been around for a while, so coming back to it later is a new fight.
+	void pairCleared(String pair)
+	{
+		log.debug("Pair {} was forgotten, its next fight starts over", pair);
+		fightTimer.pairCleared(pair);
+		memory.forgetFight(pair);
 	}
 
 	void healedOnReturn(Actor actor)
@@ -435,7 +451,9 @@ class OpponentTracker
 		}
 		else
 		{
-			fightTimer.opponentChanged(target, opponent != null && isDefeated(opponent), tick);
+			final String fightName = PairBosses.fightName(target);
+			fightTimer.opponentChanged(target, fightName, opponent != null && isFightOver(opponent), pairs.hasPair(fightName),
+				tick);
 			resumedOpponent = null;
 			resumedState = null;
 		}
