@@ -1,0 +1,53 @@
+name: Changelog post
+
+# Run by hand once a version is live on the Plugin Hub, since the version bump lands on main before that.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to post (defaults to the current version)
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find the version
+        id: version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          current=$(sed -n 's/^version=//p' runelite-plugin.properties | tr -d '\r')
+          echo "version=${INPUT_VERSION:-$current}" >> "$GITHUB_OUTPUT"
+
+      - name: Send to Discord
+        if: steps.version.outputs.version != ''
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK_URL }}
+          VERSION: ${{ steps.version.outputs.version }}
+          URL: ${{ github.server_url }}/${{ github.repository }}/blob/main/CHANGELOG.md
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "DISCORD_CHANGELOG_WEBHOOK_URL is not set"
+            exit 1
+          fi
+          # The lines under "## <version>" up to the next "## " heading.
+          notes=$(tr -d '\r' < CHANGELOG.md | awk -v v="$VERSION" '
+            /^## / { if (found) exit; if ($2 == v) { found = 1; next } }
+            found { print }' | sed '/^$/d')
+          if [ -z "$notes" ]; then
+            echo "No CHANGELOG section for $VERSION"
+            exit 1
+          fi
+          # Discord embeds hold up to 4096 characters.
+          if [ ${#notes} -gt 3900 ]; then
+            notes="${notes:0:3900}"$'\n'"…"
+          fi
+          jq -n --arg title "Boss Health Bar Additions $VERSION" --arg notes "$notes" --arg url "$URL" \
+            '{embeds: [{title: $title, url: $url, description: $notes, color: 13938487}], allowed_mentions: {parse: []}}' \
+            | curl -fsS -H "Content-Type: application/json" -d @- "$WEBHOOK"
