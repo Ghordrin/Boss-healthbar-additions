@@ -31,12 +31,14 @@ class FightTimer
 
 	private Actor opponent;
 	private String name;
-	private int startTick = NO_TICK;
 	private int endTick = NO_TICK;
 	private int clearedTick = NO_TICK;
 	private Actor lastHitActor;
 	private int lastHitTick = NO_TICK;
 
+	// Identifies the current fight, or NO_TICK before its first hit.
+	@Getter(AccessLevel.PACKAGE)
+	private int startTick = NO_TICK;
 	private int shownTicks = NO_TICK;
 	@Getter(AccessLevel.PACKAGE)
 	private String text;

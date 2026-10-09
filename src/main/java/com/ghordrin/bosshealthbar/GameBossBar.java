@@ -35,6 +35,7 @@ class GameBossBar
 	private NPC npc;
 	private int searchedId = -1;
 	private int replacedId = -1;
+	private int healthSeenId = -1;
 
 	private int percentOnlyNpcId = -1;
 	private boolean percentOnly;
@@ -199,6 +200,7 @@ class GameBossBar
 		npc = null;
 		searchedId = -1;
 		replacedId = -1;
+		healthSeenId = -1;
 	}
 
 	int maxHealth()
@@ -209,6 +211,19 @@ class GameBossBar
 	int health()
 	{
 		return client.getVarbitValue(VarbitID.HPBAR_HUD_HP);
+	}
+
+	// Right after the bar moves to another NPC it can read 0 before that NPC's health arrives, so a 0 only
+	// counts once the bar has shown health above 0 for the NPC it tracks.
+	boolean hasHealth()
+	{
+		final int trackedId = trackedNpcId();
+		if (health() > 0)
+		{
+			healthSeenId = trackedId;
+			return true;
+		}
+		return trackedId != -1 && trackedId == healthSeenId;
 	}
 
 	boolean isPercentOnly()

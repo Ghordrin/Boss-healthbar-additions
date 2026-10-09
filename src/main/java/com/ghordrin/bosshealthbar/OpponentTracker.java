@@ -285,7 +285,7 @@ class OpponentTracker
 		{
 			return true;
 		}
-		final int nativeMaxHealth = gameBossBar.isTracking(actor) ? gameBossBar.maxHealth() : 0;
+		final int nativeMaxHealth = gameBossBar.isTracking(actor) && gameBossBar.hasHealth() ? gameBossBar.maxHealth() : 0;
 		if (nativeMaxHealth > 0)
 		{
 			return gameBossBar.health() <= 0;

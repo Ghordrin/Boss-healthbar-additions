@@ -216,7 +216,7 @@ class PairBosses
 			if (npc != null)
 			{
 				slot.lastPresentTick = tick;
-				final boolean gameBar = gameBossBar.isTracking(npc);
+				final boolean gameBar = gameBossBar.isTracking(npc) && gameBossBar.hasHealth();
 				read(slot, gameBar ? gameBossBar.health() : 0, gameBar ? gameBossBar.maxHealth() : 0,
 					npc.getHealthRatio(), npc.getHealthScale(), npcManager.getHealth(NpcUtil.currentId(npc)));
 				updateDead(slot, isDying(npc));

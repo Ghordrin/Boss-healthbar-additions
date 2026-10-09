@@ -10,6 +10,7 @@
 - When this bar replaces the game's boss health bar, the game's pillar bars are drawn in the same style too, in their own box you can move
 - For bosses fought as a pair, a smaller bar under the main one now shows the other one's health
 - Fixed the fight timer starting over when a boss fought as a pair swaps between its two halves, or when the first of the two dies
+- Fixed the bar dropping to 0 for a moment when the game's boss health bar moves to another NPC of the same fight. An NPC with no health reading yet now keeps the health it last had in the fight
 
 ## 1.5.0 (2026-10-06)
 

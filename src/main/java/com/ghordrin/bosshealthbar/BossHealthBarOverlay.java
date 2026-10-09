@@ -85,6 +85,7 @@ class BossHealthBarOverlay extends Overlay
 	private final SpecialAttackCounts specialAttackCounts;
 	private final FightTimer fightTimer;
 	private final PairBosses pairs;
+	private final LastHealth lastHealth = new LastHealth();
 	private final BarAnimation animation = new BarAnimation();
 	private final BarAnimation partnerAnimation = new BarAnimation();
 	private final Rectangle2D.Float burnClipShape = new Rectangle2D.Float();
@@ -176,6 +177,7 @@ class BossHealthBarOverlay extends Overlay
 	void reset()
 	{
 		trackedOpponent = null;
+		lastHealth.clear();
 		infoActor = null;
 		barPainter.clearTextureCache();
 		animation.resetFrameTime();
@@ -308,6 +310,11 @@ class BossHealthBarOverlay extends Overlay
 			}
 			lastState = state;
 			lastStateActor = opponent;
+			if (opponent instanceof NPC)
+			{
+				lastHealth.remember(((NPC) opponent).getIndex(), Text.removeTags(opponent.getName()),
+					fightTimer.getStartTick(), state);
+			}
 			resuming = false;
 			if (retargetPending)
 			{
@@ -710,7 +717,7 @@ class BossHealthBarOverlay extends Overlay
 		// The game's bars have exact hitpoints, and some bosses stop sending overhead health updates
 		// while they're shown, so prefer them.
 		final int nativeMaxHealth = nativeBar ? gameBossBar.maxHealth() : 0;
-		if (nativeMaxHealth > 0)
+		if (nativeMaxHealth > 0 && gameBossBar.hasHealth())
 		{
 			final float[] markers = config.showPhaseMarkers()
 				? gameBossBar.phaseMarkers(nativeMaxHealth) : BarState.NO_PHASE_MARKERS;
@@ -733,14 +740,30 @@ class BossHealthBarOverlay extends Overlay
 				killCountKey, stats, specialAttacks, fightTime);
 		}
 
+		// No reading yet, such as an NPC that left and came back or a boss bar that just moved over, so it keeps the
+		// health it last had in this fight.
+		final BarState remembered = rememberedHealth(opponent);
+		if (remembered != null)
+		{
+			return new BarState(name, opponent.getCombatLevel(), remembered.maxHealth, remembered.ratio,
+				remembered.scale, remembered.exactHealth, remembered.percentOnly, BarState.NO_PHASE_MARKERS, userMarkers,
+				killCountKey, stats, specialAttacks, fightTime);
+		}
 		return null;
+	}
+
+	private BarState rememberedHealth(Actor opponent)
+	{
+		return opponent instanceof NPC
+			? lastHealth.find(((NPC) opponent).getIndex(), Text.removeTags(opponent.getName()), fightTimer.getStartTick())
+			: null;
 	}
 
 	private boolean awaitingHealth(Actor opponent)
 	{
 		return opponent.getHealthScale() <= 0
 			&& opponentTracker.shouldShowBarFor(opponent)
-			&& !gameBossBar.isTracking(opponent)
+			&& !(gameBossBar.isTracking(opponent) && gameBossBar.hasHealth())
 			&& !tobBossBar.isTracking(opponent);
 	}
 
