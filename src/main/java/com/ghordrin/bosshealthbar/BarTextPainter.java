@@ -317,6 +317,17 @@ class BarTextPainter
 		return levelFont;
 	}
 
+	FontMetrics hitpointsMetrics()
+	{
+		return metrics[HITPOINTS];
+	}
+
+	void drawHitpointsStyleText(Graphics2D graphics, String text, int x, int baseline, Color color)
+	{
+		useFont(graphics, HITPOINTS);
+		drawShadowedText(graphics, text, x, baseline, color, 1f);
+	}
+
 	private void setTextAntialiasing(Graphics2D graphics, boolean pixel)
 	{
 		graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, smoothText && !pixel

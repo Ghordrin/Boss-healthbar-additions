@@ -17,6 +17,7 @@ import net.runelite.api.events.InteractingChanged;
 import net.runelite.api.events.NpcChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.FontType;
@@ -63,6 +64,12 @@ public class BossHealthBarPlugin extends Plugin
 
 	@Inject
 	private TobBossBar tobBossBar;
+
+	@Inject
+	private PillarBars pillarBars;
+
+	@Inject
+	private PillarBarsOverlay pillarBarsOverlay;
 
 	@Inject
 	private SuperiorTracker superiorTracker;
@@ -119,6 +126,7 @@ public class BossHealthBarPlugin extends Plugin
 		specialAttackCounts.reset();
 		partyDamage.startUp();
 		overlayManager.add(overlay);
+		overlayManager.add(pillarBarsOverlay);
 		opponentInfoOverride.apply();
 	}
 
@@ -126,6 +134,7 @@ public class BossHealthBarPlugin extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+		overlayManager.remove(pillarBarsOverlay);
 		partyDamage.shutDown();
 		opponentInfoOverride.restore();
 		pickers.close();
@@ -273,6 +282,7 @@ public class BossHealthBarPlugin extends Plugin
 	private void resetState()
 	{
 		gameBossBar.reset();
+		pillarBars.reset();
 		tobBossBar.reset();
 		superiorTracker.reset();
 		opponentTracker.reset();
@@ -450,7 +460,17 @@ public class BossHealthBarPlugin extends Plugin
 		final Actor opponent = opponentTracker.getOpponent();
 		final boolean replace = config.nativeBossBarMode().hidesGameBar();
 		final boolean opponentGetsBar = opponentTracker.shouldShowBarFor(opponent);
-		gameBossBar.update(opponent, replace, opponentGetsBar);
+		final boolean replacing = gameBossBar.update(opponent, replace, opponentGetsBar);
+		pillarBars.update(replacing);
 		tobBossBar.update(opponent, replace, opponentGetsBar);
+	}
+
+	@Subscribe
+	public void onScriptPreFired(ScriptPreFired event)
+	{
+		if (event.getScriptEvent() != null)
+		{
+			pillarBars.onScript(event.getScriptId(), event.getScriptEvent().getArguments());
+		}
 	}
 }

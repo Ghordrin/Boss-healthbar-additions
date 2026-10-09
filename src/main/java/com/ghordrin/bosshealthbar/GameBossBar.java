@@ -128,13 +128,13 @@ class GameBossBar
 		}
 	}
 
-	void update(Actor opponent, boolean replaceEnabled, boolean opponentGetsBar)
+	boolean update(Actor opponent, boolean replaceEnabled, boolean opponentGetsBar)
 	{
 		final Widget bar = client.getWidget(GAME_BAR);
 		if (bar == null)
 		{
 			hidden = false;
-			return;
+			return false;
 		}
 
 		boolean replace = false;
@@ -167,6 +167,7 @@ class GameBossBar
 			replacedId = -1;
 			restore();
 		}
+		return replace;
 	}
 
 	void restore()

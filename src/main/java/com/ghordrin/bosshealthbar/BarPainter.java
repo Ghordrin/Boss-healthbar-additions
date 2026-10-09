@@ -50,8 +50,8 @@ class BarPainter
 	private static final Color BURN_EDGE_DIM = new Color(255, 120, 30, 0);
 	private static final Color BURN_EDGE_BRIGHT = new Color(255, 190, 90, 242);
 
-	private static final Color TRACK_TOP = new Color(6, 5, 5, 225);
-	private static final Color TRACK_BOTTOM = new Color(26, 22, 22, 225);
+	static final Color TRACK_TOP = new Color(6, 5, 5, 225);
+	static final Color TRACK_BOTTOM = new Color(26, 22, 22, 225);
 	private static final Color HEAL_TINT = new Color(150, 235, 160);
 	private static final Color BACKDROP = new Color(0, 0, 0, 34);
 	private static final Color FRAME_OUTLINE = new Color(6, 5, 5);

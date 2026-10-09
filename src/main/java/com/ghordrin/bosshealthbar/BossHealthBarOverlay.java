@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
@@ -39,6 +40,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
+@Singleton
 class BossHealthBarOverlay extends Overlay
 {
 	private static final String PREVIEW_NAME = "Preview";
@@ -183,6 +185,18 @@ class BossHealthBarOverlay extends Overlay
 	void invalidateColors()
 	{
 		themeColors = null;
+	}
+
+	boolean isShowingPreview()
+	{
+		return showingPreview;
+	}
+
+	// The bar's colors before any gold, for other boxes drawn in the bar's style.
+	ThemeColors baseColors()
+	{
+		return barColors(updateThemeColors(), config.matchBossColors() && !showingPreview ? infoBossColors : null,
+			BarTheme.of(config).isFlat());
 	}
 
 	private ThemeColors updateThemeColors()
