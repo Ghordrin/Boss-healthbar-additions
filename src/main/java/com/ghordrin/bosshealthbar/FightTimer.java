@@ -15,6 +15,20 @@ class FightTimer
 	// A boss that swaps to a new NPC between phases can be gone for a moment before the new one shows up.
 	static final int SWAP_TICKS = 10;
 
+	static final class Fight
+	{
+		final String name;
+		final int startTick;
+		final int endTick;
+
+		Fight(String name, int startTick, int endTick)
+		{
+			this.name = name;
+			this.startTick = startTick;
+			this.endTick = endTick;
+		}
+	}
+
 	private Actor opponent;
 	private String name;
 	private int startTick = NO_TICK;
@@ -48,6 +62,39 @@ class FightTimer
 			startTick = recentHitTick(earlierHitTick, tick);
 		}
 		updateText(tick);
+	}
+
+	void opponentReturned(Actor next, Fight fight, int tick)
+	{
+		opponentReturned(fight, next == lastHitActor ? lastHitTick : NO_TICK, tick);
+		opponent = next;
+	}
+
+	// An opponent that went out of sight carries on its own fight, whatever was fought in between.
+	void opponentReturned(Fight fight, int earlierHitTick, int tick)
+	{
+		opponent = null;
+		name = fight.name;
+		startTick = fight.startTick;
+		endTick = fight.endTick;
+		clearedTick = NO_TICK;
+		if (startTick == NO_TICK && endTick == NO_TICK)
+		{
+			startTick = recentHitTick(earlierHitTick, tick);
+		}
+		updateText(tick);
+	}
+
+	void startOver(int tick)
+	{
+		startTick = tick;
+		endTick = NO_TICK;
+		updateText(tick);
+	}
+
+	Fight save()
+	{
+		return new Fight(name, startTick, endTick);
 	}
 
 	void opponentDespawned(boolean defeated, int tick)

@@ -38,4 +38,10 @@ final class BarState
 		this.specialAttacks = specialAttacks;
 		this.fightTime = fightTime;
 	}
+
+	BarState withFightTime(String time)
+	{
+		return new BarState(name, combatLevel, maxHealth, ratio, scale, exactHealth, percentOnly, phaseMarkers,
+			userMarkers, killCountKey, stats, specialAttacks, time);
+	}
 }

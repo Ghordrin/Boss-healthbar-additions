@@ -220,6 +220,58 @@ public class FightTimerTest
 	}
 
 	@Test
+	public void anOpponentBackFromOutOfSightKeepsItsStart()
+	{
+		timer.opponentChanged("Boss", false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.opponentDespawned(false, 50);
+		final FightTimer.Fight fight = timer.save();
+		timer.opponentChanged("Minion", false, NO_TICK, 60);
+		timer.opponentReturned(fight, NO_TICK, 70 + SWAP_TICKS);
+		timer.onGameTick(true, false, 100);
+		assertEquals("1:00", timer.getText());
+		timer.onGameTick(true, false, 200);
+		assertEquals("2:00", timer.getText());
+	}
+
+	@Test
+	public void aStoppedFightStaysStoppedWhenTheOpponentComesBack()
+	{
+		timer.opponentChanged("Boss", false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, true, 100);
+		timer.opponentDespawned(false, 120);
+		final FightTimer.Fight fight = timer.save();
+		timer.reset();
+		timer.opponentReturned(fight, NO_TICK, 200);
+		assertEquals("1:00", timer.getText());
+	}
+
+	@Test
+	public void anOpponentBackBeforeAnyHitStartsOnTheNextHit()
+	{
+		timer.opponentChanged("Boss", false, NO_TICK, 0);
+		timer.opponentDespawned(false, 50);
+		final FightTimer.Fight fight = timer.save();
+		timer.opponentReturned(fight, NO_TICK, 100);
+		assertNull(timer.getText());
+		timer.onHit(110);
+		timer.onGameTick(true, false, 210);
+		assertEquals("1:00", timer.getText());
+	}
+
+	@Test
+	public void startingOverCountsFromThatTick()
+	{
+		timer.opponentChanged("Boss", false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, true, 50);
+		timer.startOver(100);
+		timer.onGameTick(true, false, 200);
+		assertEquals("1:00", timer.getText());
+	}
+
+	@Test
 	public void theSlotSizingSwapsEveryDigit()
 	{
 		assertEquals("0:00", BarTextPainter.withDigits("1:23", '0'));

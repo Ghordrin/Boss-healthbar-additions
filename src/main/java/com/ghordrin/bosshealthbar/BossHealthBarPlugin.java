@@ -405,6 +405,7 @@ public class BossHealthBarPlugin extends Plugin
 		gameBossBar.onNpcSpawned();
 		tobBossBar.onNpcSpawned(event.getNpc());
 		superiorTracker.onNpcSpawned(event.getNpc());
+		opponentTracker.onNpcSpawned(event.getNpc());
 	}
 
 	@Subscribe
@@ -435,7 +436,7 @@ public class BossHealthBarPlugin extends Plugin
 		superiorTracker.onGameTick();
 		opponentTracker.onGameTick();
 		final Actor opponent = opponentTracker.getOpponent();
-		fightTimer.onGameTick(opponent, opponent != null && opponentTracker.isDefeated(opponent), client.getTickCount());
+		fightTimer.onGameTick(opponent, opponentTracker.updateOpponentDefeated(), client.getTickCount());
 		partyDefence.update(opponentTracker.getOpponent());
 		specialAttackCounts.update(opponentTracker.getOpponent());
 	}

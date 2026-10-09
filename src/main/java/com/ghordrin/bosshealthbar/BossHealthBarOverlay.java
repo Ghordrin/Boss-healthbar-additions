@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
@@ -82,11 +83,13 @@ class BossHealthBarOverlay extends Overlay
 
 	private Actor trackedOpponent;
 	private BarState lastState;
+	private Actor lastStateActor;
 	private boolean showingPreview;
 	private long previewStartNanos;
 	private boolean rolledGold;
 	private long switchHoldUntilNanos;
 	private boolean retargetPending;
+	private boolean resuming;
 
 	private Actor infoActor;
 	private int infoNpcId = -1;
@@ -171,8 +174,10 @@ class BossHealthBarOverlay extends Overlay
 	{
 		animation.reset();
 		lastState = null;
+		lastStateActor = null;
 		switchHoldUntilNanos = 0;
 		retargetPending = false;
+		resuming = false;
 	}
 
 	void invalidateColors()
@@ -203,20 +208,54 @@ class BossHealthBarOverlay extends Overlay
 	{
 		if (opponent != trackedOpponent)
 		{
+			// Only a reading taken from this opponent counts, not one kept up from the previous target.
+			final BarState ownState = lastStateActor == trackedOpponent ? lastState : null;
+			final boolean wentOutOfSight = opponentTracker.wentOutOfSight(trackedOpponent);
+			// The bar's own reading of 0 wins over the distance.
+			final boolean outOfSight = wentOutOfSight
+				&& (ownState == null || ownState.ratio > 0 || !NpcUtil.canBeDefeated(trackedOpponent));
+			if (outOfSight)
+			{
+				opponentTracker.rememberState(trackedOpponent, ownState);
+			}
+			else if (wentOutOfSight)
+			{
+				opponentTracker.forgetOutOfSight(trackedOpponent);
+			}
+
 			if (opponent == null && trackedOpponent != null && lastState != null && !animation.isDefeatPlaying()
-				&& config.showDefeatAnimation() && (trackedOpponent.isDead() || lastState.ratio <= 0))
+				&& config.showDefeatAnimation() && !outOfSight && NpcUtil.canBeDefeated(trackedOpponent)
+				&& (trackedOpponent.isDead() || lastState.ratio <= 0))
 			{
 				// The opponent despawned as it died, so keep drawing it until the defeat animation ends.
 				animation.startDefeat(now);
 			}
 
-			if (opponent != null && trackedOpponent != null && lastState != null && !trackedOpponent.isDead()
+			final BarState resumed = opponentTracker.resumedState(opponent);
+			if (resumed != null)
+			{
+				// An opponent back from out of sight carries on from its remembered health, without the intro.
+				if (trackedOpponent == null || lastState == null || animation.isDefeatPlaying())
+				{
+					resetAnimation();
+					animation.skipIntro();
+				}
+				trackedOpponent = opponent;
+				lastState = resumed;
+				lastStateActor = opponent;
+				animation.retarget();
+				retargetPending = true;
+				resuming = true;
+			}
+			else if (opponent != null && trackedOpponent != null && lastState != null
+				&& (!trackedOpponent.isDead() || !NpcUtil.canBeDefeated(trackedOpponent))
 				&& !animation.isDefeatPlaying())
 			{
 				// Switching targets mid-fight, e.g. between the NPCs of a group boss. The bar stays up and
 				// moves over, instead of playing the intro again.
 				trackedOpponent = opponent;
 				retargetPending = true;
+				resuming = false;
 				switchHoldUntilNanos = now + SWITCH_HOLD.toNanos();
 			}
 			else if (opponent != null || !animation.isDefeatPlaying())
@@ -234,14 +273,21 @@ class BossHealthBarOverlay extends Overlay
 		final BarState state = opponent != null ? readState(opponent) : null;
 		if (state != null)
 		{
+			if (resuming && lastStateActor == opponent && lastState != null && NpcUtil.canBeDefeated(opponent)
+				&& BossMemory.healedSince(lastState.ratio, lastState.scale, state.ratio, state.scale))
+			{
+				opponentTracker.healedOnReturn(opponent);
+			}
 			lastState = state;
+			lastStateActor = opponent;
+			resuming = false;
 			if (retargetPending)
 			{
 				animation.retarget();
 				retargetPending = false;
 			}
 
-			if (!opponent.isDead())
+			if (!opponent.isDead() || !NpcUtil.canBeDefeated(opponent))
 			{
 				animation.cancelDefeat();
 			}
@@ -258,8 +304,13 @@ class BossHealthBarOverlay extends Overlay
 		}
 
 		// A new target has no health to show until it's been hit, so keep the previous bar up meanwhile.
-		if (opponent != null && lastState != null && now < switchHoldUntilNanos && awaitingHealth(opponent))
+		if (opponent != null && lastState != null && (resuming || now < switchHoldUntilNanos) && awaitingHealth(opponent))
 		{
+			final String fightTime = fightTimer.getText();
+			if (resuming && !Objects.equals(lastState.fightTime, fightTime))
+			{
+				lastState = lastState.withFightTime(fightTime);
+			}
 			return lastState;
 		}
 

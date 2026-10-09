@@ -11,6 +11,8 @@ import net.runelite.api.Hitsplat;
 import net.runelite.api.HitsplatID;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
+import net.runelite.api.Skill;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.InteractingChanged;
 
 @Slf4j
@@ -27,12 +29,20 @@ class OpponentTracker
 	private final SuperiorTracker superiors;
 	private final DamageTracker damage;
 	private final FightTimer fightTimer;
+	private final BossMemory memory;
 
 	@Getter(AccessLevel.PACKAGE)
 	private Actor opponent;
 	private long interactionLostMillis;
 	private long lastHitTakenMillis;
 	private long lastOpponentHitMillis;
+
+	private BossMemory.Entry heldEntry;
+	private NPC outOfSightNpc;
+	private BossMemory.Entry outOfSightEntry;
+	private Actor resumedOpponent;
+	private BarState resumedState;
+	private boolean opponentSeenDefeated;
 
 	private Actor knownBossActor;
 	private String knownBossName;
@@ -45,7 +55,7 @@ class OpponentTracker
 
 	@Inject
 	OpponentTracker(Client client, BossHealthBarConfig config, GameBossBar gameBossBar, TobBossBar tobBossBar,
-		SuperiorTracker superiors, DamageTracker damage, FightTimer fightTimer)
+		SuperiorTracker superiors, DamageTracker damage, FightTimer fightTimer, BossMemory memory)
 	{
 		this.client = client;
 		this.config = config;
@@ -54,6 +64,7 @@ class OpponentTracker
 		this.superiors = superiors;
 		this.damage = damage;
 		this.fightTimer = fightTimer;
+		this.memory = memory;
 	}
 
 	void onInteractingChanged(InteractingChanged event)
@@ -79,7 +90,8 @@ class OpponentTracker
 		}
 
 		// Attacking the smaller NPCs a boss spawns shouldn't take the bar off the boss.
-		if (opponent != null && !opponent.isDead() && priority(target) < priority(opponent))
+		if (opponent != null && (!opponent.isDead() || !NpcUtil.canBeDefeated(opponent))
+			&& priority(target) < priority(opponent))
 		{
 			log.debug("Keeping {} over lower priority target {}", opponent.getName(), target.getName());
 			return;
@@ -100,15 +112,55 @@ class OpponentTracker
 		}
 	}
 
-	void onNpcDespawned(NPC npc)
+	void onNpcSpawned(NPC npc)
 	{
-		if (npc != opponent)
+		final int tick = client.getTickCount();
+		final BossMemory.Entry entry = memory.find(npc.getIndex(), npc.getName(), tick);
+		if (entry == null || entry != heldEntry || opponent != null || !BossMemory.isHeld(entry.tick, tick)
+			|| isNeverShown(npc))
 		{
 			return;
 		}
 
-		log.debug("Opponent {} despawned, clearing", opponent);
-		fightTimer.opponentDespawned(isDefeated(npc), client.getTickCount());
+		// Back in sight soon after leaving it, with nothing else picked meanwhile, so the bar carries on.
+		setOpponent(npc);
+		interactionLostMillis = System.currentTimeMillis();
+	}
+
+	void onNpcDespawned(NPC npc)
+	{
+		if (npc != opponent)
+		{
+			if (memory.contains(npc.getIndex()) && isDefeated(npc))
+			{
+				memory.forget(npc.getIndex());
+			}
+			return;
+		}
+
+		final int tick = client.getTickCount();
+		// A bar that despawns with the boss can take its health with it, so the last tick's reading counts too.
+		final boolean defeated = opponentSeenDefeated || isDefeated(npc);
+		final boolean playerDied = isLocalPlayerDead();
+		final int distance = distanceToPlayer(npc);
+		final boolean outOfSight = BossMemory.isOutOfSight(defeated, playerDied, distance);
+		log.debug("Opponent {} despawned (id {}, current id {}, health {}/{}, dead {}, seen defeated {}, player died {}, distance {}, out of sight {})",
+			npc.getName(), npc.getId(), NpcUtil.currentId(npc), npc.getHealthRatio(), npc.getHealthScale(),
+			npc.isDead(), opponentSeenDefeated, playerDied, distance, outOfSight);
+		opponentSeenDefeated = false;
+		fightTimer.opponentDespawned(defeated, tick);
+		if (outOfSight)
+		{
+			heldEntry = memory.remember(npc.getIndex(), npc.getName(), tick, fightTimer.save());
+			outOfSightNpc = npc;
+			outOfSightEntry = heldEntry;
+		}
+		else
+		{
+			memory.forget(npc.getIndex());
+		}
+		resumedOpponent = null;
+		resumedState = null;
 		opponent = null;
 		interactionLostMillis = 0;
 		lastOpponentHitMillis = 0;
@@ -153,6 +205,7 @@ class OpponentTracker
 			log.debug("Opponent {} timed out after {}s with no combat, clearing", opponent, config.hideDelay());
 			opponent = null;
 			fightTimer.reset();
+			opponentSeenDefeated = false;
 		}
 	}
 
@@ -222,6 +275,10 @@ class OpponentTracker
 	// Matches the bar's Defeated: some bosses on the game's bar never set isDead() while they die, so 0 health counts too.
 	boolean isDefeated(Actor actor)
 	{
+		if (!NpcUtil.canBeDefeated(actor))
+		{
+			return false;
+		}
 		if (actor.isDead())
 		{
 			return true;
@@ -236,7 +293,20 @@ class OpponentTracker
 		{
 			return tobBossBar.health(tobMaxHealth) <= 0;
 		}
-		return actor.getHealthScale() > 0 && actor.getHealthRatio() == 0;
+		if (actor.getHealthScale() <= 0)
+		{
+			return false;
+		}
+		// Some turn into a form that can't be attacked as they die, before their bar reaches 0.
+		return actor.getHealthRatio() == 0
+			|| actor.getHealthRatio() == 1 && actor instanceof NPC && !NpcUtil.isAttackable((NPC) actor);
+	}
+
+	// Back for another phase after being defeated: it can be attacked again with health to spare.
+	private static boolean isBackUp(Actor actor)
+	{
+		return actor instanceof NPC && !actor.isDead() && NpcUtil.isAttackable((NPC) actor)
+			&& actor.getHealthScale() > 0 && actor.getHealthRatio() > 1;
 	}
 
 	void reset()
@@ -250,6 +320,92 @@ class OpponentTracker
 		opponentListMatch.clear();
 		gameBarListMatch.clear();
 		fightTimer.reset();
+		memory.clear();
+		heldEntry = null;
+		outOfSightNpc = null;
+		outOfSightEntry = null;
+		opponentSeenDefeated = false;
+		resumedOpponent = null;
+		resumedState = null;
+	}
+
+	boolean wentOutOfSight(Actor actor)
+	{
+		return actor != null && actor == outOfSightNpc;
+	}
+
+	// The bar's last reading of an opponent that went out of sight, shown again if it comes back.
+	void rememberState(Actor actor, BarState state)
+	{
+		if (actor == outOfSightNpc && outOfSightEntry != null)
+		{
+			outOfSightEntry.state = state;
+		}
+		outOfSightNpc = null;
+		outOfSightEntry = null;
+	}
+
+	// The bar's last reading was 0, so the despawn was a kill after all.
+	void forgetOutOfSight(Actor actor)
+	{
+		if (actor != outOfSightNpc)
+		{
+			return;
+		}
+		log.debug("Opponent {} was last read at 0 health, counting its despawn as a kill", actor.getName());
+		memory.forget(outOfSightNpc.getIndex());
+		if (heldEntry == outOfSightEntry)
+		{
+			heldEntry = null;
+		}
+		if (opponent == null)
+		{
+			fightTimer.opponentDespawned(true, client.getTickCount());
+		}
+		outOfSightNpc = null;
+		outOfSightEntry = null;
+	}
+
+	void healedOnReturn(Actor actor)
+	{
+		log.debug("Remembered opponent {} came back with more health, starting a new fight", actor.getName());
+		fightTimer.startOver(client.getTickCount());
+	}
+
+	BarState resumedState(Actor actor)
+	{
+		return actor != null && actor == resumedOpponent ? resumedState : null;
+	}
+
+	private int distanceToPlayer(NPC npc)
+	{
+		final Player player = client.getLocalPlayer();
+		if (player == null)
+		{
+			return -1;
+		}
+		final WorldPoint tile = npc.getWorldLocation();
+		final WorldPoint location = player.getWorldLocation();
+		if (tile.getPlane() != location.getPlane())
+		{
+			return Integer.MAX_VALUE;
+		}
+		return BossMemory.tileDistance(tile.getX(), tile.getY(), location.getX(), location.getY());
+	}
+
+	private boolean isLocalPlayerDead()
+	{
+		final Player player = client.getLocalPlayer();
+		return player != null && (player.isDead() || client.getBoostedSkillLevel(Skill.HITPOINTS) <= 0);
+	}
+
+	// Called once a tick. Kept for the despawn, when a boss bar may already have lost the health.
+	boolean updateOpponentDefeated()
+	{
+		// Once defeated it stays so, since some die by turning into a death form that still shows a bit of health.
+		opponentSeenDefeated = opponent != null
+			&& (isDefeated(opponent) || opponentSeenDefeated && !isBackUp(opponent));
+		return opponentSeenDefeated;
 	}
 
 	void loadLists()
@@ -262,8 +418,27 @@ class OpponentTracker
 
 	private void setOpponent(Actor target)
 	{
+		final int tick = client.getTickCount();
+		final BossMemory.Entry returned = target instanceof NPC
+			? memory.take(((NPC) target).getIndex(), target.getName(), tick) : null;
 		damage.resetCombo();
-		fightTimer.opponentChanged(target, opponent != null && isDefeated(opponent), client.getTickCount());
+		heldEntry = null;
+		opponentSeenDefeated = false;
+		if (returned != null)
+		{
+			log.debug("Remembered opponent {} came back after {} ticks (remembered health {}/{}, fight start tick {})",
+				target.getName(), tick - returned.tick, returned.state != null ? returned.state.ratio : -1,
+				returned.state != null ? returned.state.scale : -1, returned.fight.startTick);
+			fightTimer.opponentReturned(target, returned.fight, tick);
+			resumedOpponent = target;
+			resumedState = returned.state;
+		}
+		else
+		{
+			fightTimer.opponentChanged(target, opponent != null && isDefeated(opponent), tick);
+			resumedOpponent = null;
+			resumedState = null;
+		}
 		opponent = target;
 		lastOpponentHitMillis = 0;
 		log.debug("New opponent: {} (combat level {}, known boss: {}, game boss bar: {})",

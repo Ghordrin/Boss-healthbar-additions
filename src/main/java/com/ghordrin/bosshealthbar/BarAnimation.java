@@ -27,6 +27,7 @@ final class BarAnimation
 	private long fadeStartNanos;
 	private long defeatStartNanos;
 	private boolean snapToTarget;
+	private boolean skipIntro;
 
 	void reset()
 	{
@@ -36,6 +37,13 @@ final class BarAnimation
 		fadeStartNanos = 0;
 		defeatStartNanos = 0;
 		snapToTarget = false;
+		skipIntro = false;
+	}
+
+	// The next bar shows up fully drawn, as if its intro had already played.
+	void skipIntro()
+	{
+		skipIntro = true;
 	}
 
 	// The next tick jumps straight to the new health without replaying the intro, and without
@@ -61,8 +69,9 @@ final class BarAnimation
 		{
 			displayedFraction = targetFraction;
 			trailFraction = targetFraction;
-			fadeStartNanos = now;
+			fadeStartNanos = skipIntro ? 0 : now;
 			snapToTarget = false;
+			skipIntro = false;
 			return;
 		}
 
