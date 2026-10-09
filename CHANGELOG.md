@@ -1,20 +1,28 @@
 # Changelog
 
-## Unreleased
+## 1.6.0 (2026-10-10)
 
-- Fixed the game's pillar health bars being hidden along with its boss health bar, and the game's boss health bar sometimes staying hidden after turning the plugin off
+### New
+
 - New Also show for and Never show for options in When to show: list NPC names or IDs, separated by commas or one per line (the box grows as you add lines), to give them the bar or keep it off them. * matches anything. Never show for wins over everything else, and the game's own boss health bar stays up for those NPCs
 - New Fight timer option in Boss info (on by default) shows how long the fight has lasted, from the first hit on the opponent until it's defeated. It goes top centre by default, with its own Layout spot and font
 - Walking out of sight of a boss no longer shows "Defeated". When you come back and attack it, or it comes back into view within a minute, the bar carries on with the health it had and the fight timer keeps going, without the intro. The health updates on the next hit, and if the boss healed a lot while you were away, the timer starts over
-- Fixed a boss that restores its health while stunned showing "Defeated" and stopping the fight timer
 - When this bar replaces the game's boss health bar, the game's pillar bars are drawn in the same style too, in their own box you can move
 - For bosses fought as a pair, a smaller bar under the main one now shows the other one's health
-- Fixed the fight timer starting over when a boss fought as a pair swaps between its two halves, or when the first of the two dies
-- Fixed the bar dropping to 0 for a moment when the game's boss health bar moves to another NPC of the same fight. An NPC with no health reading yet now keeps the health it last had in the fight
+
+### Changed
+
 - With Show icons off and Use boss icon on, the boss's icon now shows small before its name, as it does on the Oldschool theme with Show icons on
 - The font settings and Smooth text moved to their own Fonts section, folded by default. Your saved fonts are kept
 - Boss info now lists Party defence and Magic defence right after Kill count
 - The Custom colors tooltips now say which text each color applies to
+
+### Fixed
+
+- Fixed the game's pillar health bars being hidden along with its boss health bar, and the game's boss health bar sometimes staying hidden after turning the plugin off
+- Fixed a boss that restores its health while stunned showing "Defeated" and stopping the fight timer
+- Fixed the fight timer starting over when a boss fought as a pair swaps between its two halves, or when the first of the two dies
+- Fixed the bar dropping to 0 for a moment when the game's boss health bar moves to another NPC of the same fight. An NPC with no health reading yet now keeps the health it last had in the fight
 
 ## 1.5.0 (2026-10-06)
 
