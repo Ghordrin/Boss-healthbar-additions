@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New Save debug log option (in the new Bug reports section, or right-click the bar) saves the plugin's recent activity to a text file for bug reports
+
 ## 1.6.0 (2026-10-10)
 
 ### New

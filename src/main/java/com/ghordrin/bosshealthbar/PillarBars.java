@@ -4,13 +4,11 @@ import static com.ghordrin.bosshealthbar.BarAnimation.clamp01;
 import java.util.Arrays;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 
 // The game's pillar charge bars, read from the scripts that drive them so they can be drawn while the game's are hidden.
-@Slf4j
 @Singleton
 class PillarBars
 {
@@ -41,6 +39,7 @@ class PillarBars
 	};
 
 	private final Client client;
+	private final DebugLog debugLog;
 
 	private final float[] fractions = new float[CORNERS];
 	private final boolean[] full = new boolean[CORNERS];
@@ -53,16 +52,22 @@ class PillarBars
 	private boolean hidden;
 
 	@Inject
-	PillarBars(Client client)
+	PillarBars(Client client, DebugLog debugLog)
 	{
 		this.client = client;
+		this.debugLog = debugLog;
 	}
 
 	void onScript(int scriptId, Object[] args)
 	{
 		if (scriptId == FADE_IN_SCRIPT || scriptId == FADE_OUT_SCRIPT)
 		{
-			shown = scriptId == FADE_IN_SCRIPT;
+			final boolean fadeIn = scriptId == FADE_IN_SCRIPT;
+			if (fadeIn != shown)
+			{
+				debugLog.add("Pillar bars fade {}", fadeIn ? "in" : "out");
+			}
+			shown = fadeIn;
 			shownKnown = true;
 			return;
 		}
@@ -98,17 +103,24 @@ class PillarBars
 		{
 			return;
 		}
+		final int previousMax = maxes[corner];
 		maxes[corner] = max;
 		final int current = currentValue == UNCHANGED ? currents[corner] : currentValue;
 		if (current == UNCHANGED)
 		{
 			return;
 		}
+		// Charge changes every hit, so only the first value, a new max and reaching or leaving full are logged.
+		final boolean nowFull = current >= max;
+		final boolean logged = !known[corner] || max != previousMax || nowFull != full[corner];
 		currents[corner] = current;
 		fractions[corner] = fraction(current, max);
-		full[corner] = current >= max;
+		full[corner] = nowFull;
 		known[corner] = true;
-		log.debug("Pillar bar {}: {}/{}", corner, current, max);
+		if (logged)
+		{
+			debugLog.add("Pillar bar {}: {}/{}", corner, current, max);
+		}
 	}
 
 	void update(boolean replace)
@@ -132,6 +144,10 @@ class PillarBars
 			if (!totems.isSelfHidden())
 			{
 				totems.setHidden(true);
+				if (!hidden)
+				{
+					debugLog.add("Pillar bars: game's bars hidden");
+				}
 				hidden = true;
 			}
 		}
@@ -161,13 +177,14 @@ class PillarBars
 			final Widget border = client.getWidget(InterfaceID.NightmareTotems.TOTEMS_BORDER);
 			shown = border != null && border.getOpacity() < TRANSPARENT;
 		}
-		log.debug("Pillar bars seeded: {} {} shown={}", Arrays.toString(fractions), Arrays.toString(full), shown);
+		debugLog.add("Pillar bars seeded: {} {} shown={}", Arrays.toString(fractions), Arrays.toString(full), shown);
 	}
 
 	private void release()
 	{
 		if (hidden)
 		{
+			debugLog.add("Pillar bars: game's bars released");
 			final Widget totems = client.getWidget(InterfaceID.NightmareTotems.TOTEMS);
 			if (totems != null)
 			{
@@ -240,5 +257,15 @@ class PillarBars
 	boolean isShown()
 	{
 		return shown;
+	}
+
+	boolean isSeen()
+	{
+		return seen;
+	}
+
+	boolean isHidingGameBars()
+	{
+		return hidden;
 	}
 }

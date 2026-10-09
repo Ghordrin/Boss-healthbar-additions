@@ -37,6 +37,9 @@ class SpecialAttackCounts
 	private final BossHealthBarConfig config;
 	private final PluginManager pluginManager;
 	private final InfoBoxManager infoBoxManager;
+	private final DebugLog debugLog;
+	// A broken info box fails every tick, so the debug log gets it once until a read works again.
+	private boolean failureLogged;
 
 	private Boolean pluginActive;
 	private boolean available;
@@ -44,11 +47,13 @@ class SpecialAttackCounts
 	private boolean missedTick;
 
 	@Inject
-	SpecialAttackCounts(BossHealthBarConfig config, PluginManager pluginManager, InfoBoxManager infoBoxManager)
+	SpecialAttackCounts(BossHealthBarConfig config, PluginManager pluginManager, InfoBoxManager infoBoxManager,
+		DebugLog debugLog)
 	{
 		this.config = config;
 		this.pluginManager = pluginManager;
 		this.infoBoxManager = infoBoxManager;
+		this.debugLog = debugLog;
 	}
 
 	void invalidatePlugin()
@@ -87,10 +92,16 @@ class SpecialAttackCounts
 		try
 		{
 			accept(find(infoBoxManager.getInfoBoxes()));
+			failureLogged = false;
 		}
 		catch (RuntimeException e)
 		{
 			log.debug("Couldn't read Special Attack Counter info boxes", e);
+			if (!failureLogged)
+			{
+				failureLogged = true;
+				debugLog.add("Couldn't read Special Attack Counter info boxes: {}", e.toString());
+			}
 			clear();
 		}
 	}

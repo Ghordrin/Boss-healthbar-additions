@@ -30,12 +30,15 @@ class GameBossBar
 	};
 
 	private final Client client;
+	private final DebugLog debugLog;
 
 	private boolean hidden;
 	private NPC npc;
 	private int searchedId = -1;
 	private int replacedId = -1;
+	private int loggedTrackedId = -1;
 	private int healthSeenId = -1;
+	private int loggedZeroId = -1;
 
 	private int percentOnlyNpcId = -1;
 	private boolean percentOnly;
@@ -45,9 +48,32 @@ class GameBossBar
 	private float[] phaseMarkers = BarState.NO_PHASE_MARKERS;
 
 	@Inject
-	GameBossBar(Client client)
+	GameBossBar(Client client, DebugLog debugLog)
 	{
 		this.client = client;
+		this.debugLog = debugLog;
+	}
+
+	void onGameTick()
+	{
+		final int trackedId = trackedNpcId();
+		if (trackedId != loggedTrackedId)
+		{
+			loggedTrackedId = trackedId;
+			if (trackedId == -1)
+			{
+				debugLog.add("Game boss bar tracks nothing");
+			}
+			else
+			{
+				debugLog.add("Game boss bar tracks NPC id {} (health {}/{})", trackedId, health(), maxHealth());
+			}
+		}
+		if (trackedId != -1 && trackedId != loggedZeroId && !hasHealth())
+		{
+			loggedZeroId = trackedId;
+			debugLog.add("Game boss bar reads 0 for NPC id {} before its health arrived, ignored", trackedId);
+		}
 	}
 
 	int trackedNpcId()
@@ -160,6 +186,10 @@ class GameBossBar
 			if (!bar.isSelfHidden())
 			{
 				bar.setHidden(true);
+				if (!hidden)
+				{
+					debugLog.add("Game boss bar hidden (tracked id {})", trackedNpcId());
+				}
 				hidden = true;
 			}
 		}
@@ -184,6 +214,7 @@ class GameBossBar
 	{
 		if (hidden)
 		{
+			debugLog.add("Game boss bar shown again");
 			final Widget bar = client.getWidget(GAME_BAR);
 			if (bar != null)
 			{
@@ -200,7 +231,14 @@ class GameBossBar
 		npc = null;
 		searchedId = -1;
 		replacedId = -1;
+		loggedTrackedId = -1;
 		healthSeenId = -1;
+		loggedZeroId = -1;
+	}
+
+	boolean isHidden()
+	{
+		return hidden;
 	}
 
 	int maxHealth()

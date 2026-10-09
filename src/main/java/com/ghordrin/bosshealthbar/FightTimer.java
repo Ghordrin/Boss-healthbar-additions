@@ -1,6 +1,7 @@
 package com.ghordrin.bosshealthbar;
 
 import java.util.Objects;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -29,6 +30,8 @@ class FightTimer
 		}
 	}
 
+	private final DebugLog debugLog;
+
 	private Actor opponent;
 	private String name;
 	private int endTick = NO_TICK;
@@ -43,6 +46,12 @@ class FightTimer
 	@Getter(AccessLevel.PACKAGE)
 	private String text;
 
+	@Inject
+	FightTimer(DebugLog debugLog)
+	{
+		this.debugLog = debugLog;
+	}
+
 	void opponentChanged(Actor next, String nextName, boolean previousDefeated, boolean pairHeld, int tick)
 	{
 		opponentChanged(nextName, previousDefeated, pairHeld, next == lastHitActor ? lastHitTick : NO_TICK, tick);
@@ -53,8 +62,16 @@ class FightTimer
 	// pairHeld is whether the new opponent's pair is still being kept from before.
 	void opponentChanged(String nextName, boolean previousDefeated, boolean pairHeld, int earlierHitTick, int tick)
 	{
-		if (!keepsCounting(name, previousDefeated || endTick != NO_TICK, clearedTick, nextName, pairHeld, tick))
+		if (keepsCounting(name, previousDefeated || endTick != NO_TICK, clearedTick, nextName, pairHeld, tick))
 		{
+			debugLog.add("Fight timer carried over to the new opponent ({})", elapsedText(tick));
+		}
+		else
+		{
+			if (startTick != NO_TICK)
+			{
+				debugLog.add("Fight timer: new fight, previous one cleared ({})", elapsedText(tick));
+			}
 			clearFight();
 		}
 		opponent = null;
@@ -63,6 +80,10 @@ class FightTimer
 		if (startTick == NO_TICK)
 		{
 			startTick = recentHitTick(earlierHitTick, tick);
+			if (startTick != NO_TICK)
+			{
+				debugLog.add("Fight timer started from a hit on tick {}", startTick);
+			}
 		}
 		updateText(tick);
 	}
@@ -85,11 +106,13 @@ class FightTimer
 		{
 			startTick = recentHitTick(earlierHitTick, tick);
 		}
+		debugLog.add("Fight timer resumed a remembered fight (start tick {}, end tick {})", startTick, endTick);
 		updateText(tick);
 	}
 
 	void startOver(int tick)
 	{
+		debugLog.add("Fight timer started over (was {})", elapsedText(tick));
 		startTick = tick;
 		endTick = NO_TICK;
 		updateText(tick);
@@ -127,6 +150,7 @@ class FightTimer
 		if (startTick == NO_TICK && endTick == NO_TICK)
 		{
 			startTick = tick;
+			debugLog.add("Fight timer started");
 			updateText(tick);
 		}
 	}
@@ -145,10 +169,11 @@ class FightTimer
 			{
 				defeat(tick);
 			}
-			else
+			else if (endTick != NO_TICK)
 			{
 				// Some opponents drop to 0 and come back for another phase.
 				endTick = NO_TICK;
+				debugLog.add("Fight timer running again, the opponent is back up");
 			}
 		}
 		updateText(tick);
@@ -159,6 +184,7 @@ class FightTimer
 	{
 		if (Objects.equals(name, pair))
 		{
+			debugLog.add("Fight timer: pair cleared, its next fight starts over");
 			name = null;
 		}
 	}
@@ -186,7 +212,14 @@ class FightTimer
 		if (startTick != NO_TICK && endTick == NO_TICK)
 		{
 			endTick = tick;
+			debugLog.add("Fight timer stopped, opponent defeated ({})", elapsedText(tick));
 		}
+	}
+
+	private String elapsedText(int tick)
+	{
+		final int ticks = elapsedTicks(startTick, endTick, tick);
+		return ticks == NO_TICK ? "not started" : ticks + " ticks";
 	}
 
 	private void updateText(int tick)

@@ -9,7 +9,6 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -17,7 +16,6 @@ import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.events.ChatMessage;
 
-@Slf4j
 @Singleton
 class SuperiorTracker
 {
@@ -41,14 +39,16 @@ class SuperiorTracker
 	}
 
 	private final Client client;
+	private final DebugLog debugLog;
 	private final Map<NPC, Integer> recentSpawnTicks = new HashMap<>();
 	private final Set<NPC> superiors = new HashSet<>();
 	private int messageTick = -1;
 
 	@Inject
-	SuperiorTracker(Client client)
+	SuperiorTracker(Client client, DebugLog debugLog)
 	{
 		this.client = client;
+		this.debugLog = debugLog;
 	}
 
 	boolean isSuperior(Actor actor)
@@ -74,7 +74,7 @@ class SuperiorTracker
 			&& event.getMessage().contains(SPAWN_MESSAGE))
 		{
 			messageTick = client.getTickCount();
-			log.debug("Superior spawn message on tick {}", messageTick);
+			debugLog.add("Superior spawn message on tick {}", messageTick);
 		}
 	}
 
@@ -92,10 +92,13 @@ class SuperiorTracker
 
 		final Player player = client.getLocalPlayer();
 		final List<Spawn<NPC>> spawns = new ArrayList<>();
+		int eligible = 0;
 		for (NPC npc : recentSpawnTicks.keySet())
 		{
 			final boolean known = SuperiorIds.contains(NpcUtil.currentId(npc));
-			spawns.add(new Spawn<>(npc, known, !known && player != null && isEligible(npc, player)));
+			final Spawn<NPC> spawn = new Spawn<>(npc, known, !known && player != null && isEligible(npc, player));
+			eligible += spawn.isEligible() ? 1 : 0;
+			spawns.add(spawn);
 		}
 
 		final Match<NPC> match = match(spawns);
@@ -105,13 +108,17 @@ class SuperiorTracker
 			if (match.getSuperior() != null)
 			{
 				superiors.add(match.getSuperior());
-				log.debug("Marked {} as a superior", match.getSuperior().getName());
+				debugLog.add("Marked {} as a superior", DebugLog.describe(match.getSuperior()));
+			}
+			else if (eligible > 1 && spawns.stream().noneMatch(Spawn::isKnownSuperior))
+			{
+				debugLog.add("{} NPCs spawned with the superior spawn message, marking none", eligible);
 			}
 		}
 		else if (tick - messageTick >= MATCH_TICKS)
 		{
 			messageTick = -1;
-			log.debug("No spawned NPC found for the superior spawn message");
+			debugLog.add("No spawned NPC found for the superior spawn message");
 		}
 	}
 
@@ -141,7 +148,6 @@ class SuperiorTracker
 		}
 		if (eligible > 1)
 		{
-			log.debug("{} NPCs spawned with the superior spawn message, marking none", eligible);
 			return new Match<>(true, null);
 		}
 		return new Match<>(eligible == 1, only);

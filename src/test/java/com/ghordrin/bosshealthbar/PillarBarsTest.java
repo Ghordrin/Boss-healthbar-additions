@@ -4,6 +4,7 @@ import static com.ghordrin.bosshealthbar.PillarBars.FADE_IN_SCRIPT;
 import static com.ghordrin.bosshealthbar.PillarBars.FADE_OUT_SCRIPT;
 import static com.ghordrin.bosshealthbar.PillarBars.UPDATE_SCRIPT;
 import java.awt.Dimension;
+import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -18,7 +19,8 @@ public class PillarBarsTest
 	private static final int SE = InterfaceID.NightmareTotems.TOTEM_SE_BAR_BACK;
 	private static final float DELTA = 0.0001f;
 
-	private final PillarBars bars = new PillarBars(null);
+	private final DebugLog debugLog = new DebugLog(null);
+	private final PillarBars bars = new PillarBars(null, debugLog);
 
 	private static Object[] update(int[]... groups)
 	{
@@ -61,6 +63,38 @@ public class PillarBarsTest
 		assertEquals(0.5f, bars.fraction(1), DELTA);
 		assertEquals(0.4f, bars.fraction(2), DELTA);
 		assertEquals(0.6f, bars.fraction(3), DELTA);
+	}
+
+	@Test
+	public void onlyChangedValuesAreLogged()
+	{
+		bars.onScript(UPDATE_SCRIPT, update(group(NW, 100, 40), group(NE, 100, 40), group(SW, 100, 40), group(SE, 100, 40)));
+		assertEquals(4, debugLog.snapshot().size());
+
+		bars.onScript(UPDATE_SCRIPT, update(group(NW, 100, 40), group(NE, -1, -1), group(SW, 100, -1), group(SE, -1, 40)));
+		assertEquals(4, debugLog.snapshot().size());
+
+		bars.onScript(UPDATE_SCRIPT, update(group(NW, 100, 41), group(NE, -1, -1), group(SW, 200, -1), group(SE, -1, -1)));
+		assertEquals(5, debugLog.snapshot().size());
+		assertEquals("Pillar bar 2: 40/200", debugLog.snapshot().get(4).message);
+
+		bars.onScript(UPDATE_SCRIPT, update(group(NW, 100, 100), group(NE, -1, -1), group(SW, -1, -1), group(SE, -1, -1)));
+		bars.onScript(UPDATE_SCRIPT, update(group(NW, 100, 0), group(NE, -1, -1), group(SW, -1, -1), group(SE, -1, -1)));
+		final List<DebugLog.Entry> entries = debugLog.snapshot();
+		assertEquals(7, entries.size());
+		assertEquals("Pillar bar 0: 100/100", entries.get(5).message);
+		assertEquals("Pillar bar 0: 0/100", entries.get(6).message);
+	}
+
+	@Test
+	public void fadesAreLoggedOnlyWhenShownChanges()
+	{
+		bars.onScript(FADE_OUT_SCRIPT, null);
+		assertTrue(debugLog.snapshot().isEmpty());
+		bars.onScript(FADE_IN_SCRIPT, null);
+		bars.onScript(FADE_IN_SCRIPT, null);
+		assertEquals(1, debugLog.snapshot().size());
+		assertEquals(1, debugLog.snapshot().get(0).repeats);
 	}
 
 	@Test

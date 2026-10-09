@@ -52,8 +52,13 @@ Everything is in the RuneLite config panel, or right-click the bar and pick Conf
 | Layout | Where each item goes: left, centre or right, above or below the bar |
 | Custom colors | The icon and colours of the Custom theme |
 | When to show | Which opponents get a bar, Also show for / Never show for, Hide after, what happens to the game's boss bar (replace it, show both, or hide this one), and the other plugins above |
+| Bug reports | Save debug log: saves the plugin's recent activity to a text file for bug reports |
 
 The tooltip on each setting explains it in more detail.
+
+## Reporting a bug
+
+Right after the bar does something wrong, tick Save debug log (Bug reports section) or right-click the bar and pick Save debug log. The file goes to `.runelite/plugin-data/boss-health-bar-additions/` and the chat says where. Attach it to a GitHub issue. It holds the plugin and RuneLite versions, your settings for this plugin, which related plugins are on, and the plugin's last 1000 events (NPC names and IDs, times, game ticks). No player names, chat or account details; it's kept in memory only and nothing is sent anywhere.
 
 ## Data
 
