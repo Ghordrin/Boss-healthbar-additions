@@ -14,7 +14,7 @@ import org.junit.Test;
 
 public class BossMemoryTest
 {
-	private static final FightTimer.Fight FIGHT = new FightTimer.Fight("Boss", 10, NO_TICK);
+	private static final FightTimer.Fight FIGHT = new FightTimer.Fight(1, 10, NO_TICK);
 
 	private final BossMemory memory = new BossMemory();
 
@@ -47,26 +47,19 @@ public class BossMemoryTest
 	@Test
 	public void clearlyMoreHealthOnReturnIsANewFight()
 	{
-		assertFalse(BossMemory.healedSince(15, 30, 15, 30));
-		assertFalse(BossMemory.healedSince(15, 30, 20, 30));
-		assertTrue(BossMemory.healedSince(15, 30, 22, 30));
-		assertTrue(BossMemory.healedSince(0, 30, 900, 1000));
-		assertFalse(BossMemory.healedSince(500, 1000, 10, 30));
-		assertFalse(BossMemory.healedSince(0, 0, 30, 30));
+		assertFalse(BossMemory.healedSince(15, 30, false, 15, 30));
+		assertFalse(BossMemory.healedSince(15, 30, false, 20, 30));
+		assertTrue(BossMemory.healedSince(15, 30, false, 22, 30));
+		assertTrue(BossMemory.healedSince(0, 1000, true, 900, 1000));
+		assertFalse(BossMemory.healedSince(500, 1000, true, 10, 30));
+		assertFalse(BossMemory.healedSince(0, 0, false, 30, 30));
 	}
 
 	@Test
-	public void aForgottenPairDropsTheEntriesOfItsFight()
+	public void healthBackFromAnOverheadZeroIsNotAHeal()
 	{
-		final FightTimer.Fight pairFight = new FightTimer.Fight(PairBosses.GUARDIANS, 10, NO_TICK);
-		memory.remember(1, "First", 100, pairFight);
-		memory.remember(2, "Second", 100, pairFight);
-		memory.remember(3, "Boss", 100, FIGHT);
-
-		memory.forgetFight(PairBosses.GUARDIANS);
-		assertNull(memory.find(1, "First", 101));
-		assertNull(memory.find(2, "Second", 101));
-		assertNotNull(memory.find(3, "Boss", 101));
+		assertFalse(BossMemory.healedSince(0, 30, false, 30, 30));
+		assertTrue(BossMemory.healedSince(0, 30, true, 30, 30));
 	}
 
 	@Test

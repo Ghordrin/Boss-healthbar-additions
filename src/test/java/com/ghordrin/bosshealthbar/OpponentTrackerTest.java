@@ -1,6 +1,10 @@
 package com.ghordrin.bosshealthbar;
 
+import static com.ghordrin.bosshealthbar.OpponentTracker.DespawnOutcome.DEFEATED;
+import static com.ghordrin.bosshealthbar.OpponentTracker.DespawnOutcome.LEFT;
+import static com.ghordrin.bosshealthbar.OpponentTracker.DespawnOutcome.OUT_OF_SIGHT;
 import net.runelite.api.HitsplatID;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -75,5 +79,30 @@ public class OpponentTrackerTest
 		assertFalse(OpponentTracker.isCombatHit(HitsplatID.DOOM));
 		assertFalse(OpponentTracker.isCombatHit(HitsplatID.CORRUPTION));
 		assertFalse(OpponentTracker.isCombatHit(HitsplatID.HEAL));
+	}
+
+	@Test
+	public void aConfirmedDefeatIsAKillWhereverItDespawns()
+	{
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(true, false, false, 5));
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(true, false, false, 40));
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(true, true, true, 40));
+	}
+
+	@Test
+	public void anUnconfirmedZeroIsOnlyAKillInView()
+	{
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(false, true, false, 14));
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(false, true, false, -1));
+		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, true, false, 15));
+		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, true, true, 15));
+	}
+
+	@Test
+	public void withoutAZeroItWentOutOfSightOrLeft()
+	{
+		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, false, false, 14));
+		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, false, false, 15));
+		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, false, true, 30));
 	}
 }

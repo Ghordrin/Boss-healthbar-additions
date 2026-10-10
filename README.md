@@ -14,7 +14,7 @@ See the [changelog](CHANGELOG.md) for what's new in each version.
 
 - Replaces the opponent health bar with a wide, themed bar: name, combat level and hitpoints, a damage trail after each hit, a low health pulse, and the damage of your latest attack (or your party's)
 - Takes over the game's own boss health bar, using its exact hitpoints and phase markers. Other bars the game shows next to it, like pillar bars, are drawn in the same style in their own movable box
-- For bosses fought as a pair, a smaller bar under the main one shows the other one's health
+- A smaller second bar shows another boss you're fighting at the same time, with its last known health while it's away
 - Remembers a boss you walk away from: come back and the bar carries on with its health and fight time, without "Defeated" or the intro
 - Optional info around the bar: kill count, fight timer, elemental weakness, defence drain limit, party and magic defence, special attack counts
 - Themes: god themes, a custom theme with your own colours and icon, the boss's own icon and colours, a plain Oldschool look, and the game's textures over the fill
@@ -47,7 +47,7 @@ Everything is in the RuneLite config panel, or right-click the bar and pick Conf
 | Look | Theme, Oldschool theme, boss colours, rare gold bars, icons, bar ends, fill texture, phase markers, size |
 | Text | Name, combat level, hitpoints text (percentage, value, both or none), damage number and whose hits it counts |
 | Fonts | Font and size of each text around the bar, and Smooth text |
-| Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer |
+| Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar |
 | Animations | Damage trail, heal speed, low health effect, flash on big hits, intro, defeat animation, burn away |
 | Layout | Where each item goes: left, centre or right, above or below the bar |
 | Custom colors | The icon and colours of the Custom theme |

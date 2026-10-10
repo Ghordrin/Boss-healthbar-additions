@@ -84,7 +84,7 @@ class BossHealthBarOverlay extends Overlay
 	private final PartyDefence partyDefence;
 	private final SpecialAttackCounts specialAttackCounts;
 	private final FightTimer fightTimer;
-	private final PairBosses pairs;
+	private final FightGroup group;
 	private final LastHealth lastHealth = new LastHealth();
 	private final DebugLog debugLog;
 	private final BarAnimation animation = new BarAnimation();
@@ -99,7 +99,7 @@ class BossHealthBarOverlay extends Overlay
 	private boolean rolledGold;
 	private long switchHoldUntilNanos;
 	private boolean retargetPending;
-	private PairBosses.Slot partnerSlot;
+	private FightGroup.Member partnerMember;
 	private BarState partnerTextState;
 	private HitpointsTextMode partnerTextMode;
 	private String partnerText;
@@ -142,7 +142,7 @@ class BossHealthBarOverlay extends Overlay
 		PartyDefence partyDefence,
 		SpecialAttackCounts specialAttackCounts,
 		FightTimer fightTimer,
-		PairBosses pairs,
+		FightGroup group,
 		Pickers pickers,
 		DebugLog debugLog,
 		DebugExport debugExport)
@@ -166,7 +166,7 @@ class BossHealthBarOverlay extends Overlay
 		this.partyDefence = partyDefence;
 		this.specialAttackCounts = specialAttackCounts;
 		this.fightTimer = fightTimer;
-		this.pairs = pairs;
+		this.group = group;
 		this.debugLog = debugLog;
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
@@ -199,7 +199,7 @@ class BossHealthBarOverlay extends Overlay
 		switchHoldUntilNanos = 0;
 		retargetPending = false;
 		partnerAnimation.reset();
-		partnerSlot = null;
+		partnerMember = null;
 		resuming = false;
 	}
 
@@ -248,7 +248,7 @@ class BossHealthBarOverlay extends Overlay
 			final boolean wentOutOfSight = opponentTracker.wentOutOfSight(trackedOpponent);
 			// The bar's own reading of 0 wins over the distance.
 			final boolean outOfSight = wentOutOfSight
-				&& (ownState == null || ownState.ratio > 0 || !NpcUtil.canBeDefeated(trackedOpponent));
+				&& (ownState == null || ownState.ratio > 0 || !ownState.exactHealth);
 			if (outOfSight)
 			{
 				opponentTracker.rememberState(trackedOpponent, ownState);
@@ -259,7 +259,7 @@ class BossHealthBarOverlay extends Overlay
 			}
 
 			if (opponent == null && trackedOpponent != null && lastState != null && !animation.isDefeatPlaying()
-				&& config.showDefeatAnimation() && !outOfSight && NpcUtil.canBeDefeated(trackedOpponent)
+				&& config.showDefeatAnimation() && !outOfSight
 				&& (trackedOpponent.isDead() || lastState.ratio <= 0))
 			{
 				// The opponent despawned as it died, so keep drawing it until the defeat animation ends.
@@ -286,7 +286,7 @@ class BossHealthBarOverlay extends Overlay
 				resuming = true;
 			}
 			else if (opponent != null && trackedOpponent != null && lastState != null
-				&& (!trackedOpponent.isDead() || !NpcUtil.canBeDefeated(trackedOpponent))
+				&& !trackedOpponent.isDead()
 				&& !animation.isDefeatPlaying())
 			{
 				// Switching targets mid-fight, e.g. between the NPCs of a group boss. The bar stays up and
@@ -321,8 +321,8 @@ class BossHealthBarOverlay extends Overlay
 		final BarState state = opponent != null ? readState(opponent) : null;
 		if (state != null)
 		{
-			if (resuming && lastStateActor == opponent && lastState != null && NpcUtil.canBeDefeated(opponent)
-				&& BossMemory.healedSince(lastState.ratio, lastState.scale, state.ratio, state.scale))
+			if (resuming && lastStateActor == opponent && lastState != null
+				&& BossMemory.healedSince(lastState.ratio, lastState.scale, lastState.exactHealth, state.ratio, state.scale))
 			{
 				opponentTracker.healedOnReturn(opponent);
 			}
@@ -340,7 +340,7 @@ class BossHealthBarOverlay extends Overlay
 				retargetPending = false;
 			}
 
-			if (!opponent.isDead() || !NpcUtil.canBeDefeated(opponent))
+			if (!opponent.isDead())
 			{
 				animation.cancelDefeat();
 			}
@@ -471,8 +471,8 @@ class BossHealthBarOverlay extends Overlay
 		final int shownInset = (width - shownWidth) / 2;
 		final int totalWidth = leftExtent + width + rightExtent;
 
-		// Kept for the whole fight with a pair, so the bar doesn't move when the other one's health first shows.
-		final boolean partnerArea = showingPreview || PairBosses.isPairMember(trackedOpponent);
+		// Kept for the whole fight, so the bar doesn't move when the other boss's health first shows.
+		final boolean partnerArea = config.showPartnerBar() && (showingPreview || group.isGroupFight());
 		final int partnerBarHeight = Math.max(PARTNER_MIN_HEIGHT, Math.round(barHeight * 0.5f));
 		final int partnerCapRise = capRise(partnerBarHeight, flat, ends);
 		final int partnerRowHeight = partnerArea ? textPainter.partnerRowHeight() : 0;
@@ -574,24 +574,24 @@ class BossHealthBarOverlay extends Overlay
 		return new Dimension(leftExtent + width + rightExtent, totalHeight);
 	}
 
-	// The other member of a pair, in the main bar's colours but without its extras.
+	// Another boss of the same fight, in the main bar's colours but without its extras.
 	private void drawPartner(Graphics2D graphics, Composite originalComposite, float barOpacity, float textOpacity,
 		ThemeColors colors, int rowTop, int barY, int width, int shownWidth, int shownInset, int capWidth, int barHeight,
 		float fillProgress, boolean flat, BarEnds ends)
 	{
-		final PairBosses.Slot slot = showingPreview ? null : pairs.partnerOf(trackedOpponent);
-		if (slot != partnerSlot)
+		final FightGroup.Member member = showingPreview ? null : group.partner();
+		if (member != partnerMember)
 		{
 			// The bars swapped, so jump to the new partner's health instead of animating from the old one's.
 			partnerAnimation.reset();
-			partnerSlot = slot;
+			partnerMember = member;
 		}
-		final BarState partner = showingPreview ? PREVIEW_PARTNER : slot != null ? slot.state : null;
+		final BarState partner = showingPreview ? PREVIEW_PARTNER : member != null ? member.state : null;
 		if (partner == null)
 		{
 			return;
 		}
-		final boolean dead = slot != null && slot.dead;
+		final boolean dead = member != null && member.dead;
 		partnerAnimation.tick(clamp01(partner.ratio / (float) partner.scale), config.animationSpeed(),
 			config.showDamageTrail(), 0);
 

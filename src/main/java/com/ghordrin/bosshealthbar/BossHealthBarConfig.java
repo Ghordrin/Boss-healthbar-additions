@@ -582,6 +582,18 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showPartnerBar",
+		name = "Second boss bar",
+		description = "Shows a smaller bar for another boss you're fighting at the same time, with its last known health while it's away.",
+		position = 7,
+		section = bossInfoSection
+	)
+	default boolean showPartnerBar()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "showDamageTrail",
 		name = "Damage trail",
 		description = "After a hit, keep the lost health visible as a lighter section before it drains away.",

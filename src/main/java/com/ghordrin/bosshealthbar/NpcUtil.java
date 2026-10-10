@@ -1,9 +1,7 @@
 package com.ghordrin.bosshealthbar;
 
-import net.runelite.api.Actor;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
-import net.runelite.api.gameval.NpcID;
 
 final class NpcUtil
 {
@@ -38,28 +36,6 @@ final class NpcUtil
 	{
 		final NPCComposition composition = npc.getTransformedComposition();
 		return composition != null ? composition.getId() : npc.getId();
-	}
-
-	static boolean canBeDefeated(Actor actor)
-	{
-		return !(actor instanceof NPC) || canBeDefeated(((NPC) actor).getId());
-	}
-
-	// Forms that restore health instead of dying, so 0 health there isn't a kill.
-	static boolean canBeDefeated(int npcId)
-	{
-		switch (npcId)
-		{
-			case NpcID.ABYSSALSIRE_SIRE_STASIS_SLEEPING:
-			case NpcID.ABYSSALSIRE_SIRE_STASIS_AWAKE:
-			case NpcID.ABYSSALSIRE_SIRE_STASIS_STUNNED:
-			case NpcID.ABYSSALSIRE_SIRE_PUPPET:
-			case NpcID.ABYSSALSIRE_SIRE_WANDERING:
-			case NpcID.ABYSSALSIRE_SIRE_PANICKING:
-				return false;
-			default:
-				return true;
-		}
 	}
 
 	// The game's boss bar tracks the base NPC ID, not the ID of the current form.

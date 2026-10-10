@@ -3,6 +3,8 @@
 ## Unreleased
 
 - New Save debug log option (in the new Bug reports section, or right-click the bar) saves the plugin's recent activity to a text file for bug reports
+- New Second boss bar option (Boss info, on by default). The smaller bar under the main one now shows any other boss you're fighting at the same time, not only pairs, with its last known health while it's away
+- Bosses fought together count as one fight on the fight timer
 
 ## 1.6.0 (2026-10-10)
 

@@ -105,11 +105,6 @@ class BossMemory
 		}
 	}
 
-	void forgetFight(String fightName)
-	{
-		entries.removeIf(entry -> entry.fight != null && Objects.equals(entry.fight.name, fightName));
-	}
-
 	void clear()
 	{
 		entries.clear();
@@ -130,9 +125,10 @@ class BossMemory
 		return Math.max(Math.abs(x - npcX), Math.abs(y - npcY));
 	}
 
-	static boolean healedSince(int rememberedRatio, int rememberedScale, int ratio, int scale)
+	// An overhead 0 isn't always a kill, such as a stun meter that empties, so health coming back from it isn't a heal.
+	static boolean healedSince(int rememberedRatio, int rememberedScale, boolean rememberedExact, int ratio, int scale)
 	{
-		return rememberedScale > 0 && scale > 0
+		return rememberedScale > 0 && scale > 0 && (rememberedRatio > 0 || rememberedExact)
 			&& ratio / (float) scale - rememberedRatio / (float) rememberedScale > HEALED_FRACTION;
 	}
 
