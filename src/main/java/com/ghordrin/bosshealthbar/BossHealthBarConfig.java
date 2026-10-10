@@ -21,6 +21,14 @@ public interface BossHealthBarConfig extends Config
 	String CHOOSE_CUSTOM_ICON_KEY = "chooseCustomIcon";
 	String THEME_KEY = "theme";
 	HealthBarTheme DEFAULT_THEME = HealthBarTheme.ZAMORAK;
+	String CUSTOM_FILL_HIGH_COLOR_KEY = "customFillHighColor";
+	String CUSTOM_FILL_LOW_COLOR_KEY = "customFillLowColor";
+	String CUSTOM_TRAIL_COLOR_KEY = "customTrailColor";
+	String CUSTOM_FRAME_COLOR_KEY = "customFrameColor";
+	String CUSTOM_TEXT_COLOR_KEY = "customTextColor";
+	String CUSTOM_LEVEL_TEXT_COLOR_KEY = "customLevelTextColor";
+	String CUSTOM_HITPOINTS_TEXT_COLOR_KEY = "customHitpointsTextColor";
+	String CUSTOM_DEFEATED_TEXT_COLOR_KEY = "customDefeatedTextColor";
 	String OLDSCHOOL_THEME_KEY = "oldschoolTheme";
 	String MATCH_BOSS_COLORS_KEY = "matchBossColors";
 	String RARE_GOLD_BARS_KEY = "rareGoldBars";
@@ -814,7 +822,7 @@ public interface BossHealthBarConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		keyName = "customFillHighColor",
+		keyName = CUSTOM_FILL_HIGH_COLOR_KEY,
 		name = "Fill (full health)",
 		description = "The fill color at full health. It blends towards the low health color as health drops.",
 		position = 1,
@@ -827,7 +835,7 @@ public interface BossHealthBarConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		keyName = "customFillLowColor",
+		keyName = CUSTOM_FILL_LOW_COLOR_KEY,
 		name = "Fill (low health)",
 		description = "The fill color near zero health. Use the full health color for a single color.",
 		position = 2,
@@ -840,7 +848,7 @@ public interface BossHealthBarConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		keyName = "customTrailColor",
+		keyName = CUSTOM_TRAIL_COLOR_KEY,
 		name = "Damage trail color",
 		description = "The color of the damage trail.",
 		position = 3,
@@ -853,7 +861,7 @@ public interface BossHealthBarConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		keyName = "customFrameColor",
+		keyName = CUSTOM_FRAME_COLOR_KEY,
 		name = "Frame",
 		description = "The color of the frame, end pieces, underline and phase markers.",
 		position = 4,
@@ -866,7 +874,7 @@ public interface BossHealthBarConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		keyName = "customTextColor",
+		keyName = CUSTOM_TEXT_COLOR_KEY,
 		name = "Name and damage text",
 		description = "The color of the name and the damage number, and of the party and magic defence and special attack counts when they have no color of their own.",
 		position = 5,
@@ -879,7 +887,7 @@ public interface BossHealthBarConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		keyName = "customLevelTextColor",
+		keyName = CUSTOM_LEVEL_TEXT_COLOR_KEY,
 		name = "Combat level text",
 		description = "The color of the combat level, fight timer, kill count, elemental weakness and defence drain limit.",
 		position = 6,
@@ -892,7 +900,7 @@ public interface BossHealthBarConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		keyName = "customHitpointsTextColor",
+		keyName = CUSTOM_HITPOINTS_TEXT_COLOR_KEY,
 		name = "Hitpoints text",
 		description = "The color of the hitpoints text.",
 		position = 7,
@@ -905,7 +913,7 @@ public interface BossHealthBarConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		keyName = "customDefeatedTextColor",
+		keyName = CUSTOM_DEFEATED_TEXT_COLOR_KEY,
 		name = "Defeated text",
 		description = "The color of the \"Defeated\" label.",
 		position = 8,

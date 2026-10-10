@@ -225,16 +225,7 @@ class BossHealthBarOverlay extends Overlay
 		if (themeColors == null)
 		{
 			final BarTheme theme = BarTheme.of(config);
-			themeColors = theme.getColors() != null ? theme.getColors() : ThemeColors.builder()
-				.fillHigh(config.customFillHighColor())
-				.fillLow(config.customFillLowColor())
-				.trail(config.customTrailColor())
-				.frame(config.customFrameColor())
-				.text(config.customTextColor())
-				.levelText(config.customLevelTextColor())
-				.hitpointsText(config.customHitpointsTextColor())
-				.defeatedText(config.customDefeatedTextColor())
-				.build();
+			themeColors = theme.getColors() != null ? theme.getColors() : CustomColors.fromConfig(config);
 		}
 		return themeColors;
 	}
