@@ -182,14 +182,12 @@ class DebugExport
 
 	private String pluginState(String name)
 	{
-		for (Plugin other : pluginManager.getPlugins())
+		final Plugin other = PluginState.find(pluginManager, name);
+		if (other == null)
 		{
-			if (name.equals(other.getName()))
-			{
-				return pluginManager.isPluginActive(other) ? "on" : "off";
-			}
+			return "not installed";
 		}
-		return "not installed";
+		return pluginManager.isPluginActive(other) ? "on" : "off";
 	}
 
 	static String fileName(LocalDateTime time)

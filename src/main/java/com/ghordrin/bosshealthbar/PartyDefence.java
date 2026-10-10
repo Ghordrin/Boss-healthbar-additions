@@ -18,7 +18,6 @@ import net.runelite.api.Skill;
 import net.runelite.api.SpritePixels;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.client.game.SkillIconManager;
-import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
@@ -141,11 +140,11 @@ class PartyDefence
 	{
 		if (pluginActive == null)
 		{
-			pluginActive = isPluginActive(PLUGIN_NAME);
+			pluginActive = PluginState.isActive(pluginManager, PLUGIN_NAME);
 		}
 		if (betterPluginActive == null)
 		{
-			betterPluginActive = isPluginActive(BETTER_PLUGIN_NAME);
+			betterPluginActive = PluginState.isActive(pluginManager, BETTER_PLUGIN_NAME);
 		}
 		available = (pluginActive || betterPluginActive) && config.showPartyDefence();
 		magicAvailable = betterPluginActive && config.showMagicDefence();
@@ -243,18 +242,6 @@ class PartyDefence
 		return magicIcon;
 	}
 
-	private boolean isPluginActive(String pluginName)
-	{
-		for (Plugin plugin : pluginManager.getPlugins())
-		{
-			if (pluginName.equals(plugin.getName()))
-			{
-				return pluginManager.isPluginActive(plugin);
-			}
-		}
-		return false;
-	}
-
 	@VisibleForTesting
 	static Reading find(List<InfoBox> infoBoxes, String opponentName)
 	{
@@ -264,10 +251,10 @@ class PartyDefence
 			{
 				continue;
 			}
-			final String text = infoBox.getText();
-			if (text != null && !text.isEmpty())
+			final Reading reading = reading(infoBox);
+			if (reading != null)
 			{
-				return new Reading(text, infoBox.getTextColor());
+				return reading;
 			}
 		}
 		return null;

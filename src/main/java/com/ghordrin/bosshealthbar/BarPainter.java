@@ -365,7 +365,17 @@ class BarPainter
 		{
 			return null;
 		}
-		final int[] pixels = textureProvider.load(textureId);
+		final BufferedImage image = decodeTexture(textureProvider, textureId);
+		if (image != null)
+		{
+			fillTextureCache.put(textureId, image);
+		}
+		return image;
+	}
+
+	static BufferedImage decodeTexture(TextureProvider provider, int id)
+	{
+		final int[] pixels = provider.load(id);
 		if (pixels == null || pixels.length == 0)
 		{
 			return null;
@@ -378,7 +388,6 @@ class BarPainter
 
 		final BufferedImage image = new BufferedImage(side, side, BufferedImage.TYPE_INT_RGB);
 		image.setRGB(0, 0, side, side, pixels, 0, side);
-		fillTextureCache.put(textureId, image);
 		return image;
 	}
 

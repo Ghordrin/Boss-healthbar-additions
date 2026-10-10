@@ -11,7 +11,6 @@ import javax.inject.Singleton;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
-import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
@@ -79,7 +78,7 @@ class SpecialAttackCounts
 	{
 		if (pluginActive == null)
 		{
-			pluginActive = isPluginActive();
+			pluginActive = PluginState.isActive(pluginManager, PLUGIN_NAME);
 		}
 		available = pluginActive && config.showSpecialAttackCounts();
 
@@ -136,18 +135,6 @@ class SpecialAttackCounts
 	List<Reading> readings()
 	{
 		return readings;
-	}
-
-	private boolean isPluginActive()
-	{
-		for (Plugin plugin : pluginManager.getPlugins())
-		{
-			if (PLUGIN_NAME.equals(plugin.getName()))
-			{
-				return pluginManager.isPluginActive(plugin);
-			}
-		}
-		return false;
 	}
 
 	@VisibleForTesting

@@ -162,18 +162,11 @@ class FillTexturePickerDialog extends JDialog
 
 	private static BufferedImage toThumbnail(TextureProvider provider, int id)
 	{
-		final int[] pixels = provider.load(id);
-		if (pixels == null || pixels.length == 0)
+		final BufferedImage image = BarPainter.decodeTexture(provider, id);
+		if (image == null)
 		{
 			return null;
 		}
-		final int side = (int) Math.round(Math.sqrt(pixels.length));
-		if (side * side != pixels.length)
-		{
-			return null;
-		}
-		final BufferedImage image = new BufferedImage(side, side, BufferedImage.TYPE_INT_RGB);
-		image.setRGB(0, 0, side, side, pixels, 0, side);
 
 		final BufferedImage thumb = new BufferedImage(THUMB_SIZE, THUMB_SIZE, BufferedImage.TYPE_INT_RGB);
 		final Graphics2D g = thumb.createGraphics();
