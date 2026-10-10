@@ -123,15 +123,8 @@ class BarTextPainter
 	private int levelAbove;
 	private int levelBelow;
 
-	private String ellipsizedSource;
-	private Font ellipsizedFont;
-	private int ellipsizedWidth;
-	private String ellipsizedName;
-
-	private String partnerNameSource;
-	private Font partnerNameFont;
-	private int partnerNameWidth;
-	private String partnerName;
+	private final EllipsizedText ellipsizedName = new EllipsizedText();
+	private final EllipsizedText partnerName = new EllipsizedText();
 
 	private final ScaledIcon defenceIconCache = new ScaledIcon();
 	private final ScaledIcon magicIconCache = new ScaledIcon();
@@ -520,14 +513,8 @@ class BarTextPainter
 
 		if (available[NAME] && name != null && nameRight > left)
 		{
-			if (!name.equals(partnerNameSource) || fontMetrics.getFont() != partnerNameFont || nameRight - left != partnerNameWidth)
-			{
-				partnerName = ellipsize(name, fontMetrics, nameRight - left);
-				partnerNameSource = name;
-				partnerNameFont = fontMetrics.getFont();
-				partnerNameWidth = nameRight - left;
-			}
-			drawShadowedText(graphics, partnerName, left, baseline, colors.getText(), 1f);
+			drawShadowedText(graphics, partnerName.get(name, fontMetrics, nameRight - left), left, baseline,
+				colors.getText(), 1f);
 		}
 	}
 
@@ -650,7 +637,7 @@ class BarTextPainter
 		if (showName)
 		{
 			final BarLayout nameRow = row(NAME);
-			nameText = ellipsizeName(name, textMetrics, ellipsisWidth + nameRow.room(NAME));
+			nameText = ellipsizedName.get(name, textMetrics, ellipsisWidth + nameRow.room(NAME));
 			nameRow.setWidth(NAME, nameFixedWidth + textMetrics.stringWidth(nameText));
 			nameRow.layout(width, left, right, LEVEL_GAP);
 		}
@@ -751,7 +738,7 @@ class BarTextPainter
 			int x = x(WEAKNESS);
 			if (weaknessIconWidth > 0)
 			{
-				drawWeaknessIcon(graphics, weaknessIcon, x - weaknessIconPadding,
+				drawScaled(graphics, weaknessIcon, x - weaknessIconPadding,
 					baseline - metrics[WEAKNESS].getAscent() / 2 - weaknessIconHeight / 2, weaknessIconWidth, weaknessIconHeight);
 				x += weaknessIconAdvance;
 			}
@@ -804,12 +791,7 @@ class BarTextPainter
 		final int size = headerIconSize(textMetrics);
 		// Centred on the capital letters, which take up roughly the top 70% of the ascent.
 		final int top = baseline - Math.round(ascent * 0.35f) - size / 2;
-		final Object interpolation = graphics.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
-		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		// Drawn scaled every frame, because ItemManager's image only fills in once the item has loaded.
-		graphics.drawImage(icon, left, top, size, size, null);
-		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, interpolation != null
-			? interpolation : RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+		drawScaled(graphics, icon, left, top, size, size);
 		return left + size + HEADER_ICON_GAP;
 	}
 
@@ -936,7 +918,7 @@ class BarTextPainter
 		return false;
 	}
 
-	private static void drawWeaknessIcon(Graphics2D graphics, BufferedImage icon, int x, int y, int width, int height)
+	private static void drawScaled(Graphics2D graphics, BufferedImage icon, int x, int y, int width, int height)
 	{
 		final Object interpolation = graphics.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
 		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
@@ -969,16 +951,24 @@ class BarTextPainter
 		}
 	}
 
-	private String ellipsizeName(String name, FontMetrics metrics, int maxWidth)
+	private static final class EllipsizedText
 	{
-		if (!name.equals(ellipsizedSource) || metrics.getFont() != ellipsizedFont || maxWidth != ellipsizedWidth)
+		private String source;
+		private Font font;
+		private int maxWidth;
+		private String text;
+
+		String get(String name, FontMetrics metrics, int maxWidth)
 		{
-			ellipsizedName = ellipsize(name, metrics, maxWidth);
-			ellipsizedSource = name;
-			ellipsizedFont = metrics.getFont();
-			ellipsizedWidth = maxWidth;
+			if (!name.equals(source) || metrics.getFont() != font || maxWidth != this.maxWidth)
+			{
+				text = ellipsize(name, metrics, maxWidth);
+				source = name;
+				font = metrics.getFont();
+				this.maxWidth = maxWidth;
+			}
+			return text;
 		}
-		return ellipsizedName;
 	}
 
 	private static String ellipsize(String text, FontMetrics metrics, int maxWidth)

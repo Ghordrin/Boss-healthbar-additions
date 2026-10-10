@@ -439,8 +439,7 @@ class BossHealthBarOverlay extends Overlay
 		final int footerHeight = textPainter.bottomRowHeight();
 		final BarTheme theme = BarTheme.of(config);
 		final boolean flat = theme.isFlat();
-		final ThemeColors baseColors = barColors(updateThemeColors(),
-			config.matchBossColors() && !showingPreview ? infoBossColors : null, flat);
+		final ThemeColors baseColors = baseColors();
 		final boolean gold = showsGold(rolledGold && !showingPreview && config.rareGoldBars(), flat);
 		final ThemeColors colors = gold ? goldBar.colors(baseColors) : baseColors;
 		final long nowMillis = now / 1_000_000L;
@@ -845,7 +844,7 @@ class BossHealthBarOverlay extends Overlay
 		if (opponent instanceof NPC)
 		{
 			infoKillCountKey = KillCounts.key(name);
-			infoStats = BossStats.info(composition != null ? npcId : ((NPC) opponent).getId());
+			infoStats = BossStats.info(NpcUtil.currentId((NPC) opponent));
 			infoBossIcon = KnownBosses.icon(name);
 			infoBossColors = KnownBosses.colors(name);
 			if (composition != null)
