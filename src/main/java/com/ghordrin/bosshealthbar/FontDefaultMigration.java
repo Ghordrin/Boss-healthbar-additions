@@ -77,13 +77,13 @@ final class FontDefaultMigration
 	// size, italic like the name but never bold. Returns null for the RuneScape fonts, whose defaults already match.
 	static FontType smallTextFont(FontType name)
 	{
-		if (name == null || name.getFamily() == null || BarTextPainter.isRunescapeFont(name.getFamily()))
+		if (name == null || name.getFamily() == null || BarFonts.isRunescapeFont(name.getFamily()))
 		{
 			return null;
 		}
 		return new FontType()
 			.withFamily(name.getFamily())
-			.withSize(BarTextPainter.smallTextSize(name.getSize()))
+			.withSize(BarFonts.smallTextSize(name.getSize()))
 			.withItalic(name.isItalic());
 	}
 }
