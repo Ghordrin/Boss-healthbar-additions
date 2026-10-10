@@ -201,7 +201,7 @@ class GameBossBar
 		return replace;
 	}
 
-	void restore()
+	private void restore()
 	{
 		if (!hidden || trackedNpcId() == -1)
 		{

@@ -61,31 +61,29 @@ class CrestRenderer
 
 	private Color cachedColor;
 	private Color cachedGlowColor;
-	private float cachedScale;
 	private float cachedBarHalfExtent;
 	private Crest cached;
 
-	Crest getCrest(Color plateColor, Color glowColor, float scale, float barHalfExtent)
+	Crest getCrest(Color plateColor, Color glowColor, float barHalfExtent)
 	{
 		if (cached == null || !plateColor.equals(cachedColor) || !glowColor.equals(cachedGlowColor)
-			|| scale != cachedScale || barHalfExtent != cachedBarHalfExtent)
+			|| barHalfExtent != cachedBarHalfExtent)
 		{
-			cached = build(plateColor, glowColor, scale, barHalfExtent / scale);
+			cached = build(plateColor, glowColor, barHalfExtent);
 			cachedColor = plateColor;
 			cachedGlowColor = glowColor;
-			cachedScale = scale;
 			cachedBarHalfExtent = barHalfExtent;
 		}
 		return cached;
 	}
 
-	private static Crest build(Color plateColor, Color glowColor, float scale, float half)
+	private static Crest build(Color plateColor, Color glowColor, float half)
 	{
 		final float reach = half + 3f;
 		final float bound = reach * LONG_POINT + 1.5f;
-		final Piece right = rasterise(-bound, -bound, bound, bound, scale,
+		final Piece right = rasterise(-bound, -bound, bound, bound,
 			g -> drawPlate(g, plateColor, glowColor, reach));
-		final int iconSize = Math.round(reach * WELL * 2 * ICON_OVER_WELL * scale);
+		final int iconSize = Math.round(reach * WELL * 2 * ICON_OVER_WELL);
 		return new Crest(mirror(right), right, iconSize);
 	}
 
@@ -165,13 +163,13 @@ class CrestRenderer
 		return new Piece(flipped, logicalWidth - piece.anchorX, piece.anchorY);
 	}
 
-	private static Piece rasterise(float minX, float minY, float maxX, float maxY, float scale, Consumer<Graphics2D> painter)
+	private static Piece rasterise(float minX, float minY, float maxX, float maxY, Consumer<Graphics2D> painter)
 	{
 		final int pad = 2;
-		final int anchorX = pad + (int) Math.ceil(-minX * scale);
-		final int anchorY = pad + (int) Math.ceil(-minY * scale);
-		final int width = anchorX + (int) Math.ceil(maxX * scale) + pad;
-		final int height = anchorY + (int) Math.ceil(maxY * scale) + pad;
+		final int anchorX = pad + (int) Math.ceil(-minX);
+		final int anchorY = pad + (int) Math.ceil(-minY);
+		final int width = anchorX + (int) Math.ceil(maxX) + pad;
+		final int height = anchorY + (int) Math.ceil(maxY) + pad;
 
 		final float rasterScale = BarPainter.RASTER_SCALE;
 		final BufferedImage image = new BufferedImage(Math.round(width * rasterScale), Math.round(height * rasterScale),
@@ -181,7 +179,6 @@ class CrestRenderer
 		g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 		g.scale(rasterScale, rasterScale);
 		g.translate(anchorX, anchorY);
-		g.scale(scale, scale);
 		painter.accept(g);
 		g.dispose();
 		return new Piece(image, anchorX, anchorY);

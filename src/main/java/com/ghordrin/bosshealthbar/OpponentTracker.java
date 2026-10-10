@@ -238,7 +238,7 @@ class OpponentTracker
 		{
 			return DespawnOutcome.DEFEATED;
 		}
-		return BossMemory.isOutOfSight(false, playerDied, distance) ? DespawnOutcome.OUT_OF_SIGHT : DespawnOutcome.LEFT;
+		return BossMemory.isOutOfSight(playerDied, distance) ? DespawnOutcome.OUT_OF_SIGHT : DespawnOutcome.LEFT;
 	}
 
 	static boolean isQuietFor(long interactionLostMillis, long lastHitTakenMillis, long lastOpponentHitMillis,

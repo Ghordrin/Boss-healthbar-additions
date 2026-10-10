@@ -191,7 +191,7 @@ class BossHealthBarOverlay extends Overlay
 		invalidateColors();
 	}
 
-	void resetAnimation()
+	private void resetAnimation()
 	{
 		animation.reset();
 		lastState = null;
@@ -451,7 +451,7 @@ class BossHealthBarOverlay extends Overlay
 
 		final BufferedImage icon = resolveIcon(theme);
 		final CrestRenderer.Crest crest = icon != null && !flat
-			? crestRenderer.getCrest(colors.getFrame(), colors.getFillHigh(), 1f, barHeight / 2f + capRise + 0.5f) : null;
+			? crestRenderer.getCrest(colors.getFrame(), colors.getFillHigh(), barHeight / 2f + capRise + 0.5f) : null;
 		final int leftExtent = crest != null ? Math.max(0, crest.left.anchorX - CREST_OVERLAP) : 0;
 		final int rightExtent = crest != null
 			? Math.max(0, Math.round(crest.right.image.getWidth() / RASTER_SCALE) - crest.right.anchorX - CREST_OVERLAP) : 0;

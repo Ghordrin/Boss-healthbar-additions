@@ -19,20 +19,19 @@ public class BossMemoryTest
 	private final BossMemory memory = new BossMemory();
 
 	@Test
-	public void onlyAnUndefeatedOpponentFarAwayWentOutOfSight()
+	public void onlyAnOpponentFarAwayWentOutOfSight()
 	{
-		assertFalse(BossMemory.isOutOfSight(false, false, 10));
-		assertFalse(BossMemory.isOutOfSight(false, false, 14));
-		assertTrue(BossMemory.isOutOfSight(false, false, 15));
-		assertTrue(BossMemory.isOutOfSight(false, false, Integer.MAX_VALUE));
-		assertFalse(BossMemory.isOutOfSight(true, false, 20));
-		assertFalse(BossMemory.isOutOfSight(false, false, -1));
+		assertFalse(BossMemory.isOutOfSight(false, 10));
+		assertFalse(BossMemory.isOutOfSight(false, 14));
+		assertTrue(BossMemory.isOutOfSight(false, 15));
+		assertTrue(BossMemory.isOutOfSight(false, Integer.MAX_VALUE));
+		assertFalse(BossMemory.isOutOfSight(false, -1));
 	}
 
 	@Test
 	public void dyingToTheOpponentIsNotWalkingAway()
 	{
-		assertFalse(BossMemory.isOutOfSight(false, true, 20));
+		assertFalse(BossMemory.isOutOfSight(true, 20));
 	}
 
 	@Test

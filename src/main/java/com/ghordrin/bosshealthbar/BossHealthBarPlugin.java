@@ -305,7 +305,7 @@ public class BossHealthBarPlugin extends Plugin
 		{
 			debugLog.add("Game state {}", state);
 		}
-		if (event.getGameState() == GameState.LOGIN_SCREEN || event.getGameState() == GameState.HOPPING)
+		if (state == GameState.LOGIN_SCREEN || state == GameState.HOPPING)
 		{
 			resetState();
 		}
@@ -496,8 +496,8 @@ public class BossHealthBarPlugin extends Plugin
 		final Actor opponent = opponentTracker.getOpponent();
 		fightGroup.onGameTick(opponent, client.getTickCount());
 		fightTimer.onGameTick(opponent, opponentTracker.updateOpponentDefeated(), client.getTickCount());
-		partyDefence.update(opponentTracker.getOpponent());
-		specialAttackCounts.update(opponentTracker.getOpponent());
+		partyDefence.update(opponent);
+		specialAttackCounts.update(opponent);
 	}
 
 	// Runs every frame because the game's scripts can unhide their bars whenever they update.
