@@ -1,5 +1,9 @@
 package com.ghordrin.bosshealthbar;
 
+import static com.ghordrin.bosshealthbar.BarAnimation.clamp01;
+import static com.ghordrin.bosshealthbar.BarAnimation.easeOut;
+import static com.ghordrin.bosshealthbar.BarAnimation.progress;
+import java.time.Duration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -71,5 +75,45 @@ public class BarAnimationTest
 		assertEquals(1f, animation.defeatOpacity(5_000_000_000L, true), 0f);
 		assertEquals(1f, animation.defeatTextOpacity(5_000_000_000L, true), 0f);
 		assertTrue(animation.defeatEffectMillis(5_000_000_000L) < 0);
+	}
+
+	@Test
+	public void clampKeepsFractionsInRange()
+	{
+		assertEquals(0f, clamp01(-5f), 0f);
+		assertEquals(1f, clamp01(5f), 0f);
+		assertEquals(0.25f, clamp01(0.25f), 0f);
+	}
+
+	@Test
+	public void progressRunsFromZeroToOneAcrossTheDuration()
+	{
+		final Duration delay = Duration.ofMillis(100);
+		final Duration duration = Duration.ofMillis(400);
+
+		assertEquals(0f, progress(Duration.ofMillis(50).toNanos(), delay, duration), 0.0001f);
+		assertEquals(0f, progress(delay.toNanos(), delay, duration), 0.0001f);
+		assertEquals(0.5f, progress(Duration.ofMillis(300).toNanos(), delay, duration), 0.0001f);
+		assertEquals(1f, progress(Duration.ofMillis(500).toNanos(), delay, duration), 0.0001f);
+		assertEquals(1f, progress(Duration.ofSeconds(10).toNanos(), delay, duration), 0.0001f);
+		assertEquals(1f, progress(Long.MAX_VALUE, delay, duration), 0.0001f);
+	}
+
+	@Test
+	public void easeOutKeepsItsEndsAndOnlyMovesForward()
+	{
+		assertEquals(0f, easeOut(0f), 0.0001f);
+		assertEquals(1f, easeOut(1f), 0.0001f);
+
+		float previous = -1f;
+		for (int i = 0; i <= 100; i++)
+		{
+			final float eased = easeOut(i / 100f);
+			assertTrue("eased value went backwards at " + i, eased > previous);
+			assertTrue("eased value left the range at " + i, eased >= 0f && eased <= 1f);
+			previous = eased;
+		}
+
+		assertTrue(easeOut(0.5f) > 0.5f);
 	}
 }

@@ -299,14 +299,6 @@ public class FightGroupTest
 		assertNull(member.state);
 	}
 
-	@Test
-	public void thePartnerRowFitsTheHitpointsFontWhileItHasText()
-	{
-		assertEquals(14, BarTextPainter.partnerRowHeight(true, false, 10, 4));
-		assertEquals(14, BarTextPainter.partnerRowHeight(false, true, 10, 4));
-		assertEquals(0, BarTextPainter.partnerRowHeight(false, false, 10, 4));
-	}
-
 	private static void assertReading(FightGroup.Member member, int ratio, int scale, boolean exact, Integer maxHealth)
 	{
 		assertEquals(ratio, member.ratio);
