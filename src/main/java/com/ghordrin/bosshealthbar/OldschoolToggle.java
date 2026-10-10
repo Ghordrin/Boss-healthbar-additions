@@ -122,8 +122,8 @@ final class OldschoolToggle
 	{
 		applyWrites(configManager, writes(key, oldValue, newValue,
 			new Settings(config.oldschoolTheme(), config.matchBossColors(), config.rareGoldBars(),
-				ConfigMigrations.savedBoolean(configManager, SAVED_MATCH_BOSS_COLORS_KEY),
-				ConfigMigrations.savedBoolean(configManager, SAVED_RARE_GOLD_BARS_KEY))));
+				ConfigWrites.savedBoolean(configManager, SAVED_MATCH_BOSS_COLORS_KEY),
+				ConfigWrites.savedBoolean(configManager, SAVED_RARE_GOLD_BARS_KEY))));
 	}
 
 	static void applyWrites(ConfigManager configManager, List<Write> writes)
@@ -132,14 +132,7 @@ final class OldschoolToggle
 		// the remembered keys are cleared before anything is turned back on.
 		for (Write write : writes)
 		{
-			if (write.getValue() == null)
-			{
-				configManager.unsetConfiguration(BossHealthBarConfig.GROUP, write.getKey());
-			}
-			else
-			{
-				configManager.setConfiguration(BossHealthBarConfig.GROUP, write.getKey(), write.getValue());
-			}
+			ConfigWrites.write(configManager, write.getKey(), write.getValue());
 		}
 	}
 }

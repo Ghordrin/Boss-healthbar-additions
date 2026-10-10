@@ -261,7 +261,7 @@ class BarFonts
 		return levelBelow;
 	}
 
-	void setTextAntialiasing(Graphics2D graphics, boolean pixel)
+	private void setTextAntialiasing(Graphics2D graphics, boolean pixel)
 	{
 		graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, smoothText && !pixel
 			? RenderingHints.VALUE_TEXT_ANTIALIAS_ON

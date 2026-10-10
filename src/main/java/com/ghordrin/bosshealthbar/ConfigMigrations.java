@@ -63,7 +63,7 @@ class ConfigMigrations
 
 	private void migrateFont(String migratedKey, String fontKey, Function<FontType, List<Write>> writes)
 	{
-		if (savedBoolean(configManager, migratedKey) != null)
+		if (ConfigWrites.savedBoolean(configManager, migratedKey) != null)
 		{
 			return;
 		}
@@ -75,14 +75,7 @@ class ConfigMigrations
 	{
 		for (Write write : writes)
 		{
-			if (write.getValue() == null)
-			{
-				configManager.unsetConfiguration(BossHealthBarConfig.GROUP, write.getKey());
-			}
-			else
-			{
-				configManager.setConfiguration(BossHealthBarConfig.GROUP, write.getKey(), write.getValue());
-			}
+			ConfigWrites.write(configManager, write.getKey(), write.getValue());
 		}
 	}
 
@@ -140,11 +133,5 @@ class ConfigMigrations
 		}
 		writes.add(new Write(FIGHT_TIMER_FONT_MIGRATED_KEY, true));
 		return writes;
-	}
-
-	static Boolean savedBoolean(ConfigManager configManager, String key)
-	{
-		final String saved = configManager.getConfiguration(BossHealthBarConfig.GROUP, key);
-		return saved != null ? Boolean.valueOf(saved) : null;
 	}
 }
