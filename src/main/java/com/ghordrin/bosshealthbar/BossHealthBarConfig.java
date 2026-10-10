@@ -32,20 +32,11 @@ public interface BossHealthBarConfig extends Config
 	String OLDSCHOOL_THEME_KEY = "oldschoolTheme";
 	String MATCH_BOSS_COLORS_KEY = "matchBossColors";
 	String RARE_GOLD_BARS_KEY = "rareGoldBars";
-	// What Match boss colors and Rare gold bars were set to before Oldschool turned them off.
-	String SAVED_MATCH_BOSS_COLORS_KEY = "oldschoolSavedMatchBossColors";
-	String SAVED_RARE_GOLD_BARS_KEY = "oldschoolSavedRareGoldBars";
 	String FONT_KEY = "font";
 	FontType DEFAULT_FONT = FontType.REGULAR;
-	// Set once the old default font has been checked for a switch to the new one. Not a config item, so Reset keeps it.
-	String FONT_DEFAULT_MIGRATED_KEY = "fontDefaultMigrated";
-	// Set once a RuneScape font's saved size has been put back to its native size. Not a config item either.
-	String PIXEL_FONT_SIZE_MIGRATED_KEY = "pixelFontSizeMigrated";
 	String NATIVE_BOSS_BAR_MODE_KEY = "nativeBossBarMode";
 	String ALSO_SHOW_FOR_KEY = "alsoShowFor";
 	String NEVER_SHOW_FOR_KEY = "neverShowFor";
-	// The checkbox nativeBossBarMode replaced. Its saved value is moved over on startup.
-	String OLD_REPLACE_NATIVE_BOSS_BAR_KEY = "replaceNativeBossBar";
 	String DAMAGE_NUMBER_FONT_KEY = "damageNumberFont";
 	String COMBAT_LEVEL_FONT_KEY = "combatLevelFont";
 	String HITPOINTS_FONT_KEY = "hitpointsFont";
@@ -54,11 +45,7 @@ public interface BossHealthBarConfig extends Config
 	String SPECIAL_ATTACK_COUNTS_FONT_KEY = "specialAttackCountsFont";
 	String WEAKNESS_FONT_KEY = "weaknessFont";
 	String DRAIN_CAP_FONT_KEY = "drainCapFont";
-	// Set once the item fonts have been given the look they had with the name's font. Not a config item either.
-	String ITEM_FONTS_MIGRATED_KEY = "itemFontsMigrated";
 	String FIGHT_TIMER_FONT_KEY = "fightTimerFont";
-	// Set once the fight timer font has been given the kill count's font. Not a config item either.
-	String FIGHT_TIMER_FONT_MIGRATED_KEY = "fightTimerFontMigrated";
 	String SAVE_DEBUG_LOG_KEY = "saveDebugLog";
 
 	@ConfigSection(

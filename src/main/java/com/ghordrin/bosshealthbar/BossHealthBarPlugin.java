@@ -2,7 +2,6 @@ package com.ghordrin.bosshealthbar;
 
 import com.google.inject.Provides;
 import java.io.IOException;
-import java.util.List;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
@@ -21,7 +20,6 @@ import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.config.FontType;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginChanged;
@@ -56,6 +54,9 @@ public class BossHealthBarPlugin extends Plugin
 
 	@Inject
 	private ConfigManager configManager;
+
+	@Inject
+	private ConfigMigrations configMigrations;
 
 	@Inject
 	private OverlayManager overlayManager;
@@ -134,11 +135,7 @@ public class BossHealthBarPlugin extends Plugin
 		{
 			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.SAVE_DEBUG_LOG_KEY, false);
 		}
-		migrateReplaceNativeBossBar();
-		migrateDefaultFont();
-		migratePixelFontSize();
-		migrateItemFonts();
-		migrateFightTimerFont();
+		configMigrations.migrate();
 		opponentTracker.loadLists();
 		overlay.reset();
 		healthIndicatorMarkers.invalidate();
@@ -167,88 +164,6 @@ public class BossHealthBarPlugin extends Plugin
 		});
 	}
 
-	private void migrateReplaceNativeBossBar()
-	{
-		final String oldSaved = configManager.getConfiguration(
-			BossHealthBarConfig.GROUP, BossHealthBarConfig.OLD_REPLACE_NATIVE_BOSS_BAR_KEY);
-		if (oldSaved == null)
-		{
-			return;
-		}
-
-		final NativeBossBarMode mode = NativeBossBarMode.migrate(oldSaved,
-			configManager.getConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.NATIVE_BOSS_BAR_MODE_KEY));
-		if (mode != null)
-		{
-			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.NATIVE_BOSS_BAR_MODE_KEY, mode);
-		}
-		configManager.unsetConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.OLD_REPLACE_NATIVE_BOSS_BAR_KEY);
-	}
-
-	private void migrateDefaultFont()
-	{
-		if (savedBoolean(BossHealthBarConfig.FONT_DEFAULT_MIGRATED_KEY) != null)
-		{
-			return;
-		}
-
-		final FontType saved = configManager.getConfiguration(
-			BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, FontType.class);
-		if (FontDefaultMigration.isOldDefault(saved))
-		{
-			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, FontType.REGULAR);
-		}
-		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_DEFAULT_MIGRATED_KEY, true);
-	}
-
-	private void migratePixelFontSize()
-	{
-		if (savedBoolean(BossHealthBarConfig.PIXEL_FONT_SIZE_MIGRATED_KEY) != null)
-		{
-			return;
-		}
-
-		final FontType migrated = FontDefaultMigration.withNativePixelSize(configManager.getConfiguration(
-			BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, FontType.class));
-		if (migrated != null)
-		{
-			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, migrated);
-		}
-		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.PIXEL_FONT_SIZE_MIGRATED_KEY, true);
-	}
-
-	// The item fonts are new, so their saved values are only the defaults and can be overwritten.
-	private void migrateItemFonts()
-	{
-		if (savedBoolean(BossHealthBarConfig.ITEM_FONTS_MIGRATED_KEY) != null)
-		{
-			return;
-		}
-
-		final FontType name = configManager.getConfiguration(
-			BossHealthBarConfig.GROUP, BossHealthBarConfig.FONT_KEY, FontType.class);
-		FontDefaultMigration.itemFontWrites(name)
-			.forEach((key, font) -> configManager.setConfiguration(BossHealthBarConfig.GROUP, key, font));
-		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.ITEM_FONTS_MIGRATED_KEY, true);
-	}
-
-	// Newer than the item fonts, so it gets its own one-time copy of the kill count font, which that migration set.
-	private void migrateFightTimerFont()
-	{
-		if (savedBoolean(BossHealthBarConfig.FIGHT_TIMER_FONT_MIGRATED_KEY) != null)
-		{
-			return;
-		}
-
-		final FontType killCount = configManager.getConfiguration(
-			BossHealthBarConfig.GROUP, BossHealthBarConfig.KILL_COUNT_FONT_KEY, FontType.class);
-		if (killCount != null)
-		{
-			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FIGHT_TIMER_FONT_KEY, killCount);
-		}
-		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FIGHT_TIMER_FONT_MIGRATED_KEY, true);
-	}
-
 	Filepath dataDirectory() throws IOException
 	{
 		return getPluginDirectory();
@@ -258,38 +173,7 @@ public class BossHealthBarPlugin extends Plugin
 	@Override
 	public void resetConfiguration()
 	{
-		applyWrites(OldschoolToggle.resetWrites());
-	}
-
-	private void applyOldschoolToggle(String key, boolean oldValue, boolean newValue)
-	{
-		applyWrites(OldschoolToggle.writes(key, oldValue, newValue,
-			new OldschoolToggle.Settings(config.oldschoolTheme(), config.matchBossColors(), config.rareGoldBars(),
-				savedBoolean(BossHealthBarConfig.SAVED_MATCH_BOSS_COLORS_KEY),
-				savedBoolean(BossHealthBarConfig.SAVED_RARE_GOLD_BARS_KEY))));
-	}
-
-	private void applyWrites(List<OldschoolToggle.Write> writes)
-	{
-		// Each write posts its own change event straight away. Handling those again is harmless, since
-		// the remembered keys are cleared before anything is turned back on.
-		for (OldschoolToggle.Write write : writes)
-		{
-			if (write.getValue() == null)
-			{
-				configManager.unsetConfiguration(BossHealthBarConfig.GROUP, write.getKey());
-			}
-			else
-			{
-				configManager.setConfiguration(BossHealthBarConfig.GROUP, write.getKey(), write.getValue());
-			}
-		}
-	}
-
-	private Boolean savedBoolean(String key)
-	{
-		final String saved = configManager.getConfiguration(BossHealthBarConfig.GROUP, key);
-		return saved != null ? Boolean.valueOf(saved) : null;
+		OldschoolToggle.applyWrites(configManager, OldschoolToggle.resetWrites());
 	}
 
 	private static boolean parseBoolean(String value, boolean defaultValue)
@@ -370,7 +254,7 @@ public class BossHealthBarPlugin extends Plugin
 		if (OldschoolToggle.handles(event.getKey()))
 		{
 			final boolean defaultValue = BossHealthBarConfig.RARE_GOLD_BARS_KEY.equals(event.getKey());
-			applyOldschoolToggle(event.getKey(), parseBoolean(event.getOldValue(), defaultValue),
+			OldschoolToggle.apply(configManager, config, event.getKey(), parseBoolean(event.getOldValue(), defaultValue),
 				parseBoolean(event.getNewValue(), defaultValue));
 		}
 
