@@ -433,6 +433,18 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "textOutline",
+		name = "Text edge",
+		description = "How text is lifted off the bar: a drop shadow, an outline all round, or nothing.",
+		position = 11,
+		section = fontsSection
+	)
+	default TextOutline textOutline()
+	{
+		return TextOutline.SHADOW;
+	}
+
+	@ConfigItem(
 		keyName = "showBossName",
 		name = "Show name",
 		description = "Show the opponent's name.",

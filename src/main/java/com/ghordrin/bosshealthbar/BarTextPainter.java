@@ -25,6 +25,7 @@ class BarTextPainter
 	private static final String DAMAGE_NUMBER_SIZING = "9999";
 	private static final String EMPTY_FIGHT_TIME = "0:00";
 	private static final Color TEXT_SHADOW = new Color(0, 0, 0, 200);
+	private static final Color TEXT_EDGE = new Color(0, 0, 0, 230);
 	private static final Color DEFENCE_ARROW = new Color(220, 40, 40);
 	private static final int DEFENCE_GAP = 3;
 	private static final float RUNE_ICON_SCALE = 1.3f;
@@ -578,10 +579,30 @@ class BarTextPainter
 		final int[] ys = {arrowTop, arrowTop, arrowTop + arrowHeight};
 		final Object antialiasing = graphics.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		graphics.translate(1, 1);
-		graphics.setColor(TEXT_SHADOW);
-		graphics.fillPolygon(xs, ys, 3);
-		graphics.translate(-1, -1);
+		final TextOutline edge = config.textOutline();
+		if (edge == TextOutline.SHADOW)
+		{
+			graphics.translate(1, 1);
+			graphics.setColor(TEXT_SHADOW);
+			graphics.fillPolygon(xs, ys, 3);
+			graphics.translate(-1, -1);
+		}
+		else if (edge == TextOutline.OUTLINE)
+		{
+			graphics.setColor(TEXT_EDGE);
+			for (int dx = -1; dx <= 1; dx++)
+			{
+				for (int dy = -1; dy <= 1; dy++)
+				{
+					if (dx != 0 || dy != 0)
+					{
+						graphics.translate(dx, dy);
+						graphics.fillPolygon(xs, ys, 3);
+						graphics.translate(-dx, -dy);
+					}
+				}
+			}
+		}
 		graphics.setColor(DEFENCE_ARROW);
 		graphics.fillPolygon(xs, ys, 3);
 		if (antialiasing != null)
@@ -846,12 +867,31 @@ class BarTextPainter
 		return new String(chars);
 	}
 
-	private static void drawShadowedText(Graphics2D graphics, String text, int x, int y, Color color, float alpha)
+	// Every edge style draws the text itself in the same place, so the setting never moves anything.
+	private void drawShadowedText(Graphics2D graphics, String text, int x, int y, Color color, float alpha)
 	{
 		alpha = clamp01(alpha);
 		final boolean opaque = alpha >= 1f;
-		graphics.setColor(opaque ? TEXT_SHADOW : withAlpha(TEXT_SHADOW, Math.round(TEXT_SHADOW.getAlpha() * alpha)));
-		graphics.drawString(text, x + 1, y + 1);
+		final TextOutline edge = config.textOutline();
+		if (edge == TextOutline.SHADOW)
+		{
+			graphics.setColor(opaque ? TEXT_SHADOW : withAlpha(TEXT_SHADOW, Math.round(TEXT_SHADOW.getAlpha() * alpha)));
+			graphics.drawString(text, x + 1, y + 1);
+		}
+		else if (edge == TextOutline.OUTLINE)
+		{
+			graphics.setColor(opaque ? TEXT_EDGE : withAlpha(TEXT_EDGE, Math.round(TEXT_EDGE.getAlpha() * alpha)));
+			for (int dx = -1; dx <= 1; dx++)
+			{
+				for (int dy = -1; dy <= 1; dy++)
+				{
+					if (dx != 0 || dy != 0)
+					{
+						graphics.drawString(text, x + dx, y + dy);
+					}
+				}
+			}
+		}
 		graphics.setColor(opaque ? color : withAlpha(color, Math.round(255 * alpha)));
 		graphics.drawString(text, x, y);
 	}

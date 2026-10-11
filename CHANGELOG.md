@@ -6,6 +6,7 @@
 - New Second boss bar option (Boss info, on by default). The smaller bar under the main one now shows any other boss you're fighting at the same time, not only pairs, with its last known health while it's away
 - Bosses fought together count as one fight on the fight timer
 - The fight timer now starts once you go for the opponent and are near it, instead of at the first hit on it
+- New Text edge option (Fonts): shadow, outline or nothing
 
 ### Fixed
 
