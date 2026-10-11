@@ -4,6 +4,7 @@ import com.google.inject.Provides;
 import java.io.IOException;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Hitsplat;
@@ -28,6 +29,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Filepath;
+import net.runelite.client.util.Text;
 
 @PluginDescriptor(
 	name = BossHealthBarPlugin.NAME,
@@ -185,12 +187,31 @@ public class BossHealthBarPlugin extends Plugin
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		final GameState state = event.getGameState();
-		if (state == GameState.LOGGED_IN || state == GameState.LOGIN_SCREEN || state == GameState.HOPPING)
+		if (state == GameState.LOGGED_IN || state == GameState.LOADING || state == GameState.LOGIN_SCREEN
+			|| state == GameState.HOPPING)
 		{
 			debugLog.add("Game state {}", state);
 		}
+		if (state == GameState.LOADING)
+		{
+			opponentTracker.onSceneLoading();
+		}
+		// A frame or an NPC spawn can reach us before the first tick after a load, so this can't wait for it.
+		if (state == GameState.LOGGED_IN)
+		{
+			checkLeftArea(true);
+		}
 		if (state == GameState.LOGIN_SCREEN || state == GameState.HOPPING)
 		{
+			resetState();
+		}
+	}
+
+	private void checkLeftArea(boolean onArrival)
+	{
+		if (opponentTracker.takeLeftArea(onArrival))
+		{
+			debugLog.add("Forgetting the fight");
 			resetState();
 		}
 	}
@@ -368,18 +389,27 @@ public class BossHealthBarPlugin extends Plugin
 	public void onChatMessage(ChatMessage event)
 	{
 		superiorTracker.onChatMessage(event);
+		if (event.getType() == ChatMessageType.GAMEMESSAGE && FightTimer.mentionsDuration(event.getMessage()))
+		{
+			final int ticks = fightTimer.getElapsedTicks(client.getTickCount());
+			debugLog.add("Game says: \"{}\" (our timer: {})", Text.removeTags(event.getMessage()),
+				ticks == FightTimer.NO_TICK ? "not started" : ticks + " ticks, " + fightTimer.getText());
+		}
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		checkLeftArea(false);
 		gameBossBar.onGameTick();
 		tobBossBar.onGameTick();
 		superiorTracker.onGameTick();
 		opponentTracker.onGameTick();
 		final Actor opponent = opponentTracker.getOpponent();
 		fightGroup.onGameTick(opponent, client.getTickCount());
-		fightTimer.onGameTick(opponent, opponentTracker.updateOpponentDown(), client.getTickCount());
+		opponentTracker.updateOpponentDown();
+		fightTimer.onGameTick(opponent, opponentTracker.isOpponentDefeated(), opponentTracker.zeroSince(),
+			client.getTickCount());
 		partyDefence.update(opponent);
 		specialAttackCounts.update(opponent);
 	}

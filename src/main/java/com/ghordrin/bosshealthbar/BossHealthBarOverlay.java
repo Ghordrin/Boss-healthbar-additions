@@ -358,6 +358,12 @@ class BossHealthBarOverlay extends Overlay
 
 		if ((animation.isDefeatPlaying() || holdingForNext) && lastState != null)
 		{
+			// A cleared timer leaves the held bar on its last time instead of dropping the line.
+			final String heldFightTime = fightTimer.getText();
+			if (heldFightTime != null && !Objects.equals(lastState.fightTime, heldFightTime))
+			{
+				lastState = lastState.withFightTime(heldFightTime);
+			}
 			return lastState;
 		}
 
@@ -840,7 +846,7 @@ class BossHealthBarOverlay extends Overlay
 		return remembered != null ? ", no reading yet, remembered " + remembered.ratio + "/" + remembered.scale : ", no reading yet";
 	}
 
-	// Nothing is remembered before the fight's first hit, so a new fight doesn't start from an older reading.
+	// Nothing is remembered before the fight starts, so a new fight doesn't start from an older reading.
 	private Health rememberedHealth(Actor opponent)
 	{
 		return opponent instanceof NPC && fightTimer.getStartTick() != FightTimer.NO_TICK

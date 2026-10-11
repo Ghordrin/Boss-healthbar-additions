@@ -1,5 +1,6 @@
 package com.ghordrin.bosshealthbar;
 
+import static com.ghordrin.bosshealthbar.FightTimer.DEATH_TICKS;
 import static com.ghordrin.bosshealthbar.FightTimer.NO_TICK;
 import static com.ghordrin.bosshealthbar.FightTimer.SWAP_TICKS;
 import static org.junit.Assert.assertEquals;
@@ -66,11 +67,93 @@ public class FightTimerTest
 	}
 
 	@Test
-	public void showsNothingBeforeTheFirstHit()
+	public void showsNothingUntilTheFightStarts()
 	{
 		timer.opponentChanged(false, false, NO_TICK, 10);
-		timer.onGameTick(true, false, 11);
+		timer.onGameTick(true, false, NO_TICK, 11);
 		assertNull(timer.getText());
+	}
+
+	@Test
+	public void theFightStartsWhenTheOpponentCanBeFought()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.onEngaged(10);
+		timer.onGameTick(true, false, NO_TICK, 110);
+		assertEquals("1:00", timer.getText());
+	}
+
+	@Test
+	public void engagingDoesNotRestartAFightThatIsRunning()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.onHit(10);
+		timer.onEngaged(50);
+		assertEquals(10, timer.getStartTick());
+	}
+
+	// The clock carries on with no further engagement, so interaction dropping out mid-fight doesn't touch it.
+	@Test
+	public void aRunningFightKeepsCountingWithoutEngagement()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.onEngaged(10);
+		timer.onGameTick(true, false, NO_TICK, 110);
+		assertEquals("1:00", timer.getText());
+
+		timer.onGameTick(true, false, NO_TICK, 210);
+		assertEquals("2:00", timer.getText());
+		assertEquals(10, timer.getStartTick());
+	}
+
+	@Test
+	public void engagingDoesNotRestartAStoppedFight()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, true, NO_TICK, 100);
+		timer.onGameTick(true, true, NO_TICK, 100 + DEATH_TICKS);
+		timer.onEngaged(120);
+		assertEquals("1:06", timer.getText());
+
+		timer.onGameTick(true, false, NO_TICK, 150);
+		assertEquals("1:30", timer.getText());
+	}
+
+	@Test
+	public void engagingAfterStartingOverKeepsTheNewStart()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.startOver(100);
+		timer.onEngaged(130);
+		timer.onGameTick(true, false, NO_TICK, 200);
+		assertEquals("1:00", timer.getText());
+	}
+
+	@Test
+	public void aDefeatBeforeTheFightStartedShowsNothing()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.onGameTick(true, true, NO_TICK, 11);
+		timer.onGameTick(true, true, NO_TICK, 60);
+		assertNull(timer.getText());
+	}
+
+	@Test
+	public void engagingWithoutAnOpponentStartsNothing()
+	{
+		timer.onEngaged(10);
+		assertNull(timer.getText());
+	}
+
+	@Test
+	public void aFightStartedWhenEngagedStopsOnDefeat()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onEngaged(0);
+		timer.onGameTick(true, true, NO_TICK, 100);
+		timer.onGameTick(true, true, NO_TICK, 150);
+		assertEquals("1:06", timer.getText());
 	}
 
 	@Test
@@ -80,7 +163,7 @@ public class FightTimerTest
 		timer.onHit(20);
 		assertEquals("0:00", timer.getText());
 		timer.onHit(30);
-		timer.onGameTick(true, false, 120);
+		timer.onGameTick(true, false, NO_TICK, 120);
 		assertEquals("1:00", timer.getText());
 	}
 
@@ -89,23 +172,97 @@ public class FightTimerTest
 	{
 		timer.opponentChanged(false, false, NO_TICK, 10);
 		timer.onHit(10);
-		timer.onGameTick(true, false, 12);
+		timer.onGameTick(true, false, NO_TICK, 12);
 		final String text = timer.getText();
-		timer.onGameTick(true, false, 12);
+		timer.onGameTick(true, false, NO_TICK, 12);
 		assertSame(text, timer.getText());
 	}
 
 	@Test
-	public void stopsWhenDefeatedAndKeepsTheTime()
+	public void keepsCountingAfterADefeatAndStopsWhenItIsGone()
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.onGameTick(true, true, 100);
-		timer.onGameTick(true, true, 150);
-		assertEquals("1:00", timer.getText());
+		timer.onGameTick(true, true, NO_TICK, 100);
+		timer.onGameTick(true, true, NO_TICK, 104);
+		assertEquals("1:02", timer.getText());
 
-		timer.opponentDespawned(true, 160);
-		assertEquals("1:00", timer.getText());
+		timer.opponentDespawned(true, 106);
+		assertEquals("1:03", timer.getText());
+		timer.onGameTick(false, false, NO_TICK, 200);
+		assertEquals("1:03", timer.getText());
+	}
+
+	@Test
+	public void stopsAtTheDeathWindowWhenTheOpponentNeverGoesAway()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, true, NO_TICK, 100);
+		timer.onGameTick(true, true, NO_TICK, 100 + DEATH_TICKS);
+		assertEquals("1:06", timer.getText());
+
+		timer.onGameTick(true, true, NO_TICK, 300);
+		assertEquals("1:06", timer.getText());
+	}
+
+	// The kill is only confirmed a few ticks into the death sequence, which started at the first 0.
+	@Test
+	public void theDeathWindowIsCountedFromTheFirstZero()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		for (int tick = 100; tick <= 300; tick++)
+		{
+			timer.onGameTick(true, tick >= 104, 100, tick);
+		}
+		assertEquals(100 + DEATH_TICKS, timer.getElapsedTicks(300));
+		assertEquals("1:06", timer.getText());
+	}
+
+	@Test
+	public void aLateDespawnDoesNotCountPastTheDeathWindow()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, true, NO_TICK, 100);
+		timer.opponentDespawned(true, 200);
+		assertEquals("1:06", timer.getText());
+	}
+
+	@Test
+	public void anUnconfirmedZeroNeverStopsTheClock()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		for (int tick = 100; tick <= 200; tick++)
+		{
+			timer.onGameTick(true, false, NO_TICK, tick);
+		}
+		assertEquals("2:00", timer.getText());
+	}
+
+	@Test
+	public void anAliveMemberAfterTheDeathWindowRunsTheClockAgain()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, true, NO_TICK, 100);
+		timer.onGameTick(true, true, NO_TICK, 100 + DEATH_TICKS);
+		assertEquals("1:06", timer.getText());
+
+		assertTrue(timer.opponentChanged(true, false, NO_TICK, 115));
+		timer.onGameTick(true, false, NO_TICK, 200);
+		assertEquals("2:00", timer.getText());
+	}
+
+	@Test
+	public void theFightEndsWhenTheOpponentIsGone()
+	{
+		assertEquals(130, FightTimer.endOfFight(NO_TICK, 130));
+		assertEquals(106, FightTimer.endOfFight(100, 106));
+		assertEquals(100 + DEATH_TICKS, FightTimer.endOfFight(100, 130));
+		assertEquals(100 + DEATH_TICKS, FightTimer.endOfFight(100, 100 + DEATH_TICKS));
 	}
 
 	@Test
@@ -114,18 +271,33 @@ public class FightTimerTest
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.opponentDespawned(true, 100);
-		timer.onGameTick(false, false, 200);
+		timer.onGameTick(false, false, NO_TICK, 200);
 		assertEquals("1:00", timer.getText());
 	}
 
 	@Test
-	public void carriesOnWhenItComesBackFromZero()
+	public void aDefeatInsideTheDeathWindowDoesNotStopTheClock()
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.onGameTick(true, true, 50);
-		timer.onGameTick(true, false, 100);
+		timer.onGameTick(true, true, NO_TICK, 50);
+		timer.onGameTick(true, false, NO_TICK, 100);
 		assertEquals("1:00", timer.getText());
+	}
+
+	@Test
+	public void anOpponentBackUpAfterTheDeathWindowRunsTheClockAgain()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, true, NO_TICK, 50);
+		timer.onGameTick(true, true, NO_TICK, 50 + DEATH_TICKS);
+		assertEquals("0:36", timer.getText());
+
+		timer.onGameTick(true, false, NO_TICK, 100);
+		assertEquals("1:00", timer.getText());
+		timer.onGameTick(true, false, NO_TICK, 200);
+		assertEquals("2:00", timer.getText());
 	}
 
 	@Test
@@ -133,21 +305,23 @@ public class FightTimerTest
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.onGameTick(true, false, 100);
+		timer.onGameTick(true, false, NO_TICK, 100);
 		assertTrue(timer.opponentChanged(false, false, NO_TICK, 101));
-		timer.onGameTick(true, false, 200);
+		timer.onGameTick(true, false, NO_TICK, 200);
 		assertEquals("2:00", timer.getText());
 	}
 
+	// The clock only stops at the end of the death window, so the next opponent is picked after it.
 	@Test
 	public void anotherOpponentAfterADefeatStartsOver()
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.onGameTick(true, true, 100);
-		assertFalse(timer.opponentChanged(false, false, NO_TICK, 101));
+		timer.onGameTick(true, true, NO_TICK, 100);
+		timer.onGameTick(true, true, NO_TICK, 100 + DEATH_TICKS);
+		assertFalse(timer.opponentChanged(false, false, NO_TICK, 111));
 		assertNull(timer.getText());
-		timer.onHit(105);
+		timer.onHit(115);
 		assertEquals("0:00", timer.getText());
 	}
 
@@ -157,12 +331,12 @@ public class FightTimerTest
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.opponentChanged(false, false, NO_TICK, 50);
-		timer.onGameTick(true, false, 100);
+		timer.onGameTick(true, false, NO_TICK, 100);
 		assertEquals("1:00", timer.getText());
 
 		timer.opponentDespawned(false, 110);
 		timer.opponentChanged(false, false, NO_TICK, 112);
-		timer.onGameTick(true, false, 200);
+		timer.onGameTick(true, false, NO_TICK, 200);
 		assertEquals("2:00", timer.getText());
 	}
 
@@ -203,7 +377,7 @@ public class FightTimerTest
 	public void theHitThatBroughtUpTheOpponentStartsTheTimer()
 	{
 		timer.opponentChanged(false, false, 100, 101);
-		timer.onGameTick(true, false, 200);
+		timer.onGameTick(true, false, NO_TICK, 200);
 		assertEquals("1:00", timer.getText());
 	}
 
@@ -213,7 +387,7 @@ public class FightTimerTest
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.opponentChanged(false, false, 50, 50);
-		timer.onGameTick(true, false, 100);
+		timer.onGameTick(true, false, NO_TICK, 100);
 		assertEquals("1:00", timer.getText());
 	}
 
@@ -232,13 +406,13 @@ public class FightTimerTest
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.onGameTick(true, true, 100);
+		timer.onGameTick(true, true, NO_TICK, 100);
 		timer.opponentDespawned(true, 105);
-		timer.onGameTick(false, false, 150);
-		assertEquals("1:00", timer.getText());
+		timer.onGameTick(false, false, NO_TICK, 150);
+		assertEquals("1:03", timer.getText());
 
 		assertTrue(timer.opponentChanged(true, false, NO_TICK, 150));
-		timer.onGameTick(true, false, 200);
+		timer.onGameTick(true, false, NO_TICK, 200);
 		assertEquals("2:00", timer.getText());
 	}
 
@@ -249,7 +423,7 @@ public class FightTimerTest
 		timer.onHit(0);
 		timer.opponentDespawned(false, 60);
 		assertTrue(timer.opponentChanged(true, false, NO_TICK, 60 + SWAP_TICKS * 3));
-		timer.onGameTick(true, false, 200);
+		timer.onGameTick(true, false, NO_TICK, 200);
 		assertEquals("2:00", timer.getText());
 	}
 
@@ -269,20 +443,20 @@ public class FightTimerTest
 		timer.onHit(0);
 		timer.opponentDespawned(false, 100);
 		// The time shown stays until the next opponent.
-		timer.onGameTick(false, false, 150);
+		timer.onGameTick(false, false, NO_TICK, 150);
 		assertEquals("1:30", timer.getText());
 		assertFalse(timer.opponentChanged(false, false, NO_TICK, 101 + SWAP_TICKS));
 		assertNull(timer.getText());
 	}
 
 	@Test
-	public void aKillFoundAtTheDespawnStopsWhereItWasFirstSeen()
+	public void aKillFoundAtTheDespawnCountsAtMostTheDeathWindow()
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.opponentDespawned(true, 100, 130);
-		timer.onGameTick(false, false, 200);
-		assertEquals("1:00", timer.getText());
+		timer.onGameTick(false, false, NO_TICK, 200);
+		assertEquals("1:06", timer.getText());
 	}
 
 	@Test
@@ -305,9 +479,9 @@ public class FightTimerTest
 		final FightTimer.Fight fight = timer.save(1);
 		timer.opponentChanged(false, false, NO_TICK, 60);
 		timer.opponentReturned(fight, NO_TICK, 70 + SWAP_TICKS);
-		timer.onGameTick(true, false, 100);
+		timer.onGameTick(true, false, NO_TICK, 100);
 		assertEquals("1:00", timer.getText());
-		timer.onGameTick(true, false, 200);
+		timer.onGameTick(true, false, NO_TICK, 200);
 		assertEquals("2:00", timer.getText());
 	}
 
@@ -316,7 +490,8 @@ public class FightTimerTest
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.onGameTick(true, true, 100);
+		timer.onGameTick(true, true, NO_TICK, 100);
+		timer.onGameTick(true, true, NO_TICK, 100 + DEATH_TICKS);
 		timer.opponentDespawned(false, 120);
 		final FightTimer.Fight saved = timer.save(7);
 		assertEquals(7, saved.group);
@@ -324,11 +499,11 @@ public class FightTimerTest
 		// Another fight in between leaves the snapshot alone.
 		timer.opponentChanged(false, false, NO_TICK, 200);
 		timer.onHit(200);
-		timer.onGameTick(true, false, 260);
+		timer.onGameTick(true, false, NO_TICK, 260);
 		assertEquals("0:36", timer.getText());
 
 		timer.opponentReturned(saved, NO_TICK, 300);
-		assertEquals("1:00", timer.getText());
+		assertEquals("1:06", timer.getText());
 	}
 
 	@Test
@@ -336,12 +511,13 @@ public class FightTimerTest
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.onGameTick(true, true, 100);
+		timer.onGameTick(true, true, NO_TICK, 100);
+		timer.onGameTick(true, true, NO_TICK, 100 + DEATH_TICKS);
 		timer.opponentDespawned(false, 120);
 		final FightTimer.Fight fight = timer.save(1);
 		timer.reset();
 		timer.opponentReturned(fight, NO_TICK, 200);
-		assertEquals("1:00", timer.getText());
+		assertEquals("1:06", timer.getText());
 	}
 
 	@Test
@@ -353,7 +529,7 @@ public class FightTimerTest
 		timer.opponentReturned(fight, NO_TICK, 100);
 		assertNull(timer.getText());
 		timer.onHit(110);
-		timer.onGameTick(true, false, 210);
+		timer.onGameTick(true, false, NO_TICK, 210);
 		assertEquals("1:00", timer.getText());
 	}
 
@@ -362,9 +538,46 @@ public class FightTimerTest
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.onGameTick(true, true, 50);
+		timer.onGameTick(true, true, NO_TICK, 50);
 		timer.startOver(100);
-		timer.onGameTick(true, false, 200);
+		timer.onGameTick(true, false, NO_TICK, 200);
 		assertEquals("1:00", timer.getText());
+	}
+
+	// Nothing of a previous fight survives a reset, so the next opponent starts over.
+	@Test
+	public void aResetFightDoesNotCarryIntoTheNextOpponent()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, false, NO_TICK, 100);
+		timer.reset();
+
+		assertFalse(timer.opponentChanged(false, false, NO_TICK, 110));
+		assertEquals(NO_TICK, timer.getStartTick());
+	}
+
+	@Test
+	public void matchesAnyWordingOfADurationMessage()
+	{
+		assertTrue(FightTimer.mentionsDuration("Fight duration: 1:52. Personal best: 1:44"));
+		assertTrue(FightTimer.mentionsDuration("Challenge duration: 2:30"));
+		assertTrue(FightTimer.mentionsDuration("Duration: 23:10"));
+		assertFalse(FightTimer.mentionsDuration("You have defeated your opponent."));
+		assertFalse(FightTimer.mentionsDuration(null));
+	}
+
+	@Test
+	public void reportsTheElapsedTicksOfTheRunningFight()
+	{
+		assertEquals(NO_TICK, timer.getElapsedTicks(10));
+
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(10);
+		assertEquals(40, timer.getElapsedTicks(50));
+
+		timer.onGameTick(true, true, NO_TICK, 60);
+		timer.onGameTick(true, true, NO_TICK, 60 + DEATH_TICKS);
+		assertEquals(60, timer.getElapsedTicks(200));
 	}
 }

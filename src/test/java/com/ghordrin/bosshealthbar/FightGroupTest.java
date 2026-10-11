@@ -478,6 +478,19 @@ public class FightGroupTest
 		assertNull(group.rememberedHealth(1, "Boss"));
 	}
 
+	// A cleared group keeps no member by name, so a same-named opponent can't carry the old fight.
+	@Test
+	public void aClearedGroupKeepsNoAwayMember()
+	{
+		final FightGroup.Member member = group.join(1, "Boss", true, 0);
+		group.despawned(member, false);
+		assertNotNull(group.awayByName("Boss"));
+
+		group.clear();
+		assertNull(group.awayByName("Boss"));
+		assertFalse(group.isAliveMember(1, "Boss"));
+	}
+
 	private static Health overhead(int ratio, int scale)
 	{
 		return new Health(ratio, scale, false, 450, false);

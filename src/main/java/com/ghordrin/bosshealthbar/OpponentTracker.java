@@ -11,6 +11,7 @@ import net.runelite.api.HitsplatID;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.InteractingChanged;
 
@@ -41,6 +42,8 @@ class OpponentTracker
 
 	@Getter(AccessLevel.PACKAGE)
 	private Actor opponent;
+	// What the player is going for, as the last interaction event left it.
+	private Actor interactingWith;
 	private long interactionLostMillis;
 	private long lastHitTakenMillis;
 	private long lastOpponentHitMillis;
@@ -60,6 +63,10 @@ class OpponentTracker
 	private Actor knownBossActor;
 	private String knownBossName;
 	private boolean knownBoss;
+
+	private boolean sceneReloaded;
+	private WorldPoint lastLocation;
+	private boolean lastInstance;
 
 	private NpcFilter alsoShowFor = NpcFilter.EMPTY;
 	private NpcFilter neverShowFor = NpcFilter.EMPTY;
@@ -92,6 +99,7 @@ class OpponentTracker
 		}
 
 		final Actor target = event.getTarget();
+		interactingWith = target;
 		if (target == null)
 		{
 			interactionLostMillis = System.currentTimeMillis();
@@ -135,6 +143,11 @@ class OpponentTracker
 	void onNpcSpawned(NPC npc)
 	{
 		final int tick = client.getTickCount();
+		// A plain name lookup, so the line doesn't disturb the caches the bar's own checks keep.
+		if (KnownBosses.contains(npc.getName()))
+		{
+			debugLog.add("{} spawned on tick {}", DebugLog.describe(npc), tick);
+		}
 		final BossMemory.Entry entry = memory.find(npc.getIndex(), npc.getName(), tick);
 		if (entry == null || entry != heldEntry || opponent != null || !BossMemory.isHeld(entry.tick, tick)
 			|| isNeverShown(npc))
@@ -149,6 +162,10 @@ class OpponentTracker
 
 	void onNpcDespawned(NPC npc)
 	{
+		if (npc == interactingWith)
+		{
+			interactingWith = null;
+		}
 		if (npc != opponent)
 		{
 			if (memory.contains(npc.getIndex()) && isDown(npc))
@@ -178,8 +195,8 @@ class OpponentTracker
 		{
 			debugLog.add("Opponent {} was last read at 0 health, counting its despawn as a kill", DebugLog.describe(npc));
 		}
-		// An unconfirmed 0 that turns out to be a kill ends the fight where the 0 was first read.
-		final int defeatTick = !confirmed && zeroSinceTick != FightTimer.NO_TICK ? zeroSinceTick : tick;
+		// A kill ends the fight where the 0 was first read, confirmed then or only at the despawn.
+		final int defeatTick = zeroSinceTick != FightTimer.NO_TICK ? zeroSinceTick : tick;
 		clearDown();
 		despawnedActor = npc;
 		despawnedOutcome = outcome;
@@ -226,8 +243,7 @@ class OpponentTracker
 			return;
 		}
 
-		final boolean nearby = !opponent.isDead()
-			&& opponent.getWorldArea().distanceTo(player.getWorldLocation()) <= COMBAT_DISTANCE;
+		final boolean nearby = !opponent.isDead() && isNearby(combatDistanceTo(opponent));
 
 		if (opponent != gameBossBar.findNpc(opponent)
 			&& opponent != tobBossBar.findBoss()
@@ -238,10 +254,56 @@ class OpponentTracker
 			debugLog.add("Opponent {} timed out after {}s with no combat, clearing", DebugLog.describe(opponent),
 				config.hideDelay());
 			opponent = null;
+			interactingWith = null;
 			fightTimer.reset();
 			group.clear();
 			clearDown();
 		}
+	}
+
+	void onSceneLoading()
+	{
+		sceneReloaded = true;
+	}
+
+	// Whether the player ended up somewhere else over the last scene load, taken once per load. A no on arrival keeps
+	// the sample, in case the position isn't the destination yet, and lets the next tick decide.
+	boolean takeLeftArea(boolean onArrival)
+	{
+		final Player player = client.getLocalPlayer();
+		final WorldView worldView = client.getTopLevelWorldView();
+		if (player == null || worldView == null)
+		{
+			return false;
+		}
+
+		final WorldPoint location = player.getWorldLocation();
+		final boolean instance = worldView.isInstance();
+		final WorldPoint from = lastLocation != null ? lastLocation : location;
+		final boolean left = leftArea(sceneReloaded && lastLocation != null, from.getPlane(), from.getX(), from.getY(),
+			lastInstance, location.getPlane(), location.getX(), location.getY(), instance);
+		if (!left && onArrival)
+		{
+			return false;
+		}
+		if (left)
+		{
+			debugLog.add("Left the area over a scene load ({} tiles, plane {} to {}, instance {} to {})",
+				BossMemory.tileDistance(from.getX(), from.getY(), location.getX(), location.getY()),
+				from.getPlane(), location.getPlane(), lastInstance, instance);
+		}
+		lastLocation = location;
+		lastInstance = instance;
+		sceneReloaded = false;
+		return left;
+	}
+
+	// Far enough over a scene load that nothing we remembered can still be in sight.
+	static boolean leftArea(boolean sampled, int fromPlane, int fromX, int fromY, boolean fromInstance,
+		int toPlane, int toX, int toY, boolean toInstance)
+	{
+		return sampled && (fromPlane != toPlane || fromInstance != toInstance
+			|| BossMemory.tileDistance(fromX, fromY, toX, toY) >= BossMemory.OUT_OF_SIGHT_DISTANCE);
 	}
 
 	// A confirmed defeat counts straight away. An overhead 0 that isn't confirmed, such as a stun meter that empties,
@@ -259,6 +321,19 @@ class OpponentTracker
 			return DespawnOutcome.LEFT;
 		}
 		return lastExact && lastRatio == 0 ? DespawnOutcome.DEFEATED : DespawnOutcome.OUT_OF_SIGHT;
+	}
+
+	// Close enough for the fight to count.
+	static boolean isNearby(int distance)
+	{
+		return distance >= 0 && distance <= COMBAT_DISTANCE;
+	}
+
+	// Whether the player is fighting this opponent right now, which is when its fight starts: going for it, near it,
+	// and it can still be fought. One only picked up because a game bar follows it, or already read at 0, isn't fought.
+	static boolean startsFight(boolean engaged, boolean attackable, boolean dead, boolean down, int distance)
+	{
+		return engaged && attackable && !dead && !down && isNearby(distance);
 	}
 
 	static boolean isQuietFor(long interactionLostMillis, long lastHitTakenMillis, long lastOpponentHitMillis,
@@ -341,6 +416,12 @@ class OpponentTracker
 		return opponentState.defeated;
 	}
 
+	// The tick the opponent's health first read 0, which is where its death sequence began.
+	int zeroSince()
+	{
+		return zeroSinceTick;
+	}
+
 	// Changes when the opponent is back up after a confirmed kill, so the bar starts over for the next one.
 	int opponentLife()
 	{
@@ -368,6 +449,7 @@ class OpponentTracker
 	void reset()
 	{
 		opponent = null;
+		interactingWith = null;
 		interactionLostMillis = 0;
 		lastHitTakenMillis = 0;
 		lastOpponentHitMillis = 0;
@@ -385,6 +467,9 @@ class OpponentTracker
 		healthReader.reset();
 		despawnedOutcome = null;
 		resumedOpponent = null;
+		lastLocation = null;
+		lastInstance = false;
+		sceneReloaded = false;
 	}
 
 	void healedOnReturn(Actor actor)
@@ -397,6 +482,28 @@ class OpponentTracker
 	boolean resumedFromMemory(Actor actor)
 	{
 		return actor != null && actor == resumedOpponent;
+	}
+
+	private int combatDistanceTo(Actor actor)
+	{
+		final Player player = client.getLocalPlayer();
+		return player == null ? -1 : actor.getWorldArea().distanceTo(player.getWorldLocation());
+	}
+
+	// Hits start the fight through the fight timer's own hit path, so this only covers the player going for the opponent.
+	private void updateFightStart(Actor actor, boolean attackable, boolean dead, boolean down, int tick)
+	{
+		// Saves the work below once the fight is under way; onEngaged is what refuses to restart it.
+		if (fightTimer.getStartTick() != FightTimer.NO_TICK)
+		{
+			return;
+		}
+		final boolean engaged = actor == interactingWith;
+		final int distance = engaged ? combatDistanceTo(actor) : -1;
+		if (startsFight(engaged, attackable, dead, down, distance) && shouldShowBarFor(actor))
+		{
+			fightTimer.onEngaged(tick);
+		}
 	}
 
 	private int distanceToPlayer(NPC npc)
@@ -422,12 +529,12 @@ class OpponentTracker
 	}
 
 	// Called once a tick. Kept for the despawn, when a boss bar may already have lost the health.
-	boolean updateOpponentDown()
+	void updateOpponentDown()
 	{
 		if (opponent == null)
 		{
 			opponentState.clear();
-			return false;
+			return;
 		}
 
 		final HealthReader.Reading reading = healthReader.read(opponent);
@@ -442,12 +549,12 @@ class OpponentTracker
 		}
 		final int tick = client.getTickCount();
 		opponentState.update(reading, dead, npc, attackable, tick, log, "Opponent ", opponent);
+		updateFightStart(opponent, attackable, dead, opponentState.down, tick);
 		if (opponentState.takeRevived())
 		{
 			startNewLife(tick);
 		}
 		updateZero();
-		return opponentState.down;
 	}
 
 	// The same NPC back up after its kill was confirmed is the next one, so nothing of the previous life carries over.
@@ -535,6 +642,7 @@ class OpponentTracker
 		lastOpponentHitMillis = 0;
 		debugLog.add("New opponent: {} (combat level {}, known boss: {}, game boss bar: {})",
 			DebugLog.describe(target), target.getCombatLevel(), KnownBosses.contains(target.getName()), isGameBarBoss(target));
+		updateFightStart(target, NpcUtil.isAttackable(target), target.isDead(), isDown(target), tick);
 	}
 
 	private int priority(Actor actor)

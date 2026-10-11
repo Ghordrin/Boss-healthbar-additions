@@ -567,7 +567,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "showFightTimer",
 		name = "Fight timer",
-		description = "Show how long the fight has lasted, from the first hit on the opponent. It stops when the opponent is defeated.",
+		description = "Show how long the fight has lasted, from when you go for the opponent and are near it. It stops once the opponent is gone.",
 		position = 6,
 		section = bossInfoSection
 	)

@@ -1,5 +1,6 @@
 package com.ghordrin.bosshealthbar;
 
+import java.util.Locale;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.AccessLevel;
@@ -7,13 +8,18 @@ import lombok.Getter;
 import net.runelite.api.Actor;
 import net.runelite.api.Constants;
 
-// How long the fight with the current opponent has lasted, counted in game ticks from the first hit on it.
+// How long the fight with the current opponent has lasted, counted in game ticks from when the player goes for it and
+// is near it, or from the first hit on it if that comes first.
 @Singleton
 class FightTimer
 {
 	static final int NO_TICK = -1;
 	// A boss that swaps to a new NPC between phases can be gone for a moment before the new one shows up.
 	static final int SWAP_TICKS = 10;
+	// Counted from the first 0: a despawn after that follows within a moment, past which the clock stops where it is.
+	// It matches SWAP_TICKS today, so the clock stops on the last tick a return would still be the same fight, but the
+	// two measure different things and either can be tuned on its own.
+	static final int DEATH_TICKS = 10;
 
 	static final class Fight
 	{
@@ -35,10 +41,12 @@ class FightTimer
 	private boolean inFight;
 	private int endTick = NO_TICK;
 	private int clearedTick = NO_TICK;
+	// Where the death sequence of a kill made in view began, i.e. the first 0 the opponent read.
+	private int deadSince = NO_TICK;
 	private Actor lastHitActor;
 	private int lastHitTick = NO_TICK;
 
-	// Identifies the current fight, or NO_TICK before its first hit.
+	// Identifies the current fight, or NO_TICK before it has started.
 	@Getter(AccessLevel.PACKAGE)
 	private int startTick = NO_TICK;
 	private int shownTicks = NO_TICK;
@@ -86,6 +94,8 @@ class FightTimer
 		opponent = null;
 		inFight = true;
 		clearedTick = NO_TICK;
+		// Whatever is the opponent now, it isn't the one that was defeated.
+		deadSince = NO_TICK;
 		if (startTick == NO_TICK)
 		{
 			startTick = recentHitTick(earlierHitTick, tick);
@@ -112,6 +122,7 @@ class FightTimer
 		startTick = fight.startTick;
 		endTick = fight.endTick;
 		clearedTick = NO_TICK;
+		deadSince = NO_TICK;
 		if (startTick == NO_TICK && endTick == NO_TICK)
 		{
 			startTick = recentHitTick(earlierHitTick, tick);
@@ -125,7 +136,13 @@ class FightTimer
 		debugLog.add("Fight timer started over (was {})", elapsedText(tick));
 		startTick = tick;
 		endTick = NO_TICK;
+		deadSince = NO_TICK;
 		updateText(tick);
+	}
+
+	int getElapsedTicks(int tick)
+	{
+		return elapsedTicks(startTick, endTick, tick);
 	}
 
 	Fight save(int group)
@@ -143,7 +160,7 @@ class FightTimer
 	{
 		if (defeated)
 		{
-			defeat(defeatTick);
+			defeat(endOfFight(deadSince != NO_TICK ? deadSince : defeatTick, tick));
 		}
 		opponent = null;
 		clearedTick = tick;
@@ -171,25 +188,48 @@ class FightTimer
 		}
 	}
 
-	void onGameTick(Actor current, boolean defeated, int tick)
+	void onEngaged(int tick)
 	{
-		final boolean tracked = current != null && current == opponent;
-		onGameTick(tracked, tracked && defeated, tick);
+		if (inFight && startTick == NO_TICK && endTick == NO_TICK)
+		{
+			startTick = tick;
+			debugLog.add("Fight timer started, going for the opponent");
+			updateText(tick);
+		}
 	}
 
-	void onGameTick(boolean tracked, boolean dead, int tick)
+	void onGameTick(Actor current, boolean defeated, int zeroSince, int tick)
+	{
+		final boolean tracked = current != null && current == opponent;
+		onGameTick(tracked, tracked && defeated, tracked ? zeroSince : NO_TICK, tick);
+	}
+
+	// zeroSince is the tick the opponent's health first read 0, where its death sequence began.
+	void onGameTick(boolean tracked, boolean defeated, int zeroSince, int tick)
 	{
 		if (tracked)
 		{
-			if (dead)
+			if (defeated)
 			{
-				defeat(tick);
+				if (deadSince == NO_TICK)
+				{
+					deadSince = zeroSince != NO_TICK ? Math.min(zeroSince, tick) : tick;
+					debugLog.add("Fight timer: the opponent is defeated, the clock runs until it is gone");
+				}
+				if (tick - deadSince >= DEATH_TICKS)
+				{
+					defeat(deadSince + DEATH_TICKS);
+				}
 			}
-			else if (endTick != NO_TICK)
+			else
 			{
-				// Some opponents drop to 0 and come back for another phase.
-				endTick = NO_TICK;
-				debugLog.add("Fight timer running again, the opponent is back up");
+				deadSince = NO_TICK;
+				if (endTick != NO_TICK)
+				{
+					// Some opponents drop to 0 and come back for another phase.
+					endTick = NO_TICK;
+					debugLog.add("Fight timer running again, the opponent is back up");
+				}
 			}
 		}
 		updateText(tick);
@@ -209,6 +249,7 @@ class FightTimer
 		startTick = NO_TICK;
 		endTick = NO_TICK;
 		clearedTick = NO_TICK;
+		deadSince = NO_TICK;
 		shownTicks = NO_TICK;
 		text = null;
 	}
@@ -247,6 +288,12 @@ class FightTimer
 		return Math.max(0, (endTick != NO_TICK ? endTick : tick) - startTick);
 	}
 
+	// The fight ends when the opponent is gone, but never more than the death window after the kill was known.
+	static int endOfFight(int knownDeadSince, int goneTick)
+	{
+		return knownDeadSince == NO_TICK ? goneTick : Math.min(goneTick, knownDeadSince + DEATH_TICKS);
+	}
+
 	static int recentHitTick(int hitTick, int tick)
 	{
 		return hitTick != NO_TICK && tick - hitTick >= 0 && tick - hitTick <= 1 ? hitTick : NO_TICK;
@@ -258,6 +305,12 @@ class FightTimer
 	{
 		return inFight
 			&& (aliveMember || (!previousEnded && (clearedTick == NO_TICK || tick - clearedTick <= SWAP_TICKS)));
+	}
+
+	// The game prints several wordings of a fight or challenge time, so match on the word they share.
+	static boolean mentionsDuration(String message)
+	{
+		return message != null && message.toLowerCase(Locale.ROOT).contains("duration");
 	}
 
 	static String format(int ticks)

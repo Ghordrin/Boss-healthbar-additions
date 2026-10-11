@@ -5,6 +5,7 @@
 - New Save debug log option (in the new Bug reports section, or right-click the bar) saves the plugin's recent activity to a text file for bug reports
 - New Second boss bar option (Boss info, on by default). The smaller bar under the main one now shows any other boss you're fighting at the same time, not only pairs, with its last known health while it's away
 - Bosses fought together count as one fight on the fight timer
+- The fight timer now starts once you go for the opponent and are near it, instead of at the first hit on it
 
 ### Fixed
 
@@ -13,6 +14,8 @@
 - The fight timer keeps running when a boss's health bar fills up again for its next phase
 - The bar no longer shows a negative or empty health for a moment when a boss's health reading goes missing
 - The fight timer starts over when a defeated boss is back up for the next fight, instead of carrying the previous kill's time over
+- The fight timer and bar no longer carry a previous fight over when you leave the area or die and come back
+- The fight timer now runs until the boss is gone, so it matches the time the game reports
 
 ## 1.6.0 (2026-10-10)
 
