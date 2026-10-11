@@ -1,6 +1,5 @@
 package com.ghordrin.bosshealthbar;
 
-import java.util.Objects;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.AccessLevel;
@@ -18,13 +17,13 @@ class FightTimer
 
 	static final class Fight
 	{
-		final String name;
+		final int group;
 		final int startTick;
 		final int endTick;
 
-		Fight(String name, int startTick, int endTick)
+		Fight(int group, int startTick, int endTick)
 		{
-			this.name = name;
+			this.group = group;
 			this.startTick = startTick;
 			this.endTick = endTick;
 		}
@@ -33,7 +32,7 @@ class FightTimer
 	private final DebugLog debugLog;
 
 	private Actor opponent;
-	private String name;
+	private boolean inFight;
 	private int endTick = NO_TICK;
 	private int clearedTick = NO_TICK;
 	private Actor lastHitActor;
@@ -52,19 +51,29 @@ class FightTimer
 		this.debugLog = debugLog;
 	}
 
-	void opponentChanged(Actor next, String nextName, boolean previousDefeated, boolean pairHeld, int tick)
+	// Returns whether the fight carries on with the new opponent.
+	boolean opponentChanged(Actor next, boolean aliveMember, boolean previousDefeated, int tick)
 	{
-		opponentChanged(nextName, previousDefeated, pairHeld, next == lastHitActor ? lastHitTick : NO_TICK, tick);
+		final boolean carried = opponentChanged(aliveMember, previousDefeated,
+			next == lastHitActor ? lastHitTick : NO_TICK, tick);
 		opponent = next;
+		return carried;
 	}
 
 	// earlierHitTick is the latest hit on the new opponent from before it became the opponent, if any.
-	// pairHeld is whether the new opponent's pair is still being kept from before.
-	void opponentChanged(String nextName, boolean previousDefeated, boolean pairHeld, int earlierHitTick, int tick)
+	// aliveMember is whether the new opponent was already fought in this fight and is still alive.
+	boolean opponentChanged(boolean aliveMember, boolean previousDefeated, int earlierHitTick, int tick)
 	{
-		if (keepsCounting(name, previousDefeated || endTick != NO_TICK, clearedTick, nextName, pairHeld, tick))
+		final boolean carried = keepsCounting(inFight, aliveMember, previousDefeated || endTick != NO_TICK, clearedTick,
+			tick);
+		if (carried)
 		{
 			debugLog.add("Fight timer carried over to the new opponent ({})", elapsedText(tick));
+			if (aliveMember && endTick != NO_TICK)
+			{
+				endTick = NO_TICK;
+				debugLog.add("Fight timer running again, the fight continues");
+			}
 		}
 		else
 		{
@@ -75,7 +84,7 @@ class FightTimer
 			clearFight();
 		}
 		opponent = null;
-		name = nextName;
+		inFight = true;
 		clearedTick = NO_TICK;
 		if (startTick == NO_TICK)
 		{
@@ -86,6 +95,7 @@ class FightTimer
 			}
 		}
 		updateText(tick);
+		return carried;
 	}
 
 	void opponentReturned(Actor next, Fight fight, int tick)
@@ -98,7 +108,7 @@ class FightTimer
 	void opponentReturned(Fight fight, int earlierHitTick, int tick)
 	{
 		opponent = null;
-		name = fight.name;
+		inFight = true;
 		startTick = fight.startTick;
 		endTick = fight.endTick;
 		clearedTick = NO_TICK;
@@ -118,16 +128,22 @@ class FightTimer
 		updateText(tick);
 	}
 
-	Fight save()
+	Fight save(int group)
 	{
-		return new Fight(name, startTick, endTick);
+		return new Fight(group, startTick, endTick);
 	}
 
 	void opponentDespawned(boolean defeated, int tick)
 	{
+		opponentDespawned(defeated, tick, tick);
+	}
+
+	// defeatTick is when it was defeated, which can be before the despawn.
+	void opponentDespawned(boolean defeated, int defeatTick, int tick)
+	{
 		if (defeated)
 		{
-			defeat(tick);
+			defeat(defeatTick);
 		}
 		opponent = null;
 		clearedTick = tick;
@@ -179,16 +195,6 @@ class FightTimer
 		updateText(tick);
 	}
 
-	// The pair was forgotten, so its next member starts a new fight. The time shown stays until then.
-	void pairCleared(String pair)
-	{
-		if (Objects.equals(name, pair))
-		{
-			debugLog.add("Fight timer: pair cleared, its next fight starts over");
-			name = null;
-		}
-	}
-
 	void reset()
 	{
 		clearFight();
@@ -199,7 +205,7 @@ class FightTimer
 	private void clearFight()
 	{
 		opponent = null;
-		name = null;
+		inFight = false;
 		startTick = NO_TICK;
 		endTick = NO_TICK;
 		clearedTick = NO_TICK;
@@ -246,15 +252,12 @@ class FightTimer
 		return hitTick != NO_TICK && tick - hitTick >= 0 && tick - hitTick <= 1 ? hitTick : NO_TICK;
 	}
 
-	// A new NPC with the same name carries on the fight, unless the last one was defeated or has been gone too long.
-	// The members of a pair can be out of reach for longer between phases, so they don't time out while the pair is kept.
-	static boolean keepsCounting(String previousName, boolean previousDefeated, int clearedTick, String nextName,
-		boolean pairHeld, int tick)
+	// An NPC already fought in this fight carries it on while it's alive. Any other does too, unless the last opponent
+	// was defeated or has been gone too long.
+	static boolean keepsCounting(boolean inFight, boolean aliveMember, boolean previousEnded, int clearedTick, int tick)
 	{
-		return previousName != null
-			&& !previousDefeated
-			&& Objects.equals(previousName, nextName)
-			&& (clearedTick == NO_TICK || tick - clearedTick <= SWAP_TICKS || (pairHeld && PairBosses.isPairKey(nextName)));
+		return inFight
+			&& (aliveMember || (!previousEnded && (clearedTick == NO_TICK || tick - clearedTick <= SWAP_TICKS)));
 	}
 
 	static String format(int ticks)

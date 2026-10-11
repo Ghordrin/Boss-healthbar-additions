@@ -42,25 +42,33 @@ public class FightTimerTest
 	}
 
 	@Test
-	public void aSameNamedNpcCarriesOnAnUndefeatedFight()
+	public void anyNpcCarriesOnAnUndefeatedFight()
 	{
-		assertTrue(FightTimer.keepsCounting("Boss", false, NO_TICK, "Boss", false, 100));
-		assertFalse(FightTimer.keepsCounting("Boss", true, NO_TICK, "Boss", false, 100));
-		assertFalse(FightTimer.keepsCounting("Boss", false, NO_TICK, "Minion", false, 100));
-		assertFalse(FightTimer.keepsCounting(null, false, NO_TICK, "Boss", false, 100));
+		assertTrue(FightTimer.keepsCounting(true, false, false, NO_TICK, 100));
+		assertFalse(FightTimer.keepsCounting(true, false, true, NO_TICK, 100));
+		assertFalse(FightTimer.keepsCounting(false, false, false, NO_TICK, 100));
 	}
 
 	@Test
-	public void aSameNamedNpcOnlyCarriesOnShortlyAfterTheLastOneWentAway()
+	public void anotherNpcOnlyCarriesOnShortlyAfterTheLastOneWentAway()
 	{
-		assertTrue(FightTimer.keepsCounting("Boss", false, 100, "Boss", false, 100 + SWAP_TICKS));
-		assertFalse(FightTimer.keepsCounting("Boss", false, 100, "Boss", false, 101 + SWAP_TICKS));
+		assertTrue(FightTimer.keepsCounting(true, false, false, 100, 100 + SWAP_TICKS));
+		assertFalse(FightTimer.keepsCounting(true, false, false, 100, 101 + SWAP_TICKS));
+	}
+
+	@Test
+	public void anAliveMemberOfTheFightCarriesItOnWhateverHappenedBefore()
+	{
+		assertTrue(FightTimer.keepsCounting(true, true, true, NO_TICK, 100));
+		assertTrue(FightTimer.keepsCounting(true, true, false, 100, 500 + SWAP_TICKS));
+		assertTrue(FightTimer.keepsCounting(true, true, true, 100, 500 + SWAP_TICKS));
+		assertFalse(FightTimer.keepsCounting(false, true, false, NO_TICK, 100));
 	}
 
 	@Test
 	public void showsNothingBeforeTheFirstHit()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,10);
+		timer.opponentChanged(false, false, NO_TICK, 10);
 		timer.onGameTick(true, false, 11);
 		assertNull(timer.getText());
 	}
@@ -68,7 +76,7 @@ public class FightTimerTest
 	@Test
 	public void countsFromTheFirstHitAndIgnoresLaterOnes()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,10);
+		timer.opponentChanged(false, false, NO_TICK, 10);
 		timer.onHit(20);
 		assertEquals("0:00", timer.getText());
 		timer.onHit(30);
@@ -79,7 +87,7 @@ public class FightTimerTest
 	@Test
 	public void theTextIsOnlyRebuiltWhenTheTimeChanges()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,10);
+		timer.opponentChanged(false, false, NO_TICK, 10);
 		timer.onHit(10);
 		timer.onGameTick(true, false, 12);
 		final String text = timer.getText();
@@ -90,7 +98,7 @@ public class FightTimerTest
 	@Test
 	public void stopsWhenDefeatedAndKeepsTheTime()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.onGameTick(true, true, 100);
 		timer.onGameTick(true, true, 150);
@@ -103,7 +111,7 @@ public class FightTimerTest
 	@Test
 	public void despawningAsItDiesStopsTheTimer()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.opponentDespawned(true, 100);
 		timer.onGameTick(false, false, 200);
@@ -113,7 +121,7 @@ public class FightTimerTest
 	@Test
 	public void carriesOnWhenItComesBackFromZero()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.onGameTick(true, true, 50);
 		timer.onGameTick(true, false, 100);
@@ -121,12 +129,23 @@ public class FightTimerTest
 	}
 
 	@Test
-	public void aDifferentOpponentStartsOver()
+	public void anotherOpponentWhileTheLastOneIsUpCarriesOn()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.onGameTick(true, false, 100);
-		timer.opponentChanged("Minion", false, false, NO_TICK, 101);
+		assertTrue(timer.opponentChanged(false, false, NO_TICK, 101));
+		timer.onGameTick(true, false, 200);
+		assertEquals("2:00", timer.getText());
+	}
+
+	@Test
+	public void anotherOpponentAfterADefeatStartsOver()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, true, 100);
+		assertFalse(timer.opponentChanged(false, false, NO_TICK, 101));
 		assertNull(timer.getText());
 		timer.onHit(105);
 		assertEquals("0:00", timer.getText());
@@ -135,14 +154,14 @@ public class FightTimerTest
 	@Test
 	public void aPhaseSwapToASameNamedNpcKeepsCounting()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.opponentChanged("Boss", false, false, NO_TICK,50);
+		timer.opponentChanged(false, false, NO_TICK, 50);
 		timer.onGameTick(true, false, 100);
 		assertEquals("1:00", timer.getText());
 
 		timer.opponentDespawned(false, 110);
-		timer.opponentChanged("Boss", false, false, NO_TICK,112);
+		timer.opponentChanged(false, false, NO_TICK, 112);
 		timer.onGameTick(true, false, 200);
 		assertEquals("2:00", timer.getText());
 	}
@@ -150,24 +169,24 @@ public class FightTimerTest
 	@Test
 	public void aSameNamedNpcAfterADefeatStartsOver()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.opponentChanged("Boss", true, false, NO_TICK, 50);
+		timer.opponentChanged(false, true, NO_TICK, 50);
 		assertNull(timer.getText());
 
 		timer.onHit(60);
 		timer.opponentDespawned(true, 100);
-		timer.opponentChanged("Boss", false, false, NO_TICK,101);
+		timer.opponentChanged(false, false, NO_TICK, 101);
 		assertNull(timer.getText());
 	}
 
 	@Test
 	public void aSameNamedNpcLongAfterTheLastOneWentAwayStartsOver()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.opponentDespawned(false, 50);
-		timer.opponentChanged("Boss", false, false, NO_TICK,51 + SWAP_TICKS);
+		timer.opponentChanged(false, false, NO_TICK, 51 + SWAP_TICKS);
 		assertNull(timer.getText());
 	}
 
@@ -183,7 +202,7 @@ public class FightTimerTest
 	@Test
 	public void theHitThatBroughtUpTheOpponentStartsTheTimer()
 	{
-		timer.opponentChanged("Boss", false, false, 100, 101);
+		timer.opponentChanged(false, false, 100, 101);
 		timer.onGameTick(true, false, 200);
 		assertEquals("1:00", timer.getText());
 	}
@@ -191,9 +210,9 @@ public class FightTimerTest
 	@Test
 	public void anEarlierHitDoesNotRestartAFightThatCarriesOn()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK, 0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
-		timer.opponentChanged("Boss", false, false, 50, 50);
+		timer.opponentChanged(false, false, 50, 50);
 		timer.onGameTick(true, false, 100);
 		assertEquals("1:00", timer.getText());
 	}
@@ -201,100 +220,90 @@ public class FightTimerTest
 	@Test
 	public void aSameNamedNpcSoonAfterADefeatedOneDespawnedStartsOver()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK, 0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.opponentDespawned(true, 100);
-		timer.opponentChanged("Boss", false, false, NO_TICK, 102);
+		timer.opponentChanged(false, false, NO_TICK, 102);
 		assertNull(timer.getText());
 	}
 
 	@Test
-	public void aPairCarriesOnWhateverTheGapBetweenItsMembersWhileItIsHeld()
+	public void anAliveMemberAfterADefeatCarriesOnAndRunsAgain()
 	{
-		assertTrue(FightTimer.keepsCounting(PairBosses.GUARDIANS, false, 100, PairBosses.GUARDIANS, true, 101 + SWAP_TICKS));
-		assertFalse(FightTimer.keepsCounting(PairBosses.GUARDIANS, false, 100, PairBosses.GUARDIANS, false, 101 + SWAP_TICKS));
-		assertTrue(FightTimer.keepsCounting(PairBosses.GUARDIANS, false, 100, PairBosses.GUARDIANS, false, 100 + SWAP_TICKS));
-		assertFalse(FightTimer.keepsCounting(PairBosses.GUARDIANS, true, 100, PairBosses.GUARDIANS, true, 101));
-		assertFalse(FightTimer.keepsCounting("Boss", false, 100, "Boss", true, 101 + SWAP_TICKS));
-	}
-
-	@Test
-	public void swappingBetweenTheMembersOfAPairKeepsCounting()
-	{
-		timer.opponentChanged(PairBosses.GUARDIANS, false, true, NO_TICK, 0);
-		timer.onHit(0);
-		timer.opponentChanged(PairBosses.GUARDIANS, false, true, NO_TICK, 30);
-		// The first member dies while the other one is still up, so it isn't counted as defeated.
-		timer.onGameTick(true, false, 50);
-		timer.opponentDespawned(false, 60);
-		timer.opponentChanged(PairBosses.GUARDIANS, false, true, NO_TICK, 60 + SWAP_TICKS * 3);
-		timer.onGameTick(true, false, 200);
-		assertEquals("2:00", timer.getText());
-	}
-
-	@Test
-	public void aPairThatWasForgottenStartsOverWhenItComesBack()
-	{
-		timer.opponentChanged(PairBosses.GUARDIANS, false, true, NO_TICK, 0);
-		timer.onHit(0);
-		timer.opponentDespawned(false, 100);
-		timer.pairCleared("Boss");
-		timer.pairCleared(PairBosses.GUARDIANS);
-		// The time shown stays until the next opponent.
-		timer.onGameTick(false, false, 150);
-		assertEquals("1:30", timer.getText());
-
-		// Back in a new fight with both members spawned, so the pair is held again.
-		timer.opponentChanged(PairBosses.GUARDIANS, false, true, NO_TICK, 800);
-		assertNull(timer.getText());
-		timer.onHit(800);
-		timer.onGameTick(true, false, 900);
-		assertEquals("1:00", timer.getText());
-	}
-
-	@Test
-	public void aPairThatIsNoLongerHeldStartsOverAfterALongGap()
-	{
-		timer.opponentChanged(PairBosses.GUARDIANS, false, true, NO_TICK, 0);
-		timer.onHit(0);
-		timer.opponentDespawned(false, 100);
-		timer.opponentChanged(PairBosses.GUARDIANS, false, false, NO_TICK, 101 + SWAP_TICKS);
-		assertNull(timer.getText());
-	}
-
-	@Test
-	public void aPairStopsWithItsLastMemberAndThenStartsOver()
-	{
-		timer.opponentChanged(PairBosses.GUARDIANS, false, true, NO_TICK, 0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.onGameTick(true, true, 100);
 		timer.opponentDespawned(true, 105);
 		timer.onGameTick(false, false, 150);
 		assertEquals("1:00", timer.getText());
 
-		timer.opponentChanged(PairBosses.GUARDIANS, false, true, NO_TICK, 300);
+		assertTrue(timer.opponentChanged(true, false, NO_TICK, 150));
+		timer.onGameTick(true, false, 200);
+		assertEquals("2:00", timer.getText());
+	}
+
+	@Test
+	public void anAliveMemberCarriesOnWhateverTheGap()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.opponentDespawned(false, 60);
+		assertTrue(timer.opponentChanged(true, false, NO_TICK, 60 + SWAP_TICKS * 3));
+		timer.onGameTick(true, false, 200);
+		assertEquals("2:00", timer.getText());
+	}
+
+	@Test
+	public void aNewNpcAfterTheLastOneWasDefeatedStartsOver()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		assertFalse(timer.opponentChanged(false, true, NO_TICK, 50));
 		assertNull(timer.getText());
+	}
+
+	@Test
+	public void aNewNpcLongAfterTheLastOneLeftStartsOver()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.opponentDespawned(false, 100);
+		// The time shown stays until the next opponent.
+		timer.onGameTick(false, false, 150);
+		assertEquals("1:30", timer.getText());
+		assertFalse(timer.opponentChanged(false, false, NO_TICK, 101 + SWAP_TICKS));
+		assertNull(timer.getText());
+	}
+
+	@Test
+	public void aKillFoundAtTheDespawnStopsWhereItWasFirstSeen()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.opponentDespawned(true, 100, 130);
+		timer.onGameTick(false, false, 200);
+		assertEquals("1:00", timer.getText());
 	}
 
 	@Test
 	public void resetClearsTheFight()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK,0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.reset();
 		assertNull(timer.getText());
-		timer.opponentChanged("Boss", false, false, NO_TICK,5);
+		timer.opponentChanged(false, false, NO_TICK, 5);
 		assertNull(timer.getText());
 	}
 
 	@Test
 	public void anOpponentBackFromOutOfSightKeepsItsStart()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK, 0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.opponentDespawned(false, 50);
-		final FightTimer.Fight fight = timer.save();
-		timer.opponentChanged("Minion", false, false, NO_TICK, 60);
+		final FightTimer.Fight fight = timer.save(1);
+		timer.opponentChanged(false, false, NO_TICK, 60);
 		timer.opponentReturned(fight, NO_TICK, 70 + SWAP_TICKS);
 		timer.onGameTick(true, false, 100);
 		assertEquals("1:00", timer.getText());
@@ -305,11 +314,11 @@ public class FightTimerTest
 	@Test
 	public void aStoppedFightStaysStoppedWhenTheOpponentComesBack()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK, 0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.onGameTick(true, true, 100);
 		timer.opponentDespawned(false, 120);
-		final FightTimer.Fight fight = timer.save();
+		final FightTimer.Fight fight = timer.save(1);
 		timer.reset();
 		timer.opponentReturned(fight, NO_TICK, 200);
 		assertEquals("1:00", timer.getText());
@@ -318,9 +327,9 @@ public class FightTimerTest
 	@Test
 	public void anOpponentBackBeforeAnyHitStartsOnTheNextHit()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK, 0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.opponentDespawned(false, 50);
-		final FightTimer.Fight fight = timer.save();
+		final FightTimer.Fight fight = timer.save(1);
 		timer.opponentReturned(fight, NO_TICK, 100);
 		assertNull(timer.getText());
 		timer.onHit(110);
@@ -331,7 +340,7 @@ public class FightTimerTest
 	@Test
 	public void startingOverCountsFromThatTick()
 	{
-		timer.opponentChanged("Boss", false, false, NO_TICK, 0);
+		timer.opponentChanged(false, false, NO_TICK, 0);
 		timer.onHit(0);
 		timer.onGameTick(true, true, 50);
 		timer.startOver(100);
