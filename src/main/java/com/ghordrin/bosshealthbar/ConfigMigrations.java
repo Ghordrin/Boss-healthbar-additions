@@ -4,6 +4,7 @@ import com.ghordrin.bosshealthbar.ConfigWrites.Write;
 import com.google.common.collect.ImmutableList;
 import java.awt.Font;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import javax.inject.Inject;
@@ -16,6 +17,9 @@ class ConfigMigrations
 {
 	// The checkbox nativeBossBarMode replaced. Its saved value is moved over on startup.
 	static final String OLD_REPLACE_NATIVE_BOSS_BAR_KEY = "replaceNativeBossBar";
+	// Remembered what Match boss colors was before the Oldschool theme turned it off. The two now work together,
+	// so the key is dropped. Its value isn't restored, which leaves the look unchanged.
+	static final String OLD_SAVED_MATCH_BOSS_COLORS_KEY = "oldschoolSavedMatchBossColors";
 	// Set once the old default font has been checked for a switch to the new one. Not a config item, so Reset keeps it.
 	static final String FONT_DEFAULT_MIGRATED_KEY = "fontDefaultMigrated";
 	// Set once a RuneScape font's saved size has been put back to its native size. Not a config item either.
@@ -46,6 +50,8 @@ class ConfigMigrations
 	void migrate()
 	{
 		migrateReplaceNativeBossBar();
+		apply(savedMatchBossColorsWrites(
+			configManager.getConfiguration(BossHealthBarConfig.GROUP, OLD_SAVED_MATCH_BOSS_COLORS_KEY)));
 		migrateFont(FONT_DEFAULT_MIGRATED_KEY, BossHealthBarConfig.FONT_KEY, ConfigMigrations::defaultFontWrites);
 		migrateFont(PIXEL_FONT_SIZE_MIGRATED_KEY, BossHealthBarConfig.FONT_KEY, ConfigMigrations::pixelFontSizeWrites);
 		migrateFont(ITEM_FONTS_MIGRATED_KEY, BossHealthBarConfig.FONT_KEY, ConfigMigrations::itemFontWrites);
@@ -93,6 +99,13 @@ class ConfigMigrations
 		}
 		writes.add(new Write(OLD_REPLACE_NATIVE_BOSS_BAR_KEY, null));
 		return writes;
+	}
+
+	static List<Write> savedMatchBossColorsWrites(String saved)
+	{
+		return saved == null
+			? Collections.emptyList()
+			: Collections.singletonList(new Write(OLD_SAVED_MATCH_BOSS_COLORS_KEY, null));
 	}
 
 	// The old "Replace game's boss health bar" checkbox: on replaced the game's bar, off hid ours.

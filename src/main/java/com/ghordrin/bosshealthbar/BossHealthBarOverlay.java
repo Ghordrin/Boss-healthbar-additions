@@ -653,7 +653,12 @@ class BossHealthBarOverlay extends Overlay
 
 	static ThemeColors barColors(ThemeColors themeColors, ThemeColors bossColors, boolean flat)
 	{
-		return bossColors != null && !flat ? bossColors : themeColors;
+		if (bossColors == null)
+		{
+			return themeColors;
+		}
+		// A flat bar keeps its own look and only takes the opponent's fill color.
+		return flat ? ThemeColors.withBase(themeColors, bossColors.getFillHigh()) : bossColors;
 	}
 
 	static boolean showsGold(boolean rolledGold, boolean flat)

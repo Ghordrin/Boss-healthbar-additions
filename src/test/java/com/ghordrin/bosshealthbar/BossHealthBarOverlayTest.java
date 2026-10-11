@@ -14,13 +14,15 @@ import org.junit.Test;
 public class BossHealthBarOverlayTest
 {
 	@Test
-	public void bossColorsDontApplyToFlatThemes()
+	public void aFlatThemeOnlyTakesTheBossFillColor()
 	{
 		final ThemeColors theme = FlatTheme.OLDSCHOOL.getColors();
 		final ThemeColors boss = HealthBarTheme.BANDOS.getColors();
-		assertSame(theme, BossHealthBarOverlay.barColors(theme, boss, true));
+		assertEquals(ThemeColors.withBase(theme, boss.getFillHigh()),
+			BossHealthBarOverlay.barColors(theme, boss, true));
 		assertSame(boss, BossHealthBarOverlay.barColors(theme, boss, false));
 		assertSame(theme, BossHealthBarOverlay.barColors(theme, null, false));
+		assertSame(theme, BossHealthBarOverlay.barColors(theme, null, true));
 	}
 
 	@Test

@@ -7,6 +7,7 @@
 - Bosses fought together count as one fight on the fight timer
 - The fight timer now starts once you go for the opponent and are near it, instead of at the first hit on it
 - New Text edge option (Fonts): shadow, outline or nothing
+- The Oldschool theme can now take the boss's colours with Match boss colors
 
 ### Fixed
 

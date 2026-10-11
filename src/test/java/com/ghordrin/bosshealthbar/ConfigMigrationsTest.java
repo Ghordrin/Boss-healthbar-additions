@@ -65,8 +65,18 @@ public class ConfigMigrationsTest
 		assertEquals("pixelFontSizeMigrated", ConfigMigrations.PIXEL_FONT_SIZE_MIGRATED_KEY);
 		assertEquals("itemFontsMigrated", ConfigMigrations.ITEM_FONTS_MIGRATED_KEY);
 		assertEquals("fightTimerFontMigrated", ConfigMigrations.FIGHT_TIMER_FONT_MIGRATED_KEY);
-		assertEquals("oldschoolSavedMatchBossColors", OldschoolToggle.SAVED_MATCH_BOSS_COLORS_KEY);
+		assertEquals("oldschoolSavedMatchBossColors", ConfigMigrations.OLD_SAVED_MATCH_BOSS_COLORS_KEY);
 		assertEquals("oldschoolSavedRareGoldBars", OldschoolToggle.SAVED_RARE_GOLD_BARS_KEY);
+	}
+
+	@Test
+	public void theRememberedMatchBossColorsIsUnsetOnceAndNothingElse()
+	{
+		assertEquals(Collections.singletonList(write(ConfigMigrations.OLD_SAVED_MATCH_BOSS_COLORS_KEY, null)),
+			ConfigMigrations.savedMatchBossColorsWrites("true"));
+		assertEquals(Collections.singletonList(write(ConfigMigrations.OLD_SAVED_MATCH_BOSS_COLORS_KEY, null)),
+			ConfigMigrations.savedMatchBossColorsWrites("false"));
+		assertTrue(ConfigMigrations.savedMatchBossColorsWrites(null).isEmpty());
 	}
 
 	@Test

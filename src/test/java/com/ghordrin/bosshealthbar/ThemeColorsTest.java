@@ -40,6 +40,56 @@ public class ThemeColorsTest
 		}
 	}
 
+	@Test
+	public void aBaseAwayFromTheFlatTrackKeepsThatTrack()
+	{
+		final ThemeColors flat = FlatTheme.OLDSCHOOL.getColors();
+		final ThemeColors colors = ThemeColors.withBase(flat, new Color(0x3CB043));
+		assertEquals(flat.getTrack(), colors.getTrack());
+		assertEquals(new Color(0x3CB043), colors.getFillHigh());
+		assertEquals(new Color(0x3CB043), colors.getFillLow());
+	}
+
+	@Test
+	public void aBaseTooCloseToTheFlatTrackGetsADarkerOneOfItsOwn()
+	{
+		final ThemeColors flat = FlatTheme.OLDSCHOOL.getColors();
+		final Color base = new Color(0xB40000);
+		final ThemeColors colors = ThemeColors.withBase(flat, base);
+		assertTrue(brightness(colors.getTrack()) < brightness(base));
+		assertTrue(ThemeColors.contrast(base, colors.getTrack()) >= 1.6f);
+	}
+
+	@Test
+	public void theFlatBarStaysReadableAndKeepsItsOwnFrameAndTextForAnyBase()
+	{
+		final ThemeColors flat = FlatTheme.OLDSCHOOL.getColors();
+		for (float hue = 0f; hue < 1f; hue += 1f / 72f)
+		{
+			for (float saturation : new float[]{0.05f, 0.3f, 0.6f, 0.9f, 1f})
+			{
+				for (float brightness = 0.3f; brightness <= 1f; brightness += 0.02f)
+				{
+					final Color base = Color.getHSBColor(hue, saturation, brightness);
+					final ThemeColors colors = ThemeColors.withBase(flat, base);
+					final String label = String.format("base %06X", base.getRGB() & 0xFFFFFF);
+
+					assertEquals(label, base, colors.getFillHigh());
+					assertEquals(label, base, colors.getFillLow());
+					assertTrue(label, ThemeColors.contrast(base, colors.getTrack()) >= 1.6f);
+					assertTrue(label, ThemeColors.contrast(colors.getTrail(), base) >= 1.5f
+						|| hueGap(colors.getTrail(), base) >= 0.25f);
+
+					assertEquals(label, flat.getFrame(), colors.getFrame());
+					assertEquals(label, flat.getText(), colors.getText());
+					assertEquals(label, flat.getLevelText(), colors.getLevelText());
+					assertEquals(label, flat.getHitpointsText(), colors.getHitpointsText());
+					assertEquals(label, flat.getDefeatedText(), colors.getDefeatedText());
+				}
+			}
+		}
+	}
+
 	private static float brightness(Color c)
 	{
 		return Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null)[2];

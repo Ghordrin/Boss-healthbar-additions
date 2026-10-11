@@ -3,7 +3,6 @@ package com.ghordrin.bosshealthbar;
 import static com.ghordrin.bosshealthbar.BossHealthBarConfig.MATCH_BOSS_COLORS_KEY;
 import static com.ghordrin.bosshealthbar.BossHealthBarConfig.OLDSCHOOL_THEME_KEY;
 import static com.ghordrin.bosshealthbar.BossHealthBarConfig.RARE_GOLD_BARS_KEY;
-import static com.ghordrin.bosshealthbar.OldschoolToggle.SAVED_MATCH_BOSS_COLORS_KEY;
 import static com.ghordrin.bosshealthbar.OldschoolToggle.SAVED_RARE_GOLD_BARS_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -61,8 +60,8 @@ public class OldschoolToggleTest
 
 		OldschoolToggle.Settings settings()
 		{
-			return new OldschoolToggle.Settings(get(OLDSCHOOL_THEME_KEY), get(MATCH_BOSS_COLORS_KEY),
-				get(RARE_GOLD_BARS_KEY), values.get(SAVED_MATCH_BOSS_COLORS_KEY), values.get(SAVED_RARE_GOLD_BARS_KEY));
+			return new OldschoolToggle.Settings(get(OLDSCHOOL_THEME_KEY), get(RARE_GOLD_BARS_KEY),
+				values.get(SAVED_RARE_GOLD_BARS_KEY));
 		}
 
 		boolean get(String key)
@@ -77,14 +76,12 @@ public class OldschoolToggleTest
 	}
 
 	@Test
-	public void tickingOnRemembersAndTurnsOffTheOtherBoxes()
+	public void tickingOnRemembersAndTurnsOffRareGoldBars()
 	{
 		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, false, true,
-			new OldschoolToggle.Settings(true, true, false, null, null));
+			new OldschoolToggle.Settings(true, false, null));
 		assertEquals(Arrays.asList(
-			new ConfigWrites.Write(SAVED_MATCH_BOSS_COLORS_KEY, true),
 			new ConfigWrites.Write(SAVED_RARE_GOLD_BARS_KEY, false),
-			new ConfigWrites.Write(MATCH_BOSS_COLORS_KEY, false),
 			new ConfigWrites.Write(RARE_GOLD_BARS_KEY, false)), writes);
 	}
 
@@ -92,42 +89,27 @@ public class OldschoolToggleTest
 	public void tickingOffClearsMemoryThenRestores()
 	{
 		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, true, false,
-			new OldschoolToggle.Settings(false, false, false, true, false));
+			new OldschoolToggle.Settings(false, false, true));
 		assertEquals(Arrays.asList(
-			new ConfigWrites.Write(SAVED_MATCH_BOSS_COLORS_KEY, null),
 			new ConfigWrites.Write(SAVED_RARE_GOLD_BARS_KEY, null),
-			new ConfigWrites.Write(MATCH_BOSS_COLORS_KEY, true),
-			new ConfigWrites.Write(RARE_GOLD_BARS_KEY, false)), writes);
-	}
-
-	@Test
-	public void tickingAConflictTurnsOldschoolOffAndRestoresOnlyTheOther()
-	{
-		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(MATCH_BOSS_COLORS_KEY, false, true,
-			new OldschoolToggle.Settings(true, true, false, false, true));
-		assertEquals(Arrays.asList(
-			new ConfigWrites.Write(SAVED_MATCH_BOSS_COLORS_KEY, null),
-			new ConfigWrites.Write(SAVED_RARE_GOLD_BARS_KEY, null),
-			new ConfigWrites.Write(RARE_GOLD_BARS_KEY, true),
-			new ConfigWrites.Write(OLDSCHOOL_THEME_KEY, false)), writes);
+			new ConfigWrites.Write(RARE_GOLD_BARS_KEY, true)), writes);
 	}
 
 	@Test
 	public void nothingToDoWhenTheValueDidntChange()
 	{
-		final OldschoolToggle.Settings settings = new OldschoolToggle.Settings(true, false, false, true, true);
+		final OldschoolToggle.Settings settings = new OldschoolToggle.Settings(true, false, true);
 		assertTrue(OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, true, true, settings).isEmpty());
-		assertTrue(OldschoolToggle.writes(MATCH_BOSS_COLORS_KEY, false, false, settings).isEmpty());
+		assertTrue(OldschoolToggle.writes(RARE_GOLD_BARS_KEY, false, false, settings).isEmpty());
 	}
 
 	@Test
-	public void conflictBoxesOnlyMatterWhileOldschoolIsOn()
+	public void rareGoldBarsOnlyMattersWhileOldschoolIsOn()
 	{
-		final OldschoolToggle.Settings off = new OldschoolToggle.Settings(false, true, true, null, null);
-		assertTrue(OldschoolToggle.writes(MATCH_BOSS_COLORS_KEY, false, true, off).isEmpty());
+		final OldschoolToggle.Settings off = new OldschoolToggle.Settings(false, true, null);
 		assertTrue(OldschoolToggle.writes(RARE_GOLD_BARS_KEY, false, true, off).isEmpty());
 
-		final OldschoolToggle.Settings on = new OldschoolToggle.Settings(true, false, false, true, true);
+		final OldschoolToggle.Settings on = new OldschoolToggle.Settings(true, false, true);
 		assertTrue(OldschoolToggle.writes(RARE_GOLD_BARS_KEY, true, false, on).isEmpty());
 		assertTrue(OldschoolToggle.writes("barWidth", false, true, on).isEmpty());
 	}
@@ -136,26 +118,21 @@ public class OldschoolToggleTest
 	public void tickingOnKeepsWhatIsAlreadyRemembered()
 	{
 		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, false, true,
-			new OldschoolToggle.Settings(true, false, false, true, true));
-		assertEquals(Arrays.asList(
-			new ConfigWrites.Write(MATCH_BOSS_COLORS_KEY, false),
-			new ConfigWrites.Write(RARE_GOLD_BARS_KEY, false)), writes);
+			new OldschoolToggle.Settings(true, false, true));
+		assertEquals(Arrays.asList(new ConfigWrites.Write(RARE_GOLD_BARS_KEY, false)), writes);
 	}
 
 	@Test
 	public void repeatedTogglingRoundTrips()
 	{
-		final FakeConfig config = new FakeConfig(false, true, false);
+		final FakeConfig config = new FakeConfig(false, true, true);
 		for (int i = 0; i < 5; i++)
 		{
 			config.set(OLDSCHOOL_THEME_KEY, true);
-			assertFalse(config.get(MATCH_BOSS_COLORS_KEY));
 			assertFalse(config.get(RARE_GOLD_BARS_KEY));
 
 			config.set(OLDSCHOOL_THEME_KEY, false);
-			assertTrue(config.get(MATCH_BOSS_COLORS_KEY));
-			assertFalse(config.get(RARE_GOLD_BARS_KEY));
-			assertNull(config.values.get(SAVED_MATCH_BOSS_COLORS_KEY));
+			assertTrue(config.get(RARE_GOLD_BARS_KEY));
 			assertNull(config.values.get(SAVED_RARE_GOLD_BARS_KEY));
 		}
 	}
@@ -167,29 +144,19 @@ public class OldschoolToggleTest
 		config.set(OLDSCHOOL_THEME_KEY, true);
 		assertFalse(config.get(RARE_GOLD_BARS_KEY));
 
-		config.set(MATCH_BOSS_COLORS_KEY, true);
-		assertFalse(config.get(OLDSCHOOL_THEME_KEY));
-		assertTrue(config.get(MATCH_BOSS_COLORS_KEY));
-		assertTrue(config.get(RARE_GOLD_BARS_KEY));
-		assertNull(config.values.get(SAVED_MATCH_BOSS_COLORS_KEY));
-		assertNull(config.values.get(SAVED_RARE_GOLD_BARS_KEY));
-
-		config.set(OLDSCHOOL_THEME_KEY, true);
 		config.set(RARE_GOLD_BARS_KEY, true);
 		assertFalse(config.get(OLDSCHOOL_THEME_KEY));
-		assertTrue(config.get(MATCH_BOSS_COLORS_KEY));
 		assertTrue(config.get(RARE_GOLD_BARS_KEY));
+		assertNull(config.values.get(SAVED_RARE_GOLD_BARS_KEY));
 	}
 
 	@Test
-	public void tickingRareGoldBarsTurnsOldschoolOffAndRestoresMatchBossColors()
+	public void tickingRareGoldBarsTurnsOldschoolOffAndClearsTheMemory()
 	{
 		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(RARE_GOLD_BARS_KEY, false, true,
-			new OldschoolToggle.Settings(true, false, true, true, false));
+			new OldschoolToggle.Settings(true, true, false));
 		assertEquals(Arrays.asList(
-			new ConfigWrites.Write(SAVED_MATCH_BOSS_COLORS_KEY, null),
 			new ConfigWrites.Write(SAVED_RARE_GOLD_BARS_KEY, null),
-			new ConfigWrites.Write(MATCH_BOSS_COLORS_KEY, true),
 			new ConfigWrites.Write(OLDSCHOOL_THEME_KEY, false)), writes);
 	}
 
@@ -206,6 +173,26 @@ public class OldschoolToggleTest
 		assertTrue(config.get(RARE_GOLD_BARS_KEY));
 	}
 
+	// The two settings now work together: neither one turns the other off.
+	@Test
+	public void oldschoolAndMatchBossColorsNoLongerExcludeEachOther()
+	{
+		assertFalse(OldschoolToggle.handles(MATCH_BOSS_COLORS_KEY));
+
+		final FakeConfig config = new FakeConfig(false, false, true);
+		config.set(OLDSCHOOL_THEME_KEY, true);
+		assertTrue(config.get(OLDSCHOOL_THEME_KEY));
+		assertFalse(config.get(MATCH_BOSS_COLORS_KEY));
+
+		config.set(MATCH_BOSS_COLORS_KEY, true);
+		assertTrue(config.get(OLDSCHOOL_THEME_KEY));
+		assertTrue(config.get(MATCH_BOSS_COLORS_KEY));
+
+		config.set(OLDSCHOOL_THEME_KEY, false);
+		config.set(OLDSCHOOL_THEME_KEY, true);
+		assertTrue(config.get(MATCH_BOSS_COLORS_KEY));
+	}
+
 	@Test
 	public void resetEndsOnTheDefaultsInAnyOrder()
 	{
@@ -219,7 +206,7 @@ public class OldschoolToggleTest
 		};
 		for (String[] order : orders)
 		{
-			final FakeConfig config = new FakeConfig(false, true, false);
+			final FakeConfig config = new FakeConfig(false, true, true);
 			config.set(OLDSCHOOL_THEME_KEY, true);
 
 			// RuneLite's Reset puts each setting back to its default, then the plugin's reset writes run.
@@ -236,7 +223,6 @@ public class OldschoolToggleTest
 			assertFalse(name, config.get(OLDSCHOOL_THEME_KEY));
 			assertFalse(name, config.get(MATCH_BOSS_COLORS_KEY));
 			assertTrue(name, config.get(RARE_GOLD_BARS_KEY));
-			assertNull(name, config.values.get(SAVED_MATCH_BOSS_COLORS_KEY));
 			assertNull(name, config.values.get(SAVED_RARE_GOLD_BARS_KEY));
 		}
 	}
