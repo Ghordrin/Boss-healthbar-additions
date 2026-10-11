@@ -50,18 +50,21 @@ class HealthIndicatorMarkers
 	private final ConfigManager configManager;
 	private final PluginManager pluginManager;
 	private final Gson gson;
+	private final DebugLog debugLog;
 
 	private List<Entry> entries;
 	private String cachedName;
 	private Marker[] cachedMarkers = NONE;
 
 	@Inject
-	HealthIndicatorMarkers(BossHealthBarConfig config, ConfigManager configManager, PluginManager pluginManager, Gson gson)
+	HealthIndicatorMarkers(BossHealthBarConfig config, ConfigManager configManager, PluginManager pluginManager, Gson gson,
+		DebugLog debugLog)
 	{
 		this.config = config;
 		this.configManager = configManager;
 		this.pluginManager = pluginManager;
 		this.gson = gson;
+		this.debugLog = debugLog;
 	}
 
 	void invalidate()
@@ -80,7 +83,8 @@ class HealthIndicatorMarkers
 
 		if (entries == null)
 		{
-			entries = isPluginActive() ? parse(gson, configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY)) : Collections.emptyList();
+			entries = isPluginActive()
+				? parse(gson, configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY), debugLog) : Collections.emptyList();
 			cachedName = null;
 		}
 
@@ -120,11 +124,11 @@ class HealthIndicatorMarkers
 	@VisibleForTesting
 	static Marker[] markersFor(Gson gson, String json, String name)
 	{
-		return match(parse(gson, json), name);
+		return match(parse(gson, json, null), name);
 	}
 
 	// The format belongs to the other plugin and could change, so anything unexpected is skipped.
-	private static List<Entry> parse(Gson gson, String json)
+	private static List<Entry> parse(Gson gson, String json, DebugLog debugLog)
 	{
 		if (json == null || json.isEmpty())
 		{
@@ -139,6 +143,10 @@ class HealthIndicatorMarkers
 		catch (JsonParseException e)
 		{
 			log.debug("Couldn't read Boss Health Indicators config", e);
+			if (debugLog != null)
+			{
+				debugLog.add("Couldn't read Boss Health Indicators config: {}", e.toString());
+			}
 			return Collections.emptyList();
 		}
 		if (root == null || !root.isJsonArray())

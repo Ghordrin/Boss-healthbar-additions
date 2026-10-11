@@ -51,6 +51,7 @@ public interface BossHealthBarConfig extends Config
 	String FIGHT_TIMER_FONT_KEY = "fightTimerFont";
 	// Set once the fight timer font has been given the kill count's font. Not a config item either.
 	String FIGHT_TIMER_FONT_MIGRATED_KEY = "fightTimerFontMigrated";
+	String SAVE_DEBUG_LOG_KEY = "saveDebugLog";
 
 	@ConfigSection(
 		name = "Look",
@@ -113,6 +114,14 @@ public interface BossHealthBarConfig extends Config
 		closedByDefault = true
 	)
 	String whenToShowSection = "whenToShow";
+
+	@ConfigSection(
+		name = "Bug reports",
+		description = "Save what the plugin did recently, to attach to a bug report.",
+		position = 8,
+		closedByDefault = true
+	)
+	String bugReportsSection = "bugReports";
 
 	@ConfigItem(
 		keyName = "showPreview",
@@ -1016,5 +1025,17 @@ public interface BossHealthBarConfig extends Config
 	default boolean showHealthIndicatorMarkers()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = SAVE_DEBUG_LOG_KEY,
+		name = "Save debug log",
+		description = "Saves the plugin's recent activity and your settings for it to a text file you can attach to a bug report. It contains no player names, chat or account details.",
+		position = 0,
+		section = bugReportsSection
+	)
+	default boolean saveDebugLog()
+	{
+		return false;
 	}
 }

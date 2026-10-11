@@ -1,6 +1,7 @@
 package com.ghordrin.bosshealthbar;
 
 import com.google.inject.Provides;
+import java.io.IOException;
 import java.util.List;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
@@ -28,15 +29,21 @@ import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.Filepath;
 
 @PluginDescriptor(
 	name = BossHealthBarPlugin.NAME,
 	description = "Replaces the opponent health bar with a themed bar that shows a damage trail and your recent damage",
-	tags = {"boss", "health", "healthbar", "hitpoints", "overlay", "pvm", "combat", "ui", "theme"}
+	tags = {"boss", "health", "healthbar", "hitpoints", "overlay", "pvm", "combat", "ui", "theme"},
+	internalName = BossHealthBarPlugin.INTERNAL_NAME
 )
 public class BossHealthBarPlugin extends Plugin
 {
 	static final String NAME = "Boss Health Bar Additions";
+	static final String INTERNAL_NAME = "boss-health-bar-additions";
+	// Keep in step with the version in build.gradle and runelite-plugin.properties.
+	static final String VERSION = "1.6.0";
+	private static final int MAX_LOGGED_VALUE_LENGTH = 100;
 
 	@Inject
 	private Client client;
@@ -107,6 +114,12 @@ public class BossHealthBarPlugin extends Plugin
 	@Inject
 	private SpecialAttackCounts specialAttackCounts;
 
+	@Inject
+	private DebugLog debugLog;
+
+	@Inject
+	private DebugExport debugExport;
+
 	@Provides
 	BossHealthBarConfig provideConfig(ConfigManager configManager)
 	{
@@ -116,6 +129,11 @@ public class BossHealthBarPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		debugLog.add("Plugin started (version {})", VERSION);
+		if (config.saveDebugLog())
+		{
+			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.SAVE_DEBUG_LOG_KEY, false);
+		}
 		migrateReplaceNativeBossBar();
 		migrateDefaultFont();
 		migratePixelFontSize();
@@ -136,6 +154,7 @@ public class BossHealthBarPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		debugLog.add("Plugin stopped");
 		overlayManager.remove(overlay);
 		overlayManager.remove(pillarBarsOverlay);
 		partyDamage.shutDown();
@@ -230,6 +249,11 @@ public class BossHealthBarPlugin extends Plugin
 		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.FIGHT_TIMER_FONT_MIGRATED_KEY, true);
 	}
 
+	Filepath dataDirectory() throws IOException
+	{
+		return getPluginDirectory();
+	}
+
 	// Reset can walk the settings in any order, so put these back to their defaults once it's done.
 	@Override
 	public void resetConfiguration()
@@ -276,6 +300,11 @@ public class BossHealthBarPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		final GameState state = event.getGameState();
+		if (state == GameState.LOGGED_IN || state == GameState.LOGIN_SCREEN || state == GameState.HOPPING)
+		{
+			debugLog.add("Game state {}", state);
+		}
 		if (event.getGameState() == GameState.LOGIN_SCREEN || event.getGameState() == GameState.HOPPING)
 		{
 			resetState();
@@ -318,6 +347,20 @@ public class BossHealthBarPlugin extends Plugin
 		}
 
 		overlay.invalidateColors();
+
+		if (BossHealthBarConfig.SAVE_DEBUG_LOG_KEY.equals(event.getKey()))
+		{
+			// Same as the picker checkboxes: ticking saves the log and the tick is undone straight away.
+			if ("true".equals(event.getNewValue()))
+			{
+				configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.SAVE_DEBUG_LOG_KEY, false);
+				debugExport.save();
+			}
+			return;
+		}
+
+		debugLog.add("Setting {}: {} -> {}", event.getKey(), DebugLog.cut(event.getOldValue(), MAX_LOGGED_VALUE_LENGTH),
+			DebugLog.cut(event.getNewValue(), MAX_LOGGED_VALUE_LENGTH));
 
 		if (BossHealthBarConfig.THEME_KEY.equals(event.getKey())
 			&& HealthBarTheme.CUSTOM.name().equals(event.getNewValue()))
@@ -449,6 +492,7 @@ public class BossHealthBarPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		gameBossBar.onGameTick();
 		tobBossBar.onGameTick();
 		superiorTracker.onGameTick();
 		for (String pair : pairBosses.onGameTick(opponentTracker.getOpponent()))

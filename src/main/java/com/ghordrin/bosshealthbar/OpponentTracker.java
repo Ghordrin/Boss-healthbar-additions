@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.Hitsplat;
@@ -15,7 +14,6 @@ import net.runelite.api.Skill;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.InteractingChanged;
 
-@Slf4j
 @Singleton
 class OpponentTracker
 {
@@ -31,6 +29,7 @@ class OpponentTracker
 	private final FightTimer fightTimer;
 	private final PairBosses pairs;
 	private final BossMemory memory;
+	private final DebugLog debugLog;
 
 	@Getter(AccessLevel.PACKAGE)
 	private Actor opponent;
@@ -56,7 +55,8 @@ class OpponentTracker
 
 	@Inject
 	OpponentTracker(Client client, BossHealthBarConfig config, GameBossBar gameBossBar, TobBossBar tobBossBar,
-		SuperiorTracker superiors, DamageTracker damage, FightTimer fightTimer, PairBosses pairs, BossMemory memory)
+		SuperiorTracker superiors, DamageTracker damage, FightTimer fightTimer, PairBosses pairs, BossMemory memory,
+		DebugLog debugLog)
 	{
 		this.client = client;
 		this.config = config;
@@ -67,6 +67,7 @@ class OpponentTracker
 		this.fightTimer = fightTimer;
 		this.pairs = pairs;
 		this.memory = memory;
+		this.debugLog = debugLog;
 	}
 
 	void onInteractingChanged(InteractingChanged event)
@@ -80,7 +81,11 @@ class OpponentTracker
 		if (target == null)
 		{
 			interactionLostMillis = System.currentTimeMillis();
-			log.debug("Interaction lost with {}, will clear after {}s if not resumed", opponent, config.hideDelay());
+			if (opponent != null)
+			{
+				debugLog.add("Interaction lost with {}, will clear after {}s if not resumed", DebugLog.describe(opponent),
+				config.hideDelay());
+			}
 			return;
 		}
 
@@ -95,7 +100,7 @@ class OpponentTracker
 		if (opponent != null && (!opponent.isDead() || !NpcUtil.canBeDefeated(opponent))
 			&& priority(target) < priority(opponent))
 		{
-			log.debug("Keeping {} over lower priority target {}", opponent.getName(), target.getName());
+			debugLog.add("Keeping {} over lower priority target {}", DebugLog.describe(opponent), DebugLog.describe(target));
 			return;
 		}
 
@@ -146,8 +151,8 @@ class OpponentTracker
 		final boolean playerDied = isLocalPlayerDead();
 		final int distance = distanceToPlayer(npc);
 		final boolean outOfSight = BossMemory.isOutOfSight(defeated, playerDied, distance);
-		log.debug("Opponent {} despawned (id {}, current id {}, health {}/{}, dead {}, seen defeated {}, player died {}, distance {}, out of sight {})",
-			npc.getName(), npc.getId(), NpcUtil.currentId(npc), npc.getHealthRatio(), npc.getHealthScale(),
+		debugLog.add("Opponent {} despawned (health {}/{}, dead {}, seen defeated {}, player died {}, distance {}, out of sight {})",
+			DebugLog.describe(npc), npc.getHealthRatio(), npc.getHealthScale(),
 			npc.isDead(), opponentSeenDefeated, playerDied, distance, outOfSight);
 		opponentSeenDefeated = false;
 		fightTimer.opponentDespawned(defeated && !pairs.otherMemberAlive(npc), tick);
@@ -204,7 +209,8 @@ class OpponentTracker
 			&& isQuietFor(interactionLostMillis, lastHitTakenMillis, lastOpponentHitMillis, nearby,
 				System.currentTimeMillis(), config.hideDelay() * 1000L))
 		{
-			log.debug("Opponent {} timed out after {}s with no combat, clearing", opponent, config.hideDelay());
+			debugLog.add("Opponent {} timed out after {}s with no combat, clearing", DebugLog.describe(opponent),
+				config.hideDelay());
 			opponent = null;
 			fightTimer.reset();
 			opponentSeenDefeated = false;
@@ -311,6 +317,24 @@ class OpponentTracker
 			&& actor.getHealthScale() > 0 && actor.getHealthRatio() > 1;
 	}
 
+	// Which reading isDefeated went by, for the debug log.
+	private String defeatSource(Actor actor)
+	{
+		if (actor.isDead())
+		{
+			return "dead";
+		}
+		if (gameBossBar.isTracking(actor) && gameBossBar.hasHealth() && gameBossBar.maxHealth() > 0)
+		{
+			return "game boss bar at " + gameBossBar.health() + "/" + gameBossBar.maxHealth();
+		}
+		if (tobBossBar.isTracking(actor) && tobBossBar.maxHealth() > 0)
+		{
+			return "raid boss bar at 0/" + tobBossBar.maxHealth();
+		}
+		return "overhead bar at " + actor.getHealthRatio() + "/" + actor.getHealthScale();
+	}
+
 	// For the fight timer, a pair's fight only ends with its last member.
 	boolean isFightOver(Actor actor)
 	{
@@ -360,7 +384,7 @@ class OpponentTracker
 		{
 			return;
 		}
-		log.debug("Opponent {} was last read at 0 health, counting its despawn as a kill", actor.getName());
+		debugLog.add("Opponent {} was last read at 0 health, counting its despawn as a kill", DebugLog.describe(actor));
 		memory.forget(outOfSightNpc.getIndex());
 		if (heldEntry == outOfSightEntry)
 		{
@@ -377,14 +401,14 @@ class OpponentTracker
 	// No member of the pair has been around for a while, so coming back to it later is a new fight.
 	void pairCleared(String pair)
 	{
-		log.debug("Pair {} was forgotten, its next fight starts over", pair);
+		debugLog.add("Pair {} was forgotten, its next fight starts over", pair);
 		fightTimer.pairCleared(pair);
 		memory.forgetFight(pair);
 	}
 
 	void healedOnReturn(Actor actor)
 	{
-		log.debug("Remembered opponent {} came back with more health, starting a new fight", actor.getName());
+		debugLog.add("Remembered opponent {} came back with more health, starting a new fight", DebugLog.describe(actor));
 		fightTimer.startOver(client.getTickCount());
 	}
 
@@ -419,8 +443,13 @@ class OpponentTracker
 	boolean updateOpponentDefeated()
 	{
 		// Once defeated it stays so, since some die by turning into a death form that still shows a bit of health.
-		opponentSeenDefeated = opponent != null
+		final boolean defeated = opponent != null
 			&& (isDefeated(opponent) || opponentSeenDefeated && !isBackUp(opponent));
+		if (defeated && !opponentSeenDefeated)
+		{
+			debugLog.add("Opponent {} seen defeated ({})", DebugLog.describe(opponent), defeatSource(opponent));
+		}
+		opponentSeenDefeated = defeated;
 		return opponentSeenDefeated;
 	}
 
@@ -442,8 +471,8 @@ class OpponentTracker
 		opponentSeenDefeated = false;
 		if (returned != null)
 		{
-			log.debug("Remembered opponent {} came back after {} ticks (remembered health {}/{}, fight start tick {})",
-				target.getName(), tick - returned.tick, returned.state != null ? returned.state.ratio : -1,
+			debugLog.add("Remembered opponent {} came back after {} ticks (remembered health {}/{}, fight start tick {})",
+				DebugLog.describe(target), tick - returned.tick, returned.state != null ? returned.state.ratio : -1,
 				returned.state != null ? returned.state.scale : -1, returned.fight.startTick);
 			fightTimer.opponentReturned(target, returned.fight, tick);
 			resumedOpponent = target;
@@ -459,8 +488,8 @@ class OpponentTracker
 		}
 		opponent = target;
 		lastOpponentHitMillis = 0;
-		log.debug("New opponent: {} (combat level {}, known boss: {}, game boss bar: {})",
-			target.getName(), target.getCombatLevel(), KnownBosses.contains(target.getName()), isGameBarBoss(target));
+		debugLog.add("New opponent: {} (combat level {}, known boss: {}, game boss bar: {})",
+			DebugLog.describe(target), target.getCombatLevel(), KnownBosses.contains(target.getName()), isGameBarBoss(target));
 	}
 
 	private int priority(Actor actor)

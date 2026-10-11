@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
@@ -20,7 +19,6 @@ import net.runelite.client.game.NPCManager;
 import net.runelite.client.util.Text;
 
 // Bosses fought as two NPCs that take turns. Both count as one fight, and each keeps its last known state.
-@Slf4j
 @Singleton
 class PairBosses
 {
@@ -90,15 +88,17 @@ class PairBosses
 	private final Client client;
 	private final GameBossBar gameBossBar;
 	private final NPCManager npcManager;
+	private final DebugLog debugLog;
 	private final List<Slot> slots = new ArrayList<>();
 	private final Set<String> ended = new HashSet<>();
 
 	@Inject
-	PairBosses(Client client, GameBossBar gameBossBar, NPCManager npcManager)
+	PairBosses(Client client, GameBossBar gameBossBar, NPCManager npcManager, DebugLog debugLog)
 	{
 		this.client = client;
 		this.gameBossBar = gameBossBar;
 		this.npcManager = npcManager;
+		this.debugLog = debugLog;
 	}
 
 	static boolean isStartForm(int npcId)
@@ -155,7 +155,7 @@ class PairBosses
 		{
 			return;
 		}
-		log.debug("Pair member {} spawned (id {})", npc.getName(), NpcUtil.currentId(npc));
+		debugLog.add("Pair member {} spawned", DebugLog.describe(npc));
 		final Slot slot = slot(slots, member, true);
 		final int id = NpcUtil.currentId(npc);
 		slot.npc = npc;
@@ -164,7 +164,7 @@ class PairBosses
 		rename(slot, npc);
 		if (isStartForm(id))
 		{
-			log.debug("Pair member {} spawned in its start form (id {}), seeding it at full health", npc.getName(), id);
+			debugLog.add("Pair member {} spawned in its start form, seeding it at full health", DebugLog.describe(npc));
 			seedFull(slot, npcManager.getHealth(id));
 		}
 	}
@@ -195,7 +195,10 @@ class PairBosses
 		final Slot slot = slotOf(npc);
 		if (slot != null)
 		{
-			despawned(slots, slot, isDying(npc));
+			final boolean dying = isDying(npc);
+			debugLog.add("Pair member {} despawned ({})", DebugLog.describe(npc),
+				dying || slot.dead ? "dead, forgotten" : "alive, kept with its last health");
+			despawned(slots, slot, dying);
 			if (!hasPair(slot.member.pair))
 			{
 				// Both members died, so the next ones that spawn start a new fight.
@@ -261,7 +264,7 @@ class PairBosses
 	// Health is unknown here, so the slot stays empty until a reading comes in.
 	private void adopt(NPC npc, Member member, int tick)
 	{
-		log.debug("Pair member {} found without a spawn (id {})", npc.getName(), NpcUtil.currentId(npc));
+		debugLog.add("Pair member {} found without a spawn", DebugLog.describe(npc));
 		final Slot slot = slot(slots, member, true);
 		slot.npc = npc;
 		slot.dead = isDying(npc);

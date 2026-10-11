@@ -113,7 +113,7 @@ public class SpecialAttackCountsTest
 	@Test
 	public void keepsTheReadingsForOneTickWhenTheBoxesAreMissing()
 	{
-		final SpecialAttackCounts counts = new SpecialAttackCounts(null, null, null);
+		final SpecialAttackCounts counts = new SpecialAttackCounts(null, null, null, new DebugLog(null));
 		final List<SpecialAttackCounts.Reading> found = readings(new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE));
 
 		counts.accept(found);
@@ -129,7 +129,7 @@ public class SpecialAttackCountsTest
 	@Test
 	public void newReadingsResetTheMissedTick()
 	{
-		final SpecialAttackCounts counts = new SpecialAttackCounts(null, null, null);
+		final SpecialAttackCounts counts = new SpecialAttackCounts(null, null, null, new DebugLog(null));
 		final List<SpecialAttackCounts.Reading> first = readings(new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE));
 		final List<SpecialAttackCounts.Reading> second = readings(new SpecialAttackCounts.Reading(MAUL, "3", Color.WHITE));
 
@@ -162,7 +162,7 @@ public class SpecialAttackCountsTest
 	@Test
 	public void unchangedReadingsKeepTheSameList()
 	{
-		final SpecialAttackCounts counts = new SpecialAttackCounts(null, null, null);
+		final SpecialAttackCounts counts = new SpecialAttackCounts(null, null, null, new DebugLog(null));
 		final List<SpecialAttackCounts.Reading> first = readings(new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE));
 
 		counts.accept(first);

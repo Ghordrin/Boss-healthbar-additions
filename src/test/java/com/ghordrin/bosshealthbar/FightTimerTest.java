@@ -11,7 +11,7 @@ import org.junit.Test;
 
 public class FightTimerTest
 {
-	private final FightTimer timer = new FightTimer();
+	private final FightTimer timer = new FightTimer(new DebugLog(null));
 
 	@Test
 	public void formatsMinutesAndSeconds()

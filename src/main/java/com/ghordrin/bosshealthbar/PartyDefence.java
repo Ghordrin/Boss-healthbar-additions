@@ -89,6 +89,9 @@ class PartyDefence
 	private final PluginManager pluginManager;
 	private final InfoBoxManager infoBoxManager;
 	private final SkillIconManager skillIconManager;
+	private final DebugLog debugLog;
+	// A broken info box fails every tick, so the debug log gets it once until a read works again.
+	private boolean failureLogged;
 
 	private Boolean pluginActive;
 	private Boolean betterPluginActive;
@@ -104,13 +107,14 @@ class PartyDefence
 
 	@Inject
 	PartyDefence(Client client, BossHealthBarConfig config, PluginManager pluginManager, InfoBoxManager infoBoxManager,
-		SkillIconManager skillIconManager)
+		SkillIconManager skillIconManager, DebugLog debugLog)
 	{
 		this.client = client;
 		this.config = config;
 		this.pluginManager = pluginManager;
 		this.infoBoxManager = infoBoxManager;
 		this.skillIconManager = skillIconManager;
+		this.debugLog = debugLog;
 	}
 
 	void invalidatePlugin()
@@ -172,10 +176,16 @@ class PartyDefence
 			{
 				magic.accept(name, findBetterMagic(infoBoxes, isMagic));
 			}
+			failureLogged = false;
 		}
 		catch (RuntimeException e)
 		{
 			log.debug("Couldn't read party defence info box", e);
+			if (!failureLogged)
+			{
+				failureLogged = true;
+				debugLog.add("Couldn't read party defence info box: {}", e.toString());
+			}
 			defence.clear();
 			magic.clear();
 		}

@@ -86,6 +86,7 @@ class BossHealthBarOverlay extends Overlay
 	private final FightTimer fightTimer;
 	private final PairBosses pairs;
 	private final LastHealth lastHealth = new LastHealth();
+	private final DebugLog debugLog;
 	private final BarAnimation animation = new BarAnimation();
 	private final BarAnimation partnerAnimation = new BarAnimation();
 	private final Rectangle2D.Float burnClipShape = new Rectangle2D.Float();
@@ -142,7 +143,9 @@ class BossHealthBarOverlay extends Overlay
 		SpecialAttackCounts specialAttackCounts,
 		FightTimer fightTimer,
 		PairBosses pairs,
-		Pickers pickers)
+		Pickers pickers,
+		DebugLog debugLog,
+		DebugExport debugExport)
 	{
 		super(plugin);
 		this.client = client;
@@ -164,12 +167,14 @@ class BossHealthBarOverlay extends Overlay
 		this.specialAttackCounts = specialAttackCounts;
 		this.fightTimer = fightTimer;
 		this.pairs = pairs;
+		this.debugLog = debugLog;
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setResizable(true);
 		setMinimumSize(MIN_FITTED_BAR_WIDTH);
 		addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, BossHealthBarPlugin.NAME);
+		addMenuEntry(RUNELITE_OVERLAY, "Save debug log", BossHealthBarPlugin.NAME, menuEntry -> debugExport.save());
 		addMenuEntry(RUNELITE_OVERLAY, "Choose custom icon", BossHealthBarPlugin.NAME, menuEntry -> pickers.openIconPicker());
 		addMenuEntry(RUNELITE_OVERLAY, "Choose fill texture", BossHealthBarPlugin.NAME, menuEntry -> pickers.openFillTexturePicker());
 	}
@@ -259,6 +264,7 @@ class BossHealthBarOverlay extends Overlay
 			{
 				// The opponent despawned as it died, so keep drawing it until the defeat animation ends.
 				animation.startDefeat(now);
+				debugLog.add("Bar: defeat animation started for {}", DebugLog.describe(trackedOpponent));
 			}
 
 			final BarState resumed = opponentTracker.resumedState(opponent);
@@ -270,6 +276,8 @@ class BossHealthBarOverlay extends Overlay
 					resetAnimation();
 					animation.skipIntro();
 				}
+				debugLog.add("Bar: resumed {} from memory at {}/{}", DebugLog.describe(opponent), resumed.ratio,
+					resumed.scale);
 				trackedOpponent = opponent;
 				lastState = resumed;
 				lastStateActor = opponent;
@@ -283,6 +291,8 @@ class BossHealthBarOverlay extends Overlay
 			{
 				// Switching targets mid-fight, e.g. between the NPCs of a group boss. The bar stays up and
 				// moves over, instead of playing the intro again.
+				debugLog.add("Bar: moved mid-fight from {} to {}{}", DebugLog.describe(trackedOpponent),
+					DebugLog.describe(opponent), healthNote(opponent));
 				trackedOpponent = opponent;
 				retargetPending = true;
 				resuming = false;
@@ -290,6 +300,14 @@ class BossHealthBarOverlay extends Overlay
 			}
 			else if (opponent != null || !animation.isDefeatPlaying())
 			{
+				if (opponent != null)
+				{
+					debugLog.add("Bar: new bar for {}{}", DebugLog.describe(opponent), healthNote(opponent));
+				}
+				else
+				{
+					debugLog.add("Bar: cleared");
+				}
 				trackedOpponent = opponent;
 				resetAnimation();
 				rolledGold = opponent != null && config.rareGoldBars() && goldBar.roll();
@@ -760,6 +778,16 @@ class BossHealthBarOverlay extends Overlay
 				killCountKey, stats, specialAttacks, fightTime);
 		}
 		return null;
+	}
+
+	private String healthNote(Actor opponent)
+	{
+		if (opponent.getHealthScale() > 0)
+		{
+			return ", health " + opponent.getHealthRatio() + "/" + opponent.getHealthScale();
+		}
+		final BarState remembered = rememberedHealth(opponent);
+		return remembered != null ? ", no reading yet, remembered " + remembered.ratio + "/" + remembered.scale : ", no reading yet";
 	}
 
 	private BarState rememberedHealth(Actor opponent)

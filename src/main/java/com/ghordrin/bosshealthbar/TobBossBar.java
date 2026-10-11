@@ -19,15 +19,18 @@ class TobBossBar
 	private static final int SEARCH_DISTANCE = 32;
 
 	private final Client client;
+	private final DebugLog debugLog;
 
 	private boolean hidden;
 	private NPC boss;
+	private NPC loggedBoss;
 	private boolean searchNeeded = true;
 
 	@Inject
-	TobBossBar(Client client)
+	TobBossBar(Client client, DebugLog debugLog)
 	{
 		this.client = client;
+		this.debugLog = debugLog;
 	}
 
 	// The Theatre of Blood bar doesn't say which NPC it belongs to, so this takes the highest level
@@ -39,6 +42,11 @@ class TobBossBar
 		{
 			boss = null;
 			searchNeeded = true;
+			if (loggedBoss != null)
+			{
+				loggedBoss = null;
+				debugLog.add("Raid boss bar gone");
+			}
 			return null;
 		}
 
@@ -69,6 +77,11 @@ class TobBossBar
 			{
 				boss = npc;
 			}
+		}
+		if (boss != loggedBoss)
+		{
+			loggedBoss = boss;
+			debugLog.add("Raid boss bar belongs to {}", DebugLog.describe(boss));
 		}
 		return boss;
 	}
@@ -137,6 +150,10 @@ class TobBossBar
 			if (!bar.isSelfHidden())
 			{
 				bar.setHidden(true);
+				if (!hidden)
+				{
+					debugLog.add("Raid boss bar hidden");
+				}
 				hidden = true;
 			}
 		}
@@ -153,6 +170,7 @@ class TobBossBar
 			return;
 		}
 
+		debugLog.add("Raid boss bar restored");
 		final Widget bar = client.getWidget(InterfaceID.TobHud.PROGRESS_CONTAINER);
 		if (bar != null && client.getVarbitValue(VarbitID.TOB_CLIENT_WAVEPROGRESS_TYPE) != PROGRESS_NONE)
 		{
@@ -165,7 +183,13 @@ class TobBossBar
 	{
 		hidden = false;
 		boss = null;
+		loggedBoss = null;
 		searchNeeded = true;
+	}
+
+	boolean isHidden()
+	{
+		return hidden;
 	}
 
 	int maxHealth()
