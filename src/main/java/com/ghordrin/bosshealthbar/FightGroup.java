@@ -30,12 +30,21 @@ class FightGroup
 		int scale = -1;
 		boolean exact;
 		Integer maxHealth;
+		// The last reading above 0, kept for a moment where the NPC has no reading or reads a 0 it can come back from.
+		Health lastAboveZero;
 		BarState state;
-		boolean dead;
+		final HealthReader.DownState downState = new HealthReader.DownState();
+		final HealthReader.Watch watch = new HealthReader.Watch();
 
 		boolean isAway()
 		{
 			return index == NO_INDEX;
+		}
+
+		// A confirmed kill, not just a 0 it can still come back from.
+		boolean isDead()
+		{
+			return downState.defeated;
 		}
 	}
 
@@ -109,6 +118,7 @@ class FightGroup
 			if (member != null)
 			{
 				member.index = index;
+				member.watch.clear();
 			}
 		}
 		if (member == null)
@@ -139,21 +149,18 @@ class FightGroup
 			return false;
 		}
 		final NPC npc = (NPC) actor;
-		return isAliveMember(npc.getIndex(), name(npc), npc.isDead());
+		return isAliveMember(npc.getIndex(), name(npc));
 	}
 
-	boolean isAliveMember(int index, String name, boolean npcDead)
+	// A member at 0 still counts until its kill is confirmed.
+	boolean isAliveMember(int index, String name)
 	{
-		if (npcDead)
-		{
-			return false;
-		}
 		Member member = find(index);
 		if (member == null)
 		{
 			member = awayByName(name);
 		}
-		return member != null && !member.dead;
+		return member != null && !member.isDead();
 	}
 
 	void onNpcDespawned(NPC npc)
@@ -163,7 +170,7 @@ class FightGroup
 		{
 			return;
 		}
-		despawned(member, npc.isDead() || diedReading(member, NpcUtil.isAttackable(npc)));
+		despawned(member, member.downState.down || npc.isDead() || diedReading(member, NpcUtil.isAttackable(npc)));
 		if (member.isAway())
 		{
 			debugLog.add("Fight group: {} away, kept with its last health", DebugLog.describe(npc));
@@ -173,7 +180,7 @@ class FightGroup
 	// One that dies is gone, one that leaves alive is kept with its last health.
 	void despawned(Member member, boolean died)
 	{
-		if (died || member.dead)
+		if (died || member.isDead())
 		{
 			remove(member);
 		}
@@ -182,6 +189,24 @@ class FightGroup
 			member.index = NO_INDEX;
 			member.npc = null;
 		}
+	}
+
+	// A member back up after its kill was confirmed is the next one of its kind, so it starts without the dead one's
+	// health or state.
+	static boolean startNewLife(Member member)
+	{
+		if (!member.downState.takeRevived())
+		{
+			return false;
+		}
+		member.downState.clear();
+		member.ratio = -1;
+		member.scale = -1;
+		member.exact = false;
+		member.maxHealth = null;
+		member.lastAboveZero = null;
+		member.state = null;
+		return true;
 	}
 
 	// Some turn into a form that can't be attacked as they die, before their bar reaches 0.
@@ -202,8 +227,12 @@ class FightGroup
 			member.lastSeenTick = tick;
 			rename(member, npc);
 			final HealthReader.Reading reading = healthReader.read(npc);
+			final boolean npcDead = npc.isDead();
+			final boolean attackable = NpcUtil.isAttackable(npc);
+			member.watch.log(debugLog, npc, reading, npcDead, attackable);
+			member.downState.update(reading, npcDead, true, attackable, tick, debugLog, "Fight group: ", npc);
+			startNewLife(member);
 			read(member, reading != null ? reading.health : null);
-			updateDead(member, npc.isDead());
 		}
 		expireAway(tick);
 		final Member own = opponent instanceof NPC ? find(((NPC) opponent).getIndex()) : null;
@@ -231,7 +260,7 @@ class FightGroup
 	void updatePartner(Member own, boolean hasOpponent)
 	{
 		final Member next = hasOpponent ? choosePartner(own)
-			: partner != null && members.contains(partner) && !partner.dead ? partner : null;
+			: partner != null && members.contains(partner) && !partner.isDead() ? partner : null;
 		if (next != partner)
 		{
 			partner = next;
@@ -252,8 +281,7 @@ class FightGroup
 		Member best = null;
 		for (Member member : members)
 		{
-			if (member != own && member.bossLike && !member.dead && member.scale > 0
-				&& (member.npc == null || !member.npc.isDead())
+			if (member != own && member.bossLike && !member.isDead() && member.scale > 0
 				&& (best == null || member.lastEngagedTick > best.lastEngagedTick))
 			{
 				best = member;
@@ -307,6 +335,51 @@ class FightGroup
 		return null;
 	}
 
+	// The last health above 0 read for one NPC of this fight. Same NPC first, and since an NPC that left and came back
+	// gets a new index, a single member with its name counts too.
+	Health rememberedHealth(int index, String name)
+	{
+		if (name == null)
+		{
+			return null;
+		}
+		Health byIndex = null;
+		Member byName = null;
+		int sameName = 0;
+		for (Member member : members)
+		{
+			if (!name.equals(member.name))
+			{
+				continue;
+			}
+			if (member.index == index && index != NO_INDEX)
+			{
+				byIndex = member.lastAboveZero;
+			}
+			else
+			{
+				byName = member;
+				sameName++;
+			}
+		}
+		if (byIndex != null)
+		{
+			return byIndex;
+		}
+		return sameName == 1 ? byName.lastAboveZero : null;
+	}
+
+	// An NPC picked up again from memory brings its remembered health back, in case the fight it belonged to was
+	// cleared while another one was fought.
+	void restoreHealth(int index, Health health)
+	{
+		final Member member = find(index);
+		if (member != null && member.lastAboveZero == null)
+		{
+			member.lastAboveZero = health;
+		}
+	}
+
 	// Only a boss is taken back by name, and only when the name leaves no doubt which one it is.
 	Member awayByName(String name)
 	{
@@ -317,7 +390,7 @@ class FightGroup
 		Member found = null;
 		for (Member member : members)
 		{
-			if (member.isAway() && member.bossLike && !member.dead && name.equals(member.name))
+			if (member.isAway() && member.bossLike && !member.isDead() && name.equals(member.name))
 			{
 				if (found != null)
 				{
@@ -380,24 +453,16 @@ class FightGroup
 		return member;
 	}
 
-	static void updateDead(Member member, boolean npcDead)
-	{
-		if (npcDead || (member.scale > 0 && member.ratio == 0))
-		{
-			member.dead = true;
-		}
-		else if (member.scale > 0 && member.ratio > 0)
-		{
-			member.dead = false;
-		}
-	}
-
 	// Without a reading the last one is kept, since the overhead bar of an NPC that isn't being hit soon goes away.
 	static boolean read(Member member, Health health)
 	{
 		if (health == null || health.scale <= 0 || health.ratio < 0)
 		{
 			return false;
+		}
+		if (health.ratio > 0)
+		{
+			member.lastAboveZero = health;
 		}
 		if (member.ratio == health.ratio && member.scale == health.scale && member.exact == health.exactHealth
 			&& Objects.equals(member.maxHealth, health.maxHealth))

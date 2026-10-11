@@ -25,7 +25,7 @@ class BossMemory
 		final String name;
 		final int tick;
 		final FightTimer.Fight fight;
-		BarState state;
+		Health health;
 
 		Entry(int index, String name, int tick, FightTimer.Fight fight)
 		{

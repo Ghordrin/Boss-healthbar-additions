@@ -6,6 +6,14 @@
 - New Second boss bar option (Boss info, on by default). The smaller bar under the main one now shows any other boss you're fighting at the same time, not only pairs, with its last known health while it's away
 - Bosses fought together count as one fight on the fight timer
 
+### Fixed
+
+- A boss that drops to 0 hitpoints and heals back, or is only at 0 for a phase, is no longer shown as defeated
+- The bar no longer disappears and replays its intro when one boss hands over to another
+- The fight timer keeps running when a boss's health bar fills up again for its next phase
+- The bar no longer shows a negative or empty health for a moment when a boss's health reading goes missing
+- The fight timer starts over when a defeated boss is back up for the next fight, instead of carrying the previous kill's time over
+
 ## 1.6.0 (2026-10-10)
 
 ### New

@@ -379,7 +379,7 @@ public class BossHealthBarPlugin extends Plugin
 		opponentTracker.onGameTick();
 		final Actor opponent = opponentTracker.getOpponent();
 		fightGroup.onGameTick(opponent, client.getTickCount());
-		fightTimer.onGameTick(opponent, opponentTracker.updateOpponentDefeated(), client.getTickCount());
+		fightTimer.onGameTick(opponent, opponentTracker.updateOpponentDown(), client.getTickCount());
 		partyDefence.update(opponent);
 		specialAttackCounts.update(opponent);
 	}

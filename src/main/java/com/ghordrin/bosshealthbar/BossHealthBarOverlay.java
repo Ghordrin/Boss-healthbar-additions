@@ -84,25 +84,27 @@ class BossHealthBarOverlay extends Overlay
 	private final SpecialAttackCounts specialAttackCounts;
 	private final FightTimer fightTimer;
 	private final FightGroup group;
-	private final LastHealth lastHealth = new LastHealth();
 	private final DebugLog debugLog;
 	private final BarAnimation animation = new BarAnimation();
 	private final BarAnimation partnerAnimation = new BarAnimation();
 	private final Rectangle2D.Float burnClipShape = new Rectangle2D.Float();
 
 	private Actor trackedOpponent;
+	private int trackedLife;
 	private BarState lastState;
-	private Actor lastStateActor;
+	private Actor leftAlive;
 	private boolean showingPreview;
 	private long previewStartNanos;
 	private boolean rolledGold;
 	private long switchHoldUntilNanos;
 	private boolean retargetPending;
 	private FightGroup.Member partnerMember;
+	private boolean partnerLoggedDead;
 	private BarState partnerTextState;
 	private HitpointsTextMode partnerTextMode;
 	private String partnerText;
 	private boolean resuming;
+	private Health resumedHealth;
 
 	private Actor infoActor;
 	private int infoNpcId = -1;
@@ -180,7 +182,6 @@ class BossHealthBarOverlay extends Overlay
 	void reset()
 	{
 		trackedOpponent = null;
-		lastHealth.clear();
 		infoActor = null;
 		barPainter.clearTextureCache();
 		animation.resetFrameTime();
@@ -193,12 +194,13 @@ class BossHealthBarOverlay extends Overlay
 	{
 		animation.reset();
 		lastState = null;
-		lastStateActor = null;
+		leftAlive = null;
 		switchHoldUntilNanos = 0;
 		retargetPending = false;
 		partnerAnimation.reset();
 		partnerMember = null;
 		resuming = false;
+		resumedHealth = null;
 	}
 
 	void invalidateColors()
@@ -230,48 +232,56 @@ class BossHealthBarOverlay extends Overlay
 
 	private BarState selectState(Actor opponent, long now)
 	{
-		if (opponent != trackedOpponent)
+		boolean holdingForNext = false;
+		final int life = opponentTracker.opponentLife();
+		// The same opponent back up after being defeated is the next one, so the bar starts over for it.
+		if (opponent != trackedOpponent || life != trackedLife)
 		{
-			// Only a reading taken from this opponent counts, not one kept up from the previous target.
-			final BarState ownState = lastStateActor == trackedOpponent ? lastState : null;
-			final boolean wentOutOfSight = opponentTracker.wentOutOfSight(trackedOpponent);
-			// The bar's own reading of 0 wins over the distance.
-			final boolean outOfSight = wentOutOfSight
-				&& (ownState == null || ownState.health.ratio > 0 || !ownState.health.exactHealth);
-			if (outOfSight)
-			{
-				opponentTracker.rememberState(trackedOpponent, ownState);
-			}
-			else if (wentOutOfSight)
-			{
-				opponentTracker.forgetOutOfSight(trackedOpponent);
-			}
-
+			trackedLife = life;
+			final OpponentTracker.DespawnOutcome outcome = opponentTracker.despawnOutcome(trackedOpponent);
 			if (opponent == null && trackedOpponent != null && lastState != null && !animation.isDefeatPlaying()
 				&& config.showDefeatAnimation()
-				&& defeatedAtDespawn(trackedOpponent.isDead(), lastState.health.ratio, outOfSight))
+				&& defeatedAtDespawn(outcome, trackedOpponent.isDead(), lastState.health.ratio,
+					outcome == OpponentTracker.DespawnOutcome.OUT_OF_SIGHT))
 			{
 				// The opponent despawned as it died, so keep drawing it until the defeat animation ends.
 				animation.startDefeat(now);
 				debugLog.add("Bar: defeat animation started for {}", DebugLog.describe(trackedOpponent));
 			}
 
-			final BarState resumed = opponentTracker.resumedState(opponent);
-			final Switch next = switchTo(opponent != null, resumed != null, trackedOpponent != null && lastState != null,
-				trackedOpponent != null && trackedOpponent.isDead(), animation.isDefeatPlaying());
+			// One boss can leave alive as another takes over, so the bar waits a moment for the next one.
+			final boolean left = outcome == OpponentTracker.DespawnOutcome.LEFT;
+			if (opponent == null && left && lastState != null && !animation.isDefeatPlaying()
+				&& leftAlive != trackedOpponent)
+			{
+				leftAlive = trackedOpponent;
+				switchHoldUntilNanos = now + SWITCH_HOLD.toNanos();
+				debugLog.add("Bar: {} left alive, holding the bar for the next opponent",
+					DebugLog.describe(trackedOpponent));
+			}
+			holdingForNext = left && leftAlive == trackedOpponent && now < switchHoldUntilNanos;
+
+			final Switch next = switchTo(opponent != null, opponentTracker.resumedFromMemory(opponent),
+				trackedOpponent != null && lastState != null, opponentTracker.continuesFight(opponent),
+				animation.isDefeatPlaying(), holdingForNext);
 			if (next == Switch.RESUME)
 			{
 				// An opponent back from out of sight carries on from its remembered health, without the intro.
+				final Health resumed = rememberedHealth(opponent);
 				if (trackedOpponent == null || lastState == null || animation.isDefeatPlaying())
 				{
 					resetAnimation();
 					animation.skipIntro();
 				}
-				debugLog.add("Bar: resumed {} from memory at {}/{}", DebugLog.describe(opponent), resumed.health.ratio,
-					resumed.health.scale);
+				if (resumed == null)
+				{
+					// With nothing remembered there is no bar to carry over, so the previous one isn't kept up.
+					lastState = null;
+				}
+				debugLog.add("Bar: resumed {} from memory at {}/{}", DebugLog.describe(opponent),
+					resumed != null ? resumed.ratio : -1, resumed != null ? resumed.scale : -1);
 				trackedOpponent = opponent;
-				lastState = resumed;
-				lastStateActor = opponent;
+				resumedHealth = resumed;
 				animation.retarget();
 				retargetPending = true;
 				resuming = true;
@@ -286,6 +296,7 @@ class BossHealthBarOverlay extends Overlay
 				retargetPending = true;
 				resuming = false;
 				switchHoldUntilNanos = now + SWITCH_HOLD.toNanos();
+				leftAlive = null;
 			}
 			else if (next == Switch.RESET)
 			{
@@ -311,27 +322,23 @@ class BossHealthBarOverlay extends Overlay
 		final BarState state = opponent != null ? readState(opponent, reading) : null;
 		if (state != null)
 		{
-			if (resuming && lastStateActor == opponent && lastState != null
-				&& BossMemory.healedSince(lastState.health.ratio, lastState.health.scale, lastState.health.exactHealth,
+			if (resuming && resumedHealth != null
+				&& BossMemory.healedSince(resumedHealth.ratio, resumedHealth.scale, resumedHealth.exactHealth,
 					state.health.ratio, state.health.scale))
 			{
 				opponentTracker.healedOnReturn(opponent);
 			}
 			lastState = state;
-			lastStateActor = opponent;
-			if (opponent instanceof NPC)
-			{
-				lastHealth.remember(((NPC) opponent).getIndex(), Text.removeTags(opponent.getName()),
-					fightTimer.getStartTick(), state.health);
-			}
 			resuming = false;
+			resumedHealth = null;
 			if (retargetPending)
 			{
 				animation.retarget();
 				retargetPending = false;
 			}
 
-			final DefeatStep step = defeatStep(opponent.isDead(), animation.isDefeatPlaying(), config.showDefeatAnimation());
+			final DefeatStep step = defeatStep(opponentTracker.isOpponentDefeated(), animation.isDefeatPlaying(),
+				config.showDefeatAnimation());
 			if (step == DefeatStep.CANCEL)
 			{
 				animation.cancelDefeat();
@@ -339,11 +346,17 @@ class BossHealthBarOverlay extends Overlay
 			else if (step == DefeatStep.START)
 			{
 				animation.startDefeat(now);
+				debugLog.add("Bar: defeat animation started for {} (in view)", DebugLog.describe(opponent));
+			}
+			// While the opponent is still here the bar stays on "Defeated" for up to "Hide after", in case it comes back.
+			if (animation.isDefeatPlaying())
+			{
+				animation.holdDefeat(now, config.hideDelay() * 1_000_000_000L);
 			}
 			return state;
 		}
 
-		if (animation.isDefeatPlaying() && lastState != null)
+		if ((animation.isDefeatPlaying() || holdingForNext) && lastState != null)
 		{
 			return lastState;
 		}
@@ -577,15 +590,24 @@ class BossHealthBarOverlay extends Overlay
 			// The bars swapped, so jump to the new partner's health instead of animating from the old one's.
 			partnerAnimation.reset();
 			partnerMember = member;
+			partnerLoggedDead = false;
 		}
 		final BarState partner = showingPreview ? PREVIEW_PARTNER : member != null ? member.state : null;
 		if (partner == null)
 		{
 			return;
 		}
-		final boolean dead = member != null && member.dead;
-		partnerAnimation.tick(clamp01(partner.health.ratio / (float) partner.health.scale), config.animationSpeed(),
-			config.showDamageTrail(), 0);
+		final boolean dead = member != null && member.isDead();
+		if (member != null && dead != partnerLoggedDead)
+		{
+			if (dead)
+			{
+				debugLog.add("Second bar: {} defeated", partner.name);
+			}
+			partnerLoggedDead = dead;
+		}
+		partnerAnimation.tick(dead ? 0f : clamp01(partner.health.ratio / (float) partner.health.scale),
+			config.animationSpeed(), config.showDamageTrail(), 0);
 
 		setOpacity(graphics, originalComposite, textOpacity);
 		textPainter.drawPartnerRow(graphics, partner.name, partnerHitpointsText(partner), dead, colors, width, capWidth,
@@ -637,16 +659,22 @@ class BossHealthBarOverlay extends Overlay
 	}
 
 	// What the bar does when the opponent changes. RESET starts a new bar, or clears it when there's no opponent.
-	static Switch switchTo(boolean hasOpponent, boolean resumed, boolean hasBar, boolean previousDead,
-		boolean defeatPlaying)
+	// sameFight is the fight timer's call that the new opponent carries on the fight, so the bar moves when the timer
+	// keeps counting. holdingForNext is set for a short while after the last opponent left alive.
+	static Switch switchTo(boolean hasOpponent, boolean resumed, boolean hasBar, boolean sameFight,
+		boolean defeatPlaying, boolean holdingForNext)
 	{
-		if (resumed)
+		if (hasOpponent && resumed)
 		{
 			return Switch.RESUME;
 		}
-		if (hasOpponent && hasBar && !previousDead && !defeatPlaying)
+		if (hasOpponent && hasBar && (sameFight || holdingForNext) && !defeatPlaying)
 		{
 			return Switch.MOVE;
+		}
+		if (!hasOpponent && holdingForNext)
+		{
+			return Switch.KEEP;
 		}
 		return hasOpponent || !defeatPlaying ? Switch.RESET : Switch.KEEP;
 	}
@@ -667,10 +695,16 @@ class BossHealthBarOverlay extends Overlay
 		return !playing && animationOn ? DefeatStep.START : DefeatStep.NONE;
 	}
 
-	// Whether an opponent that's gone died, going by the bar's last reading of it.
-	static boolean defeatedAtDespawn(boolean dead, int lastRatio, boolean outOfSight)
+	// Whether an opponent that's gone died. The tracker's reading of its despawn decides when there is one, otherwise
+	// the bar's last reading of it.
+	static boolean defeatedAtDespawn(OpponentTracker.DespawnOutcome outcome, boolean dead, int lastRatio,
+		boolean outOfSight)
 	{
-		return !outOfSight && (dead || lastRatio <= 0);
+		if (outcome == OpponentTracker.DespawnOutcome.LEFT)
+		{
+			return false;
+		}
+		return outcome == OpponentTracker.DespawnOutcome.DEFEATED || !outOfSight && (dead || lastRatio <= 0);
 	}
 
 	// Without crests, the boss's icon goes small before the name, as on the Oldschool theme.
@@ -798,7 +832,7 @@ class BossHealthBarOverlay extends Overlay
 
 	private String healthNote(Actor opponent)
 	{
-		if (opponent.getHealthScale() > 0)
+		if (opponent.getHealthScale() > 0 && opponent.getHealthRatio() >= 0)
 		{
 			return ", health " + opponent.getHealthRatio() + "/" + opponent.getHealthScale();
 		}
@@ -806,10 +840,11 @@ class BossHealthBarOverlay extends Overlay
 		return remembered != null ? ", no reading yet, remembered " + remembered.ratio + "/" + remembered.scale : ", no reading yet";
 	}
 
+	// Nothing is remembered before the fight's first hit, so a new fight doesn't start from an older reading.
 	private Health rememberedHealth(Actor opponent)
 	{
-		return opponent instanceof NPC
-			? lastHealth.find(((NPC) opponent).getIndex(), Text.removeTags(opponent.getName()), fightTimer.getStartTick())
+		return opponent instanceof NPC && fightTimer.getStartTick() != FightTimer.NO_TICK
+			? group.rememberedHealth(((NPC) opponent).getIndex(), Text.removeTags(opponent.getName()))
 			: null;
 	}
 

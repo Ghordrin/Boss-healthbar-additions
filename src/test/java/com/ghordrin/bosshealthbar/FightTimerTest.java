@@ -312,6 +312,26 @@ public class FightTimerTest
 	}
 
 	@Test
+	public void aReturnedOpponentsSnapshotResumesItsStartAndEnd()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 0);
+		timer.onHit(0);
+		timer.onGameTick(true, true, 100);
+		timer.opponentDespawned(false, 120);
+		final FightTimer.Fight saved = timer.save(7);
+		assertEquals(7, saved.group);
+
+		// Another fight in between leaves the snapshot alone.
+		timer.opponentChanged(false, false, NO_TICK, 200);
+		timer.onHit(200);
+		timer.onGameTick(true, false, 260);
+		assertEquals("0:36", timer.getText());
+
+		timer.opponentReturned(saved, NO_TICK, 300);
+		assertEquals("1:00", timer.getText());
+	}
+
+	@Test
 	public void aStoppedFightStaysStoppedWhenTheOpponentComesBack()
 	{
 		timer.opponentChanged(false, false, NO_TICK, 0);

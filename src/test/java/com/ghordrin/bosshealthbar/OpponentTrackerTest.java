@@ -6,6 +6,7 @@ import static com.ghordrin.bosshealthbar.OpponentTracker.DespawnOutcome.OUT_OF_S
 import net.runelite.api.HitsplatID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -84,25 +85,76 @@ public class OpponentTrackerTest
 	@Test
 	public void aConfirmedDefeatIsAKillWhereverItDespawns()
 	{
-		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(true, false, false, 5));
-		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(true, false, false, 40));
-		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(true, true, true, 40));
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(true, false, false, 5, -1, false));
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(true, false, false, 40, -1, false));
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(true, true, true, 40, -1, false));
 	}
 
 	@Test
 	public void anUnconfirmedZeroIsOnlyAKillInView()
 	{
-		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(false, true, false, 14));
-		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(false, true, false, -1));
-		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, true, false, 15));
-		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, true, true, 15));
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(false, true, false, 14, -1, false));
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(false, true, false, -1, -1, false));
+		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, true, false, 15, -1, false));
+		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, true, true, 15, -1, false));
 	}
 
 	@Test
 	public void withoutAZeroItWentOutOfSightOrLeft()
 	{
-		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, false, false, 14));
-		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, false, false, 15));
-		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, false, true, 30));
+		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, false, false, 14, -1, false));
+		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, false, false, 15, -1, false));
+		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, false, true, 30, -1, false));
+	}
+
+	@Test
+	public void anExactZeroFarAwayIsAKillAndNotOutOfSight()
+	{
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(false, false, false, 20, 0, true));
+		assertEquals(DEFEATED, OpponentTracker.despawnOutcome(false, true, false, 20, 0, true));
+	}
+
+	@Test
+	public void aLastReadingAboveZeroFarAwayIsOutOfSight()
+	{
+		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, false, false, 20, 20, true));
+		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, false, false, 20, 1, true));
+	}
+
+	@Test
+	public void anOverheadZeroFarAwayIsOutOfSight()
+	{
+		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, true, false, 20, 0, false));
+		assertEquals(OUT_OF_SIGHT, OpponentTracker.despawnOutcome(false, false, false, 20, 0, false));
+	}
+
+	// Dying while the opponent reads 0 isn't a kill, however exact that reading was.
+	@Test
+	public void anExactZeroIsStillNotAKillWhenThePlayerDied()
+	{
+		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, true, true, 20, 0, true));
+		assertEquals(LEFT, OpponentTracker.despawnOutcome(false, false, true, 20, 0, true));
+	}
+
+	@Test
+	public void aNewLifeStartsTheFightOverAndLeavesTheOldGroupBehind()
+	{
+		final FightTimer timer = new FightTimer(new DebugLog(null));
+		final FightGroup group = new FightGroup(null, new DebugLog(null));
+		timer.opponentChanged(false, false, FightTimer.NO_TICK, 0);
+		timer.onHit(0);
+		group.join(1, "Boss", true, 0);
+		group.join(2, "Minion", false, 20);
+		timer.onGameTick(true, true, 600);
+		assertEquals("6:00", timer.getText());
+		final int fight = group.id();
+
+		OpponentTracker.newLife(timer, group, null, true, 650);
+		assertEquals("0:00", timer.getText());
+		assertNotEquals(fight, group.id());
+		assertEquals(0, group.size());
+
+		timer.onGameTick(true, false, 700);
+		assertEquals("0:30", timer.getText());
 	}
 }

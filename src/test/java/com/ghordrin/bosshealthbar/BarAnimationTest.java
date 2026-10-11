@@ -55,6 +55,40 @@ public class BarAnimationTest
 	}
 
 	@Test
+	public void aHeldDefeatStaysOnDefeatedAndFadesOnceLetGo()
+	{
+		final long hold = BarAnimation.DEFEAT_HOLD.toNanos();
+		final long fade = BarAnimation.DEFEAT_FADE.toNanos();
+		final BarAnimation animation = new BarAnimation();
+		animation.startDefeat(1_000L);
+		final long later = 1_000L + hold + fade * 3;
+		animation.holdDefeat(later, fade * 10);
+		assertEquals(1f, animation.defeatOpacity(later, false), 0f);
+		assertEquals(0, animation.defeatEffectMillis(later));
+		assertEquals(-1f, animation.defeatOpacity(later + fade, false), 0f);
+	}
+
+	@Test
+	public void aDefeatIsOnlyHeldUpToTheLimit()
+	{
+		final long hold = BarAnimation.DEFEAT_HOLD.toNanos();
+		final long limit = hold * 3;
+		final BarAnimation animation = new BarAnimation();
+		animation.startDefeat(1_000L);
+		animation.holdDefeat(1_000L + limit - 1, limit);
+		assertEquals(0, animation.defeatEffectMillis(1_000L + limit - 1));
+		// Past the limit it fades even while still held.
+		final long past = 1_000L + limit + hold;
+		animation.holdDefeat(past, limit);
+		assertTrue(animation.defeatEffectMillis(past) > 0);
+		// A limit below the normal hold still holds that long.
+		final BarAnimation shortLimit = new BarAnimation();
+		shortLimit.startDefeat(1_000L);
+		shortLimit.holdDefeat(1_000L + hold - 1, 0);
+		assertEquals(1f, shortLimit.defeatOpacity(1_000L + hold - 1, false), 0f);
+	}
+
+	@Test
 	public void burnAwayFadesOnlyTheText()
 	{
 		final BarAnimation animation = new BarAnimation();

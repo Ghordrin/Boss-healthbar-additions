@@ -26,6 +26,7 @@ final class BarAnimation
 	private long lastRenderNanos;
 	private long fadeStartNanos;
 	private long defeatStartNanos;
+	private long defeatFirstStartNanos;
 	private boolean snapToTarget;
 	private boolean skipIntro;
 
@@ -36,6 +37,7 @@ final class BarAnimation
 		actualFraction = -1f;
 		fadeStartNanos = 0;
 		defeatStartNanos = 0;
+		defeatFirstStartNanos = 0;
 		snapToTarget = false;
 		skipIntro = false;
 	}
@@ -135,11 +137,24 @@ final class BarAnimation
 	void startDefeat(long now)
 	{
 		defeatStartNanos = now;
+		defeatFirstStartNanos = now;
 	}
 
 	void cancelDefeat()
 	{
 		defeatStartNanos = 0;
+		defeatFirstStartNanos = 0;
+	}
+
+	// Keeps a playing defeat at the end of its "Defeated" hold, so the fade only starts once this stops being called,
+	// or once it has been held for maxHoldNanos.
+	void holdDefeat(long now, long maxHoldNanos)
+	{
+		if (defeatStartNanos != 0 && now - defeatStartNanos > DEFEAT_HOLD.toNanos()
+			&& now - defeatFirstStartNanos < Math.max(DEFEAT_HOLD.toNanos(), maxHoldNanos))
+		{
+			defeatStartNanos = now - DEFEAT_HOLD.toNanos();
+		}
 	}
 
 	// The whole bar's opacity, or -1 once the defeat animation is over. Burn away doesn't fade the whole bar.

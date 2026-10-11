@@ -1,5 +1,6 @@
 package com.ghordrin.bosshealthbar;
 
+import net.runelite.api.Actor;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 
@@ -7,6 +8,12 @@ final class NpcUtil
 {
 	private NpcUtil()
 	{
+	}
+
+	// Only an NPC counts, a player is never attackable here.
+	static boolean isAttackable(Actor actor)
+	{
+		return actor instanceof NPC && isAttackable((NPC) actor);
 	}
 
 	static boolean isAttackable(NPC npc)

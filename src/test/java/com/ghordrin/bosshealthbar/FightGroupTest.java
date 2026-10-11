@@ -3,6 +3,7 @@ package com.ghordrin.bosshealthbar;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -40,7 +41,7 @@ public class FightGroupTest
 		assertTrue(member.isAway());
 		assertEquals(1, group.size());
 		assertEquals(12, member.ratio);
-		assertTrue(group.isAliveMember(7, "Boss", false));
+		assertTrue(group.isAliveMember(7, "Boss"));
 	}
 
 	@Test
@@ -49,12 +50,12 @@ public class FightGroupTest
 		final FightGroup.Member member = group.join(1, "Boss", true, 0);
 		group.despawned(member, true);
 		assertEquals(0, group.size());
-		assertFalse(group.isAliveMember(1, "Boss", false));
+		assertFalse(group.isAliveMember(1, "Boss"));
 
-		final FightGroup.Member zero = group.join(2, "Boss", true, 0);
-		FightGroup.read(zero, overhead(0, 30));
-		FightGroup.updateDead(zero, false);
-		group.despawned(zero, false);
+		final FightGroup.Member confirmed = group.join(2, "Boss", true, 0);
+		confirmed.downState.update(overheadReading(1, 60), false, true, false, 1, null, null, null);
+		confirmed.downState.update(overheadReading(1, 60), false, true, false, 2, null, null, null);
+		group.despawned(confirmed, false);
 		assertEquals(0, group.size());
 	}
 
@@ -76,12 +77,14 @@ public class FightGroupTest
 	}
 
 	@Test
-	public void aDeadNpcIsNotAnAliveMember()
+	public void onlyAConfirmedKillIsNotAnAliveMember()
 	{
-		group.join(1, "Boss", true, 0);
-		assertTrue(group.isAliveMember(1, "Boss", false));
-		assertFalse(group.isAliveMember(1, "Boss", true));
-		assertFalse(group.isAliveMember(2, "Other", false));
+		final FightGroup.Member member = group.join(1, "Boss", true, 0);
+		member.downState.update(overheadReading(0, 30), true, true, true, 1, null, null, null);
+		assertTrue(group.isAliveMember(1, "Boss"));
+		member.downState.defeated = true;
+		assertFalse(group.isAliveMember(1, "Boss"));
+		assertFalse(group.isAliveMember(2, "Other"));
 	}
 
 	@Test
@@ -107,7 +110,7 @@ public class FightGroupTest
 		group.despawned(second, false);
 
 		assertNull(group.awayByName("Boss"));
-		assertFalse(group.isAliveMember(9, "Boss", false));
+		assertFalse(group.isAliveMember(9, "Boss"));
 		assertNotSame(first, group.join(9, "Boss", true, 10));
 		assertEquals(3, group.size());
 	}
@@ -134,7 +137,7 @@ public class FightGroupTest
 		}
 
 		assertSame(newer, group.choosePartner(own));
-		newer.dead = true;
+		newer.downState.defeated = true;
 		assertSame(older, group.choosePartner(own));
 		assertNull(noHealth.state);
 	}
@@ -247,34 +250,65 @@ public class FightGroupTest
 		assertSame(present, group.find(2));
 	}
 
-	// Flips once a member's 0 waits for a confirmed kill.
 	@Test
-	public void aZeroReadingIsStoredForNow()
+	public void aMemberAtZeroShowsTheZeroAndIsOnlyDeadOnceConfirmed()
 	{
 		final FightGroup.Member member = new FightGroup.Member();
 		FightGroup.read(member, overhead(20, 30));
+
+		member.downState.update(overheadReading(0, 30), true, true, true, 1, null, null, null);
 		assertTrue(FightGroup.read(member, overhead(0, 30)));
 		assertReading(member, 0, 30, false, 450);
+		assertTrue(member.downState.down);
+		assertFalse(member.isDead());
+
+		// Healing back from 0 carries on from there.
+		member.downState.update(overheadReading(12, 30), false, true, true, 2, null, null, null);
+		assertTrue(FightGroup.read(member, overhead(12, 30)));
+		assertReading(member, 12, 30, false, 450);
+		assertFalse(member.downState.down);
+		assertFalse(member.isDead());
 	}
 
-	// Flips once dead means a confirmed kill: today any 0 is dead.
 	@Test
-	public void aZeroReadingIsDeadAndAFreshOneIsAliveAgain()
+	public void aMemberIsDeadOnceItCanNoLongerBeAttackedForTwoTicks()
 	{
 		final FightGroup.Member member = new FightGroup.Member();
-		FightGroup.updateDead(member, false);
-		assertFalse(member.dead);
+		member.downState.update(overheadReading(0, 30), true, true, false, 1, null, null, null);
+		assertFalse(member.isDead());
+		member.downState.update(overheadReading(0, 30), true, true, false, 2, null, null, null);
+		assertTrue(member.isDead());
+	}
 
-		FightGroup.read(member, overhead(0, 30));
-		FightGroup.updateDead(member, false);
-		assertTrue(member.dead);
+	@Test
+	public void aMemberBackUpAfterAConfirmedKillStartsANewLife()
+	{
+		final FightGroup.Member own = group.join(1, "First", true, 0);
+		FightGroup.read(own, overhead(10, 30));
+		final FightGroup.Member member = group.join(2, "Second", true, 0);
+		FightGroup.read(member, overhead(20, 30));
+		member.downState.update(overheadReading(0, 30), true, true, false, 1, null, null, null);
+		member.downState.update(overheadReading(0, 30), true, true, false, 2, null, null, null);
+		member.downState.update(null, false, true, false, 3, null, null, null);
+		assertTrue(member.isDead());
+		assertFalse(group.isAliveMember(2, "Second"));
+		assertNull(group.choosePartner(own));
+		assertFalse(FightGroup.startNewLife(member));
 
-		FightGroup.read(member, overhead(5, 30));
-		FightGroup.updateDead(member, false);
-		assertFalse(member.dead);
+		// Back with full health well after the kill, so this is the next one and not another phase.
+		member.downState.update(overheadReading(30, 30), false, true, true, 20, null, null, null);
+		assertTrue(FightGroup.startNewLife(member));
+		assertFalse(member.isDead());
+		assertTrue(group.isAliveMember(2, "Second"));
+		assertEquals(-1, member.ratio);
+		assertEquals(-1, member.scale);
+		assertNull(member.maxHealth);
+		assertNull(member.state);
 
-		FightGroup.updateDead(member, true);
-		assertTrue(member.dead);
+		FightGroup.read(member, overhead(30, 30));
+		assertSame(member, group.choosePartner(own));
+		group.despawned(member, false);
+		assertSame(member, group.awayByName("Second"));
 	}
 
 	@Test
@@ -290,6 +324,10 @@ public class FightGroupTest
 
 		// The overhead bar went away, so the last reading stays.
 		assertFalse(FightGroup.read(member, null));
+		assertReading(member, 15, 30, false, 450);
+
+		// An overhead bar with no value isn't a reading either.
+		assertFalse(FightGroup.read(member, overhead(-1, 60)));
 		assertReading(member, 15, 30, false, 450);
 	}
 
@@ -308,9 +346,146 @@ public class FightGroupTest
 		assertNull(member.state);
 	}
 
+	@Test
+	public void theRememberedHealthIsFoundByIndexAndName()
+	{
+		final Health first = gameBar(300, 500);
+		final Health second = gameBar(200, 500);
+		FightGroup.read(group.join(1, "Boss", true, 0), first);
+		FightGroup.read(group.join(2, "Boss", true, 0), second);
+
+		assertSame(first, group.rememberedHealth(1, "Boss"));
+		assertSame(second, group.rememberedHealth(2, "Boss"));
+		assertNull(group.rememberedHealth(1, "Other"));
+		assertNull(group.rememberedHealth(1, null));
+	}
+
+	// An NPC that leaves and comes back gets a new index, and isn't always linked back to the member it left as.
+	@Test
+	public void aSingleMemberWithTheNameCoversAMemberWithoutAReading()
+	{
+		final Health health = gameBar(300, 500);
+		final FightGroup.Member left = group.join(1, "Npc", false, 0);
+		FightGroup.read(left, health);
+		FightGroup.read(group.join(2, "Minion", false, 0), gameBar(50, 500));
+		group.despawned(left, false);
+
+		final FightGroup.Member back = group.join(9, "Npc", false, 10);
+		assertNull(back.lastAboveZero);
+		assertSame(health, group.rememberedHealth(9, "Npc"));
+	}
+
+	@Test
+	public void anOpponentBackFromMemoryBringsItsRememberedHealthToANewGroup()
+	{
+		FightGroup.read(group.join(1, "Boss", true, 0), gameBar(300, 500));
+		final int fight = group.id();
+		group.startFight(null, false, 50);
+		group.join(2, "Other", true, 50);
+
+		// The fight it belonged to was cleared meanwhile, so it rejoins without its reading.
+		group.restore(fight, null, true, 60);
+		group.join(9, "Boss", true, 60);
+		assertNull(group.rememberedHealth(9, "Boss"));
+
+		final Health remembered = gameBar(300, 500);
+		group.restoreHealth(9, remembered);
+		assertSame(remembered, group.rememberedHealth(9, "Boss"));
+
+		// A member that read its own health keeps it.
+		group.restoreHealth(9, gameBar(10, 500));
+		assertSame(remembered, group.rememberedHealth(9, "Boss"));
+	}
+
+	@Test
+	public void severalMembersWithTheNameAreNotGuessed()
+	{
+		FightGroup.read(group.join(1, "Boss", true, 0), gameBar(300, 500));
+		FightGroup.read(group.join(2, "Boss", true, 0), gameBar(200, 500));
+		assertNull(group.rememberedHealth(9, "Boss"));
+	}
+
+	@Test
+	public void aNewReadingReplacesTheRememberedOne()
+	{
+		final FightGroup.Member member = group.join(1, "Boss", true, 0);
+		FightGroup.read(member, gameBar(300, 500));
+		final Health newer = gameBar(250, 500);
+		FightGroup.read(member, newer);
+		assertSame(newer, group.rememberedHealth(1, "Boss"));
+		assertSame(newer, group.rememberedHealth(5, "Boss"));
+	}
+
+	@Test
+	public void theRememberedHealthGoesWithTheMemberThatIsDropped()
+	{
+		for (int i = 0; i < FightGroup.MAX_MEMBERS; i++)
+		{
+			FightGroup.read(group.join(i, "Npc " + i, false, 100 - i), gameBar(100 + i, 500));
+		}
+		FightGroup.read(group.join(50, "New", false, 200), gameBar(400, 500));
+
+		assertNull(group.rememberedHealth(FightGroup.MAX_MEMBERS - 1, "Npc " + (FightGroup.MAX_MEMBERS - 1)));
+		assertNotNull(group.rememberedHealth(50, "New"));
+		assertNotNull(group.rememberedHealth(1, "Npc 1"));
+	}
+
+	@Test
+	public void anotherFightDoesntSeeTheRememberedHealth()
+	{
+		FightGroup.read(group.join(1, "Boss", true, 0), gameBar(300, 500));
+		group.startFight(null, false, 10);
+		assertNull(group.rememberedHealth(1, "Boss"));
+		assertNull(group.rememberedHealth(2, "Boss"));
+	}
+
+	// A 0 isn't remembered, so the last health above it stays for an opponent that can still come back from it.
+	@Test
+	public void aZeroOrNoValueKeepsTheLastHealthAboveIt()
+	{
+		final FightGroup.Member member = group.join(1, "Boss", true, 0);
+		final Health above = overhead(40, 60);
+		FightGroup.read(member, above);
+		FightGroup.read(member, overhead(0, 60));
+		assertSame(above, group.rememberedHealth(1, "Boss"));
+
+		FightGroup.read(group.join(2, "Other", true, 0), overhead(0, 60));
+		assertNull(group.rememberedHealth(2, "Other"));
+
+		FightGroup.read(member, new Health(-1, 60, false, 450, false));
+		assertSame(above, group.rememberedHealth(1, "Boss"));
+	}
+
+	@Test
+	public void aReadingWithoutHealthIsNotRemembered()
+	{
+		final FightGroup.Member member = group.join(1, "Boss", true, 0);
+		FightGroup.read(member, new Health(-1, -1, false, null, false));
+		FightGroup.read(member, null);
+		assertNull(group.rememberedHealth(1, "Boss"));
+	}
+
+	@Test
+	public void aNewLifeForgetsTheRememberedHealth()
+	{
+		final FightGroup.Member member = group.join(1, "Boss", true, 0);
+		FightGroup.read(member, overhead(20, 30));
+		member.downState.update(overheadReading(0, 30), true, true, false, 1, null, null, null);
+		member.downState.update(overheadReading(0, 30), true, true, false, 2, null, null, null);
+		member.downState.update(overheadReading(30, 30), false, true, true, 20, null, null, null);
+
+		assertTrue(FightGroup.startNewLife(member));
+		assertNull(group.rememberedHealth(1, "Boss"));
+	}
+
 	private static Health overhead(int ratio, int scale)
 	{
 		return new Health(ratio, scale, false, 450, false);
+	}
+
+	private static HealthReader.Reading overheadReading(int ratio, int scale)
+	{
+		return new HealthReader.Reading(HealthReader.Source.OVERHEAD, overhead(ratio, scale));
 	}
 
 	private static Health gameBar(int health, int max)
