@@ -20,8 +20,8 @@ class TobBossBar
 
 	private final Client client;
 	private final DebugLog debugLog;
+	private final HiddenWidget raidBar;
 
-	private boolean hidden;
 	private NPC boss;
 	private NPC loggedBoss;
 	private boolean searchNeeded = true;
@@ -31,6 +31,7 @@ class TobBossBar
 	{
 		this.client = client;
 		this.debugLog = debugLog;
+		this.raidBar = new HiddenWidget(client, debugLog, InterfaceID.TobHud.PROGRESS_CONTAINER);
 	}
 
 	// The Theatre of Blood bar doesn't say which NPC it belongs to, so this takes the highest level
@@ -138,24 +139,16 @@ class TobBossBar
 
 	void update(Actor opponent, boolean replaceEnabled, boolean opponentGetsBar)
 	{
-		final Widget bar = client.getWidget(InterfaceID.TobHud.PROGRESS_CONTAINER);
+		final Widget bar = raidBar.widget();
 		if (bar == null)
 		{
-			hidden = false;
+			raidBar.forget();
 			return;
 		}
 
 		if (replaceEnabled && isTracking(opponent) && opponentGetsBar)
 		{
-			if (!bar.isSelfHidden())
-			{
-				bar.setHidden(true);
-				if (!hidden)
-				{
-					debugLog.add("Raid boss bar hidden");
-				}
-				hidden = true;
-			}
+			raidBar.hide(bar, "Raid boss bar hidden");
 		}
 		else
 		{
@@ -165,23 +158,18 @@ class TobBossBar
 
 	void restore()
 	{
-		if (!hidden)
+		if (!raidBar.isHidden())
 		{
 			return;
 		}
 
-		debugLog.add("Raid boss bar restored");
-		final Widget bar = client.getWidget(InterfaceID.TobHud.PROGRESS_CONTAINER);
-		if (bar != null && client.getVarbitValue(VarbitID.TOB_CLIENT_WAVEPROGRESS_TYPE) != PROGRESS_NONE)
-		{
-			bar.setHidden(false);
-		}
-		hidden = false;
+		raidBar.release("Raid boss bar restored",
+			client.getVarbitValue(VarbitID.TOB_CLIENT_WAVEPROGRESS_TYPE) != PROGRESS_NONE);
 	}
 
 	void reset()
 	{
-		hidden = false;
+		raidBar.forget();
 		boss = null;
 		loggedBoss = null;
 		searchNeeded = true;
@@ -189,7 +177,7 @@ class TobBossBar
 
 	boolean isHidden()
 	{
-		return hidden;
+		return raidBar.isHidden();
 	}
 
 	int maxHealth()

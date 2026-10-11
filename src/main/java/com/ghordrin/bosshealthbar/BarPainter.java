@@ -233,22 +233,15 @@ class BarPainter
 		graphics.setStroke(THIN_STROKE);
 		for (float marker : phaseMarkers)
 		{
-			final int markerX = innerX + Math.round((innerWidth - 1) * marker);
-			graphics.setColor(MARKER_SHADOW);
-			graphics.drawLine(markerX + 1, innerY, markerX + 1, innerY + innerHeight - 1);
-			graphics.setColor(markerColor);
-			graphics.drawLine(markerX, y - 2, markerX, y + height + 1);
+			drawMarker(graphics, innerX + Math.round((innerWidth - 1) * marker), markerColor, innerY, innerHeight, y, height);
 		}
 
 		if (!defeated)
 		{
 			for (HealthIndicatorMarkers.Marker marker : state.userMarkers)
 			{
-				final int markerX = innerX + Math.round((innerWidth - 1) * marker.getFraction());
-				graphics.setColor(MARKER_SHADOW);
-				graphics.drawLine(markerX + 1, innerY, markerX + 1, innerY + innerHeight - 1);
-				graphics.setColor(marker.getColor());
-				graphics.drawLine(markerX, y - 2, markerX, y + height + 1);
+				drawMarker(graphics, innerX + Math.round((innerWidth - 1) * marker.getFraction()), marker.getColor(),
+					innerY, innerHeight, y, height);
 			}
 		}
 
@@ -266,10 +259,10 @@ class BarPainter
 			}
 		}
 
-		if (flash && config.flashOnBigHits() && state.maxHealth != null)
+		if (flash && config.flashOnBigHits() && state.health.maxHealth != null)
 		{
 			final long lastHit = damageTracker.getLastHitMillis();
-			if (lastHit != 0 && damageTracker.getLastHitAmount() >= state.maxHealth * BIG_HIT_FRACTION)
+			if (lastHit != 0 && damageTracker.getLastHitAmount() >= state.health.maxHealth * BIG_HIT_FRACTION)
 			{
 				final long since = System.currentTimeMillis() - lastHit;
 				if (since < FLASH_DURATION.toMillis())
@@ -365,7 +358,17 @@ class BarPainter
 		{
 			return null;
 		}
-		final int[] pixels = textureProvider.load(textureId);
+		final BufferedImage image = decodeTexture(textureProvider, textureId);
+		if (image != null)
+		{
+			fillTextureCache.put(textureId, image);
+		}
+		return image;
+	}
+
+	static BufferedImage decodeTexture(TextureProvider provider, int id)
+	{
+		final int[] pixels = provider.load(id);
 		if (pixels == null || pixels.length == 0)
 		{
 			return null;
@@ -378,7 +381,6 @@ class BarPainter
 
 		final BufferedImage image = new BufferedImage(side, side, BufferedImage.TYPE_INT_RGB);
 		image.setRGB(0, 0, side, side, pixels, 0, side);
-		fillTextureCache.put(textureId, image);
 		return image;
 	}
 
@@ -439,6 +441,14 @@ class BarPainter
 	static float scaledFrameStroke(int barHeight)
 	{
 		return Math.max(1f, capScale(barHeight));
+	}
+
+	private static void drawMarker(Graphics2D graphics, int x, Color color, int innerY, int innerHeight, int y, int height)
+	{
+		graphics.setColor(MARKER_SHADOW);
+		graphics.drawLine(x + 1, innerY, x + 1, innerY + innerHeight - 1);
+		graphics.setColor(color);
+		graphics.drawLine(x, y - 2, x, y + height + 1);
 	}
 
 	private static void drawFrame(Graphics2D graphics, int x, int y, int width, int height, Color frameColor,

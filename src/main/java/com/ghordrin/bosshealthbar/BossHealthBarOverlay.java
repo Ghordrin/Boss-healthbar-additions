@@ -31,7 +31,6 @@ import net.runelite.api.gameval.ItemID;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.game.NPCManager;
 import net.runelite.client.game.SpriteManager;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import net.runelite.client.ui.overlay.Overlay;
@@ -61,20 +60,20 @@ class BossHealthBarOverlay extends Overlay
 	private static final int CREST_OVERLAP = 2;
 	private static final Duration SWITCH_HOLD = Duration.ofSeconds(3);
 	private static final float CLIP_REACH = 4096f;
-	private static final BarState PREVIEW_PARTNER = new BarState("Partner", 0, PREVIEW_MAX_HEALTH, 300, PREVIEW_MAX_HEALTH,
-		true, false, BarState.NO_PHASE_MARKERS, HealthIndicatorMarkers.NONE, null, null, Collections.emptyList(), null);
+	private static final BarState PREVIEW_PARTNER = BarState.healthOnly("Partner",
+		new Health(300, PREVIEW_MAX_HEALTH, true, PREVIEW_MAX_HEALTH, false));
 	private static final int PARTNER_GAP = 3;
 	private static final int PARTNER_MIN_HEIGHT = 4;
 
 	private final Client client;
 	private final BossHealthBarConfig config;
-	private final NPCManager npcManager;
 	private final SpriteManager spriteManager;
 	private final ItemManager itemManager;
 	private final CrestRenderer crestRenderer;
 	private final BarPainter barPainter;
 	private final BarTextPainter textPainter;
 	private final OpponentTracker opponentTracker;
+	private final HealthReader healthReader;
 	private final GameBossBar gameBossBar;
 	private final TobBossBar tobBossBar;
 	private final DamageTracker damageTracker;
@@ -110,7 +109,6 @@ class BossHealthBarOverlay extends Overlay
 	private String infoName;
 	private String infoKillCountKey;
 	private BossStats.Info infoStats;
-	private Integer infoMaxHealth;
 	private KnownBosses.Icon infoBossIcon;
 	private ThemeColors infoBossColors;
 
@@ -126,13 +124,13 @@ class BossHealthBarOverlay extends Overlay
 		BossHealthBarPlugin plugin,
 		Client client,
 		BossHealthBarConfig config,
-		NPCManager npcManager,
 		SpriteManager spriteManager,
 		ItemManager itemManager,
 		CrestRenderer crestRenderer,
 		BarPainter barPainter,
 		BarTextPainter textPainter,
 		OpponentTracker opponentTracker,
+		HealthReader healthReader,
 		GameBossBar gameBossBar,
 		TobBossBar tobBossBar,
 		DamageTracker damageTracker,
@@ -150,13 +148,13 @@ class BossHealthBarOverlay extends Overlay
 		super(plugin);
 		this.client = client;
 		this.config = config;
-		this.npcManager = npcManager;
 		this.spriteManager = spriteManager;
 		this.itemManager = itemManager;
 		this.crestRenderer = crestRenderer;
 		this.barPainter = barPainter;
 		this.textPainter = textPainter;
 		this.opponentTracker = opponentTracker;
+		this.healthReader = healthReader;
 		this.gameBossBar = gameBossBar;
 		this.tobBossBar = tobBossBar;
 		this.damageTracker = damageTracker;
@@ -191,7 +189,7 @@ class BossHealthBarOverlay extends Overlay
 		invalidateColors();
 	}
 
-	void resetAnimation()
+	private void resetAnimation()
 	{
 		animation.reset();
 		lastState = null;
@@ -225,16 +223,7 @@ class BossHealthBarOverlay extends Overlay
 		if (themeColors == null)
 		{
 			final BarTheme theme = BarTheme.of(config);
-			themeColors = theme.getColors() != null ? theme.getColors() : ThemeColors.builder()
-				.fillHigh(config.customFillHighColor())
-				.fillLow(config.customFillLowColor())
-				.trail(config.customTrailColor())
-				.frame(config.customFrameColor())
-				.text(config.customTextColor())
-				.levelText(config.customLevelTextColor())
-				.hitpointsText(config.customHitpointsTextColor())
-				.defeatedText(config.customDefeatedTextColor())
-				.build();
+			themeColors = theme.getColors() != null ? theme.getColors() : CustomColors.fromConfig(config);
 		}
 		return themeColors;
 	}
@@ -248,7 +237,7 @@ class BossHealthBarOverlay extends Overlay
 			final boolean wentOutOfSight = opponentTracker.wentOutOfSight(trackedOpponent);
 			// The bar's own reading of 0 wins over the distance.
 			final boolean outOfSight = wentOutOfSight
-				&& (ownState == null || ownState.ratio > 0 || !ownState.exactHealth);
+				&& (ownState == null || ownState.health.ratio > 0 || !ownState.health.exactHealth);
 			if (outOfSight)
 			{
 				opponentTracker.rememberState(trackedOpponent, ownState);
@@ -259,8 +248,8 @@ class BossHealthBarOverlay extends Overlay
 			}
 
 			if (opponent == null && trackedOpponent != null && lastState != null && !animation.isDefeatPlaying()
-				&& config.showDefeatAnimation() && !outOfSight
-				&& (trackedOpponent.isDead() || lastState.ratio <= 0))
+				&& config.showDefeatAnimation()
+				&& defeatedAtDespawn(trackedOpponent.isDead(), lastState.health.ratio, outOfSight))
 			{
 				// The opponent despawned as it died, so keep drawing it until the defeat animation ends.
 				animation.startDefeat(now);
@@ -268,7 +257,9 @@ class BossHealthBarOverlay extends Overlay
 			}
 
 			final BarState resumed = opponentTracker.resumedState(opponent);
-			if (resumed != null)
+			final Switch next = switchTo(opponent != null, resumed != null, trackedOpponent != null && lastState != null,
+				trackedOpponent != null && trackedOpponent.isDead(), animation.isDefeatPlaying());
+			if (next == Switch.RESUME)
 			{
 				// An opponent back from out of sight carries on from its remembered health, without the intro.
 				if (trackedOpponent == null || lastState == null || animation.isDefeatPlaying())
@@ -276,8 +267,8 @@ class BossHealthBarOverlay extends Overlay
 					resetAnimation();
 					animation.skipIntro();
 				}
-				debugLog.add("Bar: resumed {} from memory at {}/{}", DebugLog.describe(opponent), resumed.ratio,
-					resumed.scale);
+				debugLog.add("Bar: resumed {} from memory at {}/{}", DebugLog.describe(opponent), resumed.health.ratio,
+					resumed.health.scale);
 				trackedOpponent = opponent;
 				lastState = resumed;
 				lastStateActor = opponent;
@@ -285,9 +276,7 @@ class BossHealthBarOverlay extends Overlay
 				retargetPending = true;
 				resuming = true;
 			}
-			else if (opponent != null && trackedOpponent != null && lastState != null
-				&& !trackedOpponent.isDead()
-				&& !animation.isDefeatPlaying())
+			else if (next == Switch.MOVE)
 			{
 				// Switching targets mid-fight, e.g. between the NPCs of a group boss. The bar stays up and
 				// moves over, instead of playing the intro again.
@@ -298,7 +287,7 @@ class BossHealthBarOverlay extends Overlay
 				resuming = false;
 				switchHoldUntilNanos = now + SWITCH_HOLD.toNanos();
 			}
-			else if (opponent != null || !animation.isDefeatPlaying())
+			else if (next == Switch.RESET)
 			{
 				if (opponent != null)
 				{
@@ -318,11 +307,13 @@ class BossHealthBarOverlay extends Overlay
 		showingPreview = false;
 
 		// A target that doesn't get a bar falls through to the preview, same as no target.
-		final BarState state = opponent != null ? readState(opponent) : null;
+		final HealthReader.Reading reading = opponent != null ? healthReader.read(opponent) : null;
+		final BarState state = opponent != null ? readState(opponent, reading) : null;
 		if (state != null)
 		{
 			if (resuming && lastStateActor == opponent && lastState != null
-				&& BossMemory.healedSince(lastState.ratio, lastState.scale, lastState.exactHealth, state.ratio, state.scale))
+				&& BossMemory.healedSince(lastState.health.ratio, lastState.health.scale, lastState.health.exactHealth,
+					state.health.ratio, state.health.scale))
 			{
 				opponentTracker.healedOnReturn(opponent);
 			}
@@ -331,7 +322,7 @@ class BossHealthBarOverlay extends Overlay
 			if (opponent instanceof NPC)
 			{
 				lastHealth.remember(((NPC) opponent).getIndex(), Text.removeTags(opponent.getName()),
-					fightTimer.getStartTick(), state);
+					fightTimer.getStartTick(), state.health);
 			}
 			resuming = false;
 			if (retargetPending)
@@ -340,11 +331,12 @@ class BossHealthBarOverlay extends Overlay
 				retargetPending = false;
 			}
 
-			if (!opponent.isDead())
+			final DefeatStep step = defeatStep(opponent.isDead(), animation.isDefeatPlaying(), config.showDefeatAnimation());
+			if (step == DefeatStep.CANCEL)
 			{
 				animation.cancelDefeat();
 			}
-			else if (!animation.isDefeatPlaying() && config.showDefeatAnimation())
+			else if (step == DefeatStep.START)
 			{
 				animation.startDefeat(now);
 			}
@@ -357,7 +349,8 @@ class BossHealthBarOverlay extends Overlay
 		}
 
 		// A new target has no health to show until it's been hit, so keep the previous bar up meanwhile.
-		if (opponent != null && lastState != null && (resuming || now < switchHoldUntilNanos) && awaitingHealth(opponent))
+		if (opponent != null && lastState != null && (resuming || now < switchHoldUntilNanos)
+			&& awaitingHealth(opponent, reading))
 		{
 			final String fightTime = fightTimer.getText();
 			if (resuming && !Objects.equals(lastState.fightTime, fightTime))
@@ -414,12 +407,12 @@ class BossHealthBarOverlay extends Overlay
 		final long defeatMillis = animation.defeatEffectMillis(now);
 		final float burn = burnAway ? BarEffects.burnProgress(defeatMillis) : 0f;
 
-		animation.tick(defeated ? 0f : clamp01(state.ratio / (float) state.scale),
+		animation.tick(defeated ? 0f : clamp01(state.health.ratio / (float) state.health.scale),
 			config.animationSpeed(), config.showDamageTrail(), damageTracker.getLastHitMillis());
 
 		final int barHeight = config.barHeight();
 		textPainter.updateFonts();
-		final String hitpointsText = textPainter.hitpointsText(state);
+		final String hitpointsText = HealthText.hitpointsText(config.hitpointsTextMode(), state.health);
 		final String killCountText = !config.showKillCount() ? null
 			: showingPreview ? PREVIEW_KILL_COUNT : killCounts.textFor(state.killCountKey);
 		final boolean showFightTime = config.showFightTimer();
@@ -439,8 +432,7 @@ class BossHealthBarOverlay extends Overlay
 		final int footerHeight = textPainter.bottomRowHeight();
 		final BarTheme theme = BarTheme.of(config);
 		final boolean flat = theme.isFlat();
-		final ThemeColors baseColors = barColors(updateThemeColors(),
-			config.matchBossColors() && !showingPreview ? infoBossColors : null, flat);
+		final ThemeColors baseColors = baseColors();
 		final boolean gold = showsGold(rolledGold && !showingPreview && config.rareGoldBars(), flat);
 		final ThemeColors colors = gold ? goldBar.colors(baseColors) : baseColors;
 		final long nowMillis = now / 1_000_000L;
@@ -451,7 +443,7 @@ class BossHealthBarOverlay extends Overlay
 
 		final BufferedImage icon = resolveIcon(theme);
 		final CrestRenderer.Crest crest = icon != null && !flat
-			? crestRenderer.getCrest(colors.getFrame(), colors.getFillHigh(), 1f, barHeight / 2f + capRise + 0.5f) : null;
+			? crestRenderer.getCrest(colors.getFrame(), colors.getFillHigh(), barHeight / 2f + capRise + 0.5f) : null;
 		final int leftExtent = crest != null ? Math.max(0, crest.left.anchorX - CREST_OVERLAP) : 0;
 		final int rightExtent = crest != null
 			? Math.max(0, Math.round(crest.right.image.getWidth() / RASTER_SCALE) - crest.right.anchorX - CREST_OVERLAP) : 0;
@@ -592,7 +584,7 @@ class BossHealthBarOverlay extends Overlay
 			return;
 		}
 		final boolean dead = member != null && member.dead;
-		partnerAnimation.tick(clamp01(partner.ratio / (float) partner.scale), config.animationSpeed(),
+		partnerAnimation.tick(clamp01(partner.health.ratio / (float) partner.health.scale), config.animationSpeed(),
 			config.showDamageTrail(), 0);
 
 		setOpacity(graphics, originalComposite, textOpacity);
@@ -611,7 +603,7 @@ class BossHealthBarOverlay extends Overlay
 		final HitpointsTextMode mode = config.hitpointsTextMode();
 		if (partner != partnerTextState || mode != partnerTextMode)
 		{
-			partnerText = textPainter.hitpointsText(partner);
+			partnerText = HealthText.hitpointsText(mode, partner.health);
 			partnerTextState = partner;
 			partnerTextMode = mode;
 		}
@@ -634,6 +626,51 @@ class BossHealthBarOverlay extends Overlay
 	static boolean showsGold(boolean rolledGold, boolean flat)
 	{
 		return rolledGold && !flat;
+	}
+
+	enum Switch
+	{
+		RESUME,
+		MOVE,
+		RESET,
+		KEEP
+	}
+
+	// What the bar does when the opponent changes. RESET starts a new bar, or clears it when there's no opponent.
+	static Switch switchTo(boolean hasOpponent, boolean resumed, boolean hasBar, boolean previousDead,
+		boolean defeatPlaying)
+	{
+		if (resumed)
+		{
+			return Switch.RESUME;
+		}
+		if (hasOpponent && hasBar && !previousDead && !defeatPlaying)
+		{
+			return Switch.MOVE;
+		}
+		return hasOpponent || !defeatPlaying ? Switch.RESET : Switch.KEEP;
+	}
+
+	enum DefeatStep
+	{
+		START,
+		CANCEL,
+		NONE
+	}
+
+	static DefeatStep defeatStep(boolean defeated, boolean playing, boolean animationOn)
+	{
+		if (!defeated)
+		{
+			return DefeatStep.CANCEL;
+		}
+		return !playing && animationOn ? DefeatStep.START : DefeatStep.NONE;
+	}
+
+	// Whether an opponent that's gone died, going by the bar's last reading of it.
+	static boolean defeatedAtDespawn(boolean dead, int lastRatio, boolean outOfSight)
+	{
+		return !outOfSight && (dead || lastRatio <= 0);
 	}
 
 	// Without crests, the boss's icon goes small before the name, as on the Oldschool theme.
@@ -719,65 +756,44 @@ class BossHealthBarOverlay extends Overlay
 		return Math.max(leftY + leftHeight, rightY + rightHeight);
 	}
 
-	private BarState readState(Actor opponent)
+	private BarState readState(Actor opponent, HealthReader.Reading reading)
 	{
 		if (!opponentTracker.shouldShowBarFor(opponent))
 		{
 			return null;
 		}
 
-		final boolean nativeBar = gameBossBar.isTracking(opponent);
-		final boolean tobBar = tobBossBar.isTracking(opponent);
-		if ((nativeBar || tobBar) && config.nativeBossBarMode().hidesOurBar())
+		if ((gameBossBar.isTracking(opponent) || tobBossBar.isTracking(opponent))
+			&& config.nativeBossBarMode().hidesOurBar())
 		{
 			return null;
 		}
 
 		updateOpponentInfo(opponent);
-		final String name = infoName;
-		final Integer maxHealth = infoMaxHealth;
-		final HealthIndicatorMarkers.Marker[] userMarkers = indicatorMarkers.markersFor(name);
-		final String killCountKey = infoKillCountKey;
-		final BossStats.Info stats = infoStats;
-		final List<SpecialAttackCounts.Reading> specialAttacks = specialAttackCounts.readings();
-		final String fightTime = fightTimer.getText();
 
-		// The game's bars have exact hitpoints, and some bosses stop sending overhead health updates
-		// while they're shown, so prefer them.
-		final int nativeMaxHealth = nativeBar ? gameBossBar.maxHealth() : 0;
-		if (nativeMaxHealth > 0 && gameBossBar.hasHealth())
+		if (reading != null)
 		{
-			final float[] markers = config.showPhaseMarkers()
-				? gameBossBar.phaseMarkers(nativeMaxHealth) : BarState.NO_PHASE_MARKERS;
-			return new BarState(name, opponent.getCombatLevel(), nativeMaxHealth,
-				gameBossBar.health(), nativeMaxHealth, true, gameBossBar.isPercentOnly(), markers, userMarkers,
-				killCountKey, stats, specialAttacks, fightTime);
-		}
-
-		final int tobMax = tobBar ? tobBossBar.maxHealth() : 0;
-		if (tobMax > 0)
-		{
-			return new BarState(name, opponent.getCombatLevel(), maxHealth, tobBossBar.health(tobMax), tobMax,
-				false, false, BarState.NO_PHASE_MARKERS, userMarkers, killCountKey, stats, specialAttacks, fightTime);
-		}
-
-		if (opponent.getHealthScale() > 0)
-		{
-			return new BarState(name, opponent.getCombatLevel(), maxHealth,
-				opponent.getHealthRatio(), opponent.getHealthScale(), false, false, BarState.NO_PHASE_MARKERS, userMarkers,
-				killCountKey, stats, specialAttacks, fightTime);
+			final float[] markers = reading.source == HealthReader.Source.GAME_BAR && config.showPhaseMarkers()
+				? gameBossBar.phaseMarkers(reading.health.scale) : BarState.NO_PHASE_MARKERS;
+			return barState(opponent, reading.health, markers);
 		}
 
 		// No reading yet, such as an NPC that left and came back or a boss bar that just moved over, so it keeps the
 		// health it last had in this fight.
-		final BarState remembered = rememberedHealth(opponent);
+		final Health remembered = rememberedHealth(opponent);
 		if (remembered != null)
 		{
-			return new BarState(name, opponent.getCombatLevel(), remembered.maxHealth, remembered.ratio,
-				remembered.scale, remembered.exactHealth, remembered.percentOnly, BarState.NO_PHASE_MARKERS, userMarkers,
-				killCountKey, stats, specialAttacks, fightTime);
+			return barState(opponent, remembered, BarState.NO_PHASE_MARKERS);
 		}
 		return null;
+	}
+
+	// The opponent's extras come from updateOpponentInfo, which readState calls first.
+	private BarState barState(Actor opponent, Health health, float[] phaseMarkers)
+	{
+		return new BarState(infoName, opponent.getCombatLevel(), health, phaseMarkers,
+			indicatorMarkers.markersFor(infoName), infoKillCountKey, infoStats, specialAttackCounts.readings(),
+			fightTimer.getText());
 	}
 
 	private String healthNote(Actor opponent)
@@ -786,30 +802,28 @@ class BossHealthBarOverlay extends Overlay
 		{
 			return ", health " + opponent.getHealthRatio() + "/" + opponent.getHealthScale();
 		}
-		final BarState remembered = rememberedHealth(opponent);
+		final Health remembered = rememberedHealth(opponent);
 		return remembered != null ? ", no reading yet, remembered " + remembered.ratio + "/" + remembered.scale : ", no reading yet";
 	}
 
-	private BarState rememberedHealth(Actor opponent)
+	private Health rememberedHealth(Actor opponent)
 	{
 		return opponent instanceof NPC
 			? lastHealth.find(((NPC) opponent).getIndex(), Text.removeTags(opponent.getName()), fightTimer.getStartTick())
 			: null;
 	}
 
-	private boolean awaitingHealth(Actor opponent)
+	private boolean awaitingHealth(Actor opponent, HealthReader.Reading reading)
 	{
-		return opponent.getHealthScale() <= 0
-			&& opponentTracker.shouldShowBarFor(opponent)
-			&& !(gameBossBar.isTracking(opponent) && gameBossBar.hasHealth())
-			&& !tobBossBar.isTracking(opponent);
+		return reading == null && opponentTracker.shouldShowBarFor(opponent);
 	}
 
 	private BarState previewState(long now)
 	{
 		final int step = (int) ((now - previewStartNanos) / PREVIEW_STEP.toNanos() % PREVIEW_HEALTH.length);
-		return new BarState(PREVIEW_NAME, PREVIEW_COMBAT_LEVEL, PREVIEW_MAX_HEALTH, PREVIEW_HEALTH[step],
-			PREVIEW_MAX_HEALTH, true, false, config.showPhaseMarkers() ? PREVIEW_PHASE_MARKERS : BarState.NO_PHASE_MARKERS,
+		return new BarState(PREVIEW_NAME, PREVIEW_COMBAT_LEVEL,
+			new Health(PREVIEW_HEALTH[step], PREVIEW_MAX_HEALTH, true, PREVIEW_MAX_HEALTH, false),
+			config.showPhaseMarkers() ? PREVIEW_PHASE_MARKERS : BarState.NO_PHASE_MARKERS,
 			HealthIndicatorMarkers.NONE, null, PREVIEW_STATS,
 			specialAttackCounts.isAvailable() ? previewSpecialAttacks() : Collections.emptyList(), PREVIEW_FIGHT_TIME);
 	}
@@ -836,7 +850,6 @@ class BossHealthBarOverlay extends Overlay
 		}
 
 		String name = Text.removeTags(opponent.getName());
-		Integer maxHealth = null;
 		boolean complete = true;
 		infoBossIcon = null;
 		infoBossColors = null;
@@ -844,10 +857,14 @@ class BossHealthBarOverlay extends Overlay
 		infoStats = null;
 		if (opponent instanceof NPC)
 		{
-			infoKillCountKey = KillCounts.key(name);
-			infoStats = BossStats.info(composition != null ? npcId : ((NPC) opponent).getId());
-			infoBossIcon = KnownBosses.icon(name);
-			infoBossColors = KnownBosses.colors(name);
+			final KnownBosses.Boss boss = KnownBosses.find(name);
+			if (boss != null)
+			{
+				infoBossIcon = boss.getIcon();
+				infoBossColors = boss.getColors();
+				infoKillCountKey = boss.getKillCountKey();
+			}
+			infoStats = BossStats.info(NpcUtil.currentId((NPC) opponent));
 			if (composition != null)
 			{
 				final String longName = composition.getStringValue(ParamID.NPC_HP_NAME);
@@ -855,7 +872,6 @@ class BossHealthBarOverlay extends Overlay
 				{
 					name = longName;
 				}
-				maxHealth = npcManager.getHealth(npcId);
 			}
 			else
 			{
@@ -864,7 +880,6 @@ class BossHealthBarOverlay extends Overlay
 		}
 
 		infoName = name;
-		infoMaxHealth = maxHealth;
 		infoActor = complete ? opponent : null;
 		infoNpcId = npcId;
 	}

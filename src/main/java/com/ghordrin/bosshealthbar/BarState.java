@@ -1,5 +1,6 @@
 package com.ghordrin.bosshealthbar;
 
+import java.util.Collections;
 import java.util.List;
 
 final class BarState
@@ -8,11 +9,7 @@ final class BarState
 
 	final String name;
 	final int combatLevel;
-	final Integer maxHealth;
-	final int ratio;
-	final int scale;
-	final boolean exactHealth;
-	final boolean percentOnly;
+	final Health health;
 	final float[] phaseMarkers;
 	final HealthIndicatorMarkers.Marker[] userMarkers;
 	final String killCountKey;
@@ -20,17 +17,12 @@ final class BarState
 	final List<SpecialAttackCounts.Reading> specialAttacks;
 	final String fightTime;
 
-	BarState(String name, int combatLevel, Integer maxHealth, int ratio, int scale,
-		boolean exactHealth, boolean percentOnly, float[] phaseMarkers, HealthIndicatorMarkers.Marker[] userMarkers,
+	BarState(String name, int combatLevel, Health health, float[] phaseMarkers, HealthIndicatorMarkers.Marker[] userMarkers,
 		String killCountKey, BossStats.Info stats, List<SpecialAttackCounts.Reading> specialAttacks, String fightTime)
 	{
 		this.name = name;
 		this.combatLevel = combatLevel;
-		this.maxHealth = maxHealth;
-		this.ratio = ratio;
-		this.scale = scale;
-		this.exactHealth = exactHealth;
-		this.percentOnly = percentOnly;
+		this.health = health;
 		this.phaseMarkers = phaseMarkers;
 		this.userMarkers = userMarkers;
 		this.killCountKey = killCountKey;
@@ -39,9 +31,16 @@ final class BarState
 		this.fightTime = fightTime;
 	}
 
+	// A bar with a name and health but none of the extras.
+	static BarState healthOnly(String name, Health health)
+	{
+		return new BarState(name, 0, health, NO_PHASE_MARKERS, HealthIndicatorMarkers.NONE, null, null,
+			Collections.emptyList(), null);
+	}
+
 	BarState withFightTime(String time)
 	{
-		return new BarState(name, combatLevel, maxHealth, ratio, scale, exactHealth, percentOnly, phaseMarkers,
-			userMarkers, killCountKey, stats, specialAttacks, time);
+		return new BarState(name, combatLevel, health, phaseMarkers, userMarkers, killCountKey, stats, specialAttacks,
+			time);
 	}
 }

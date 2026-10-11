@@ -14,12 +14,10 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
-import java.util.Map;
 import net.runelite.client.config.FontType;
 import net.runelite.client.ui.FontManager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -125,36 +123,12 @@ public class ItemFontsTest
 	}
 
 	@Test
-	public void largeTextKeepsItsBaselineGap()
-	{
-		assertEquals(18, BarTextPainter.largeAbove(16));
-		assertEquals(6, BarTextPainter.largeBelow(16));
-		assertEquals(20, BarTextPainter.largeAbove(17));
-		assertEquals(6, BarTextPainter.largeBelow(17));
-		assertEquals(36, BarTextPainter.largeAbove(32));
-		assertEquals(12, BarTextPainter.largeBelow(32));
-		assertEquals(0, BarTextPainter.smallBelow(10, 12));
-	}
-
-	@Test
-	public void smallTextRowsKeepTheirOldHeight()
-	{
-		final String small = FontManager.getRunescapeSmallFont().getFamily();
-		assertEquals(16, BarTextPainter.smallRowHeight(16, true, small, Font.SERIF, 17));
-		assertEquals(32, BarTextPainter.smallRowHeight(32, true, small, Font.SERIF, 17));
-		// Small Serif 12 went with a Serif 17 name and a 17 high row.
-		assertEquals(17, BarTextPainter.smallRowHeight(12, false, Font.SERIF, Font.SERIF, 17));
-		assertEquals(17, BarTextPainter.smallRowHeight(12, false, Font.SANS_SERIF, Font.SERIF, 17));
-		assertEquals(14, BarTextPainter.smallRowHeight(10, false, Font.SERIF, Font.SERIF, 17));
-	}
-
-	@Test
 	public void migratedSmallTextRowsKeepTheirOldHeightAtEverySize()
 	{
 		for (int size = 8; size <= 40; size++)
 		{
 			final FontType name = new FontType().withFamily(Font.SERIF).withSize(size);
-			final FontType small = FontDefaultMigration.smallTextFont(name);
+			final FontType small = ConfigMigrations.smallTextFont(name);
 			final FontsConfig config = new FontsConfig();
 			config.font = name;
 			config.damageNumberFont = name;
@@ -199,7 +173,7 @@ public class ItemFontsTest
 		final FontsConfig config = new FontsConfig();
 		config.partyDefenceFont = SERIF_12;
 		final FontType[] fonts = new FontType[ITEM_COUNT];
-		BarTextPainter.readItemFonts(config, fonts);
+		BarFonts.readItemFonts(config, fonts);
 		assertSame(BossHealthBarConfig.DEFAULT_FONT, fonts[NAME]);
 		assertSame(FontType.REGULAR, fonts[DAMAGE_NUMBER]);
 		assertSame(FontType.SMALL, fonts[HITPOINTS]);
@@ -217,12 +191,12 @@ public class ItemFontsTest
 		final BarTextPainter painter = painter(config);
 		final String small = FontManager.getRunescapeSmallFont().getFamily();
 
-		assertEquals(FontManager.getRunescapeFont().getFamily(), painter.font(NAME).getFamily());
-		assertEquals(16, painter.font(NAME).getSize());
-		assertEquals(16, painter.font(DAMAGE_NUMBER).getSize());
-		assertEquals(small, painter.font(HITPOINTS).getFamily());
-		assertEquals(16, painter.font(HITPOINTS).getSize());
-		assertEquals(small, painter.levelFont().getFamily());
+		assertEquals(FontManager.getRunescapeFont().getFamily(), painter.fonts().font(NAME).getFamily());
+		assertEquals(16, painter.fonts().font(NAME).getSize());
+		assertEquals(16, painter.fonts().font(DAMAGE_NUMBER).getSize());
+		assertEquals(small, painter.fonts().font(HITPOINTS).getFamily());
+		assertEquals(16, painter.fonts().font(HITPOINTS).getSize());
+		assertEquals(small, painter.fonts().levelFont().getFamily());
 		assertEquals(24, painter.topRowHeight());
 		assertEquals(16, painter.bottomRowHeight());
 		assertEquals(18, painter.topRowBaseline());
@@ -243,9 +217,9 @@ public class ItemFontsTest
 		final int smallAscent = graphics.getFontMetrics(FontManager.getFallbackFont(Font.SERIF, Font.PLAIN, 12)).getAscent();
 		graphics.dispose();
 
-		assertEquals(17, painter.font(NAME).getSize());
-		assertEquals(12, painter.font(HITPOINTS).getSize());
-		assertEquals(12, painter.levelFont().getSize());
+		assertEquals(17, painter.fonts().font(NAME).getSize());
+		assertEquals(12, painter.fonts().font(HITPOINTS).getSize());
+		assertEquals(12, painter.fonts().levelFont().getSize());
 		assertEquals(26, painter.topRowHeight());
 		assertEquals(17, painter.bottomRowHeight());
 		assertEquals(20, painter.topRowBaseline());
@@ -259,9 +233,9 @@ public class ItemFontsTest
 		config.font = FontType.REGULAR.withSize(24);
 		final BarTextPainter painter = painter(config);
 
-		assertEquals(24, painter.font(NAME).getSize());
-		assertEquals(16, painter.font(DAMAGE_NUMBER).getSize());
-		assertEquals(16, painter.font(HITPOINTS).getSize());
+		assertEquals(24, painter.fonts().font(NAME).getSize());
+		assertEquals(16, painter.fonts().font(DAMAGE_NUMBER).getSize());
+		assertEquals(16, painter.fonts().font(HITPOINTS).getSize());
 		assertEquals(36, painter.topRowHeight());
 		assertEquals(16, painter.bottomRowHeight());
 	}
@@ -276,8 +250,8 @@ public class ItemFontsTest
 		config.killCountFont = FontType.SMALL.withSize(40);
 		final BarTextPainter painter = painter(config);
 
-		assertEquals(32, painter.font(HITPOINTS).getSize());
-		assertEquals(40, painter.font(KILL_COUNT).getSize());
+		assertEquals(32, painter.fonts().font(HITPOINTS).getSize());
+		assertEquals(40, painter.fonts().font(KILL_COUNT).getSize());
 		assertEquals(40, painter.topRowHeight());
 		assertEquals(32, painter.bottomRowHeight());
 	}
@@ -299,83 +273,32 @@ public class ItemFontsTest
 	{
 		final FontsConfig config = new FontsConfig();
 		final BarTextPainter painter = painter(config);
-		final Font name = painter.font(NAME);
-		final Font hitpoints = painter.font(HITPOINTS);
-		final Font killCount = painter.font(KILL_COUNT);
+		final Font name = painter.fonts().font(NAME);
+		final Font hitpoints = painter.fonts().font(HITPOINTS);
+		final Font killCount = painter.fonts().font(KILL_COUNT);
 
 		painter.updateFonts();
-		assertSame(name, painter.font(NAME));
-		assertSame(hitpoints, painter.font(HITPOINTS));
+		assertSame(name, painter.fonts().font(NAME));
+		assertSame(hitpoints, painter.fonts().font(HITPOINTS));
 
 		config.hitpointsFont = FontType.SMALL.withSize(24);
 		painter.updateFonts();
-		assertEquals(24, painter.font(HITPOINTS).getSize());
-		assertSame(killCount, painter.font(KILL_COUNT));
-		assertSame(name, painter.font(NAME));
+		assertEquals(24, painter.fonts().font(HITPOINTS).getSize());
+		assertSame(killCount, painter.fonts().font(KILL_COUNT));
+		assertSame(name, painter.fonts().font(NAME));
 
 		// Smooth text only changes how the fonts are measured and drawn.
 		config.smoothText = false;
 		painter.updateFonts();
-		assertSame(killCount, painter.font(KILL_COUNT));
+		assertSame(killCount, painter.fonts().font(KILL_COUNT));
 
 		config.killCountFont = FontType.SMALL.withBold(true);
 		painter.updateFonts();
-		assertTrue(painter.font(KILL_COUNT).isBold());
+		assertTrue(painter.fonts().font(KILL_COUNT).isBold());
 		config.killCountFont = FontType.SMALL.withItalic(true);
 		painter.updateFonts();
-		assertFalse(painter.font(KILL_COUNT).isBold());
-		assertTrue(painter.font(KILL_COUNT).isItalic());
-		assertSame(name, painter.font(NAME));
-	}
-
-	@Test
-	public void migrationKeepsTheOldSmallText()
-	{
-		final FontType small = FontDefaultMigration.smallTextFont(SERIF_17);
-		assertEquals(Font.SERIF, small.getFamily());
-		assertEquals(12, small.getSize());
-		assertFalse(small.isBold());
-		assertFalse(small.isItalic());
-
-		final FontType styled = FontDefaultMigration.smallTextFont(SERIF_17.withBold(true).withItalic(true).withSize(20));
-		assertEquals(14, styled.getSize());
-		assertFalse(styled.isBold());
-		assertTrue(styled.isItalic());
-
-		assertEquals(8, FontDefaultMigration.smallTextFont(SERIF_17.withSize(8)).getSize());
-	}
-
-	@Test
-	public void migrationLeavesRunescapeFontsAlone()
-	{
-		assertNull(FontDefaultMigration.smallTextFont(FontType.REGULAR));
-		assertNull(FontDefaultMigration.smallTextFont(FontType.SMALL));
-		assertNull(FontDefaultMigration.smallTextFont(FontType.BOLD));
-		assertNull(FontDefaultMigration.smallTextFont(FontType.REGULAR.withSize(20)));
-		assertNull(FontDefaultMigration.smallTextFont(null));
-	}
-
-	@Test
-	public void migrationAlwaysGivesTheDamageNumberTheNameFont()
-	{
-		final FontType bold = FontType.BOLD.withItalic(true);
-		final Map<String, FontType> pixelWrites = FontDefaultMigration.itemFontWrites(bold);
-		assertEquals(1, pixelWrites.size());
-		assertSame(bold, pixelWrites.get(BossHealthBarConfig.DAMAGE_NUMBER_FONT_KEY));
-		assertTrue(pixelWrites.get(BossHealthBarConfig.DAMAGE_NUMBER_FONT_KEY).isBold());
-
-		final Map<String, FontType> serifWrites = FontDefaultMigration.itemFontWrites(SERIF_17);
-		assertEquals(8, serifWrites.size());
-		assertSame(SERIF_17, serifWrites.get(BossHealthBarConfig.DAMAGE_NUMBER_FONT_KEY));
-		assertEquals(12, serifWrites.get(BossHealthBarConfig.HITPOINTS_FONT_KEY).getSize());
-
-		assertTrue(FontDefaultMigration.itemFontWrites(null).isEmpty());
-	}
-
-	@Test
-	public void migrationCoversEverySmallTextFont()
-	{
-		assertEquals(7, FontDefaultMigration.SMALL_TEXT_FONT_KEYS.size());
-		assertFalse(FontDefaultMigration.SMALL_TEXT_FONT_KEYS.contains(BossHealthBarConfig.DAMAGE_NUMBER_FONT_KEY));
+		assertFalse(painter.fonts().font(KILL_COUNT).isBold());
+		assertTrue(painter.fonts().font(KILL_COUNT).isItalic());
+		assertSame(name, painter.fonts().font(NAME));
 	}
 }

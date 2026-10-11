@@ -15,34 +15,34 @@ final class LastHealth
 		final int index;
 		final String name;
 		final int fight;
-		final BarState state;
+		final Health health;
 
-		Entry(int index, String name, int fight, BarState state)
+		Entry(int index, String name, int fight, Health health)
 		{
 			this.index = index;
 			this.name = name;
 			this.fight = fight;
-			this.state = state;
+			this.health = health;
 		}
 	}
 
 	private final Deque<Entry> entries = new ArrayDeque<>();
 
 	// fight identifies the fight the reading belongs to, such as the tick it started. Below 0 means no fight yet.
-	void remember(int index, String name, int fight, BarState state)
+	void remember(int index, String name, int fight, Health health)
 	{
-		if (name == null || fight < 0 || state == null || state.scale <= 0)
+		if (name == null || fight < 0 || health == null || health.scale <= 0)
 		{
 			return;
 		}
 		final Entry newest = entries.peekFirst();
-		if (newest != null && newest.index == index && newest.fight == fight && newest.state == state
+		if (newest != null && newest.index == index && newest.fight == fight && newest.health == health
 			&& newest.name.equals(name))
 		{
 			return;
 		}
 		removeMatching(index, name);
-		entries.addFirst(new Entry(index, name, fight, state));
+		entries.addFirst(new Entry(index, name, fight, health));
 		while (entries.size() > CAPACITY)
 		{
 			entries.removeLast();
@@ -50,7 +50,7 @@ final class LastHealth
 	}
 
 	// Same NPC first. An NPC that left and came back gets a new index, so a single entry with its name counts too.
-	BarState find(int index, String name, int fight)
+	Health find(int index, String name, int fight)
 	{
 		if (name == null || fight < 0)
 		{
@@ -66,12 +66,12 @@ final class LastHealth
 			}
 			if (entry.index == index)
 			{
-				return entry.state;
+				return entry.health;
 			}
 			byName = entry;
 			sameName++;
 		}
-		return sameName == 1 ? byName.state : null;
+		return sameName == 1 ? byName.health : null;
 	}
 
 	void clear()

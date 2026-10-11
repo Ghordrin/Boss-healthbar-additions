@@ -347,11 +347,4 @@ public class FightTimerTest
 		timer.onGameTick(true, false, 200);
 		assertEquals("1:00", timer.getText());
 	}
-
-	@Test
-	public void theSlotSizingSwapsEveryDigit()
-	{
-		assertEquals("0:00", BarTextPainter.withDigits("1:23", '0'));
-		assertEquals("4:44:44", BarTextPainter.withDigits("1:05:09", '4'));
-	}
 }

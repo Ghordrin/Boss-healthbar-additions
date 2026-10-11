@@ -17,7 +17,6 @@ import javax.inject.Singleton;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
 
 // Reads the health lines users set up in the "Boss Health Indicators" plugin, which draws them onto the
@@ -48,7 +47,7 @@ class HealthIndicatorMarkers
 
 	private final BossHealthBarConfig config;
 	private final ConfigManager configManager;
-	private final PluginManager pluginManager;
+	private final PluginReader plugin;
 	private final Gson gson;
 	private final DebugLog debugLog;
 
@@ -62,13 +61,14 @@ class HealthIndicatorMarkers
 	{
 		this.config = config;
 		this.configManager = configManager;
-		this.pluginManager = pluginManager;
+		this.plugin = new PluginReader(pluginManager, PLUGIN_NAME);
 		this.gson = gson;
 		this.debugLog = debugLog;
 	}
 
 	void invalidate()
 	{
+		plugin.invalidate();
 		entries = null;
 		cachedName = null;
 	}
@@ -83,7 +83,7 @@ class HealthIndicatorMarkers
 
 		if (entries == null)
 		{
-			entries = isPluginActive()
+			entries = plugin.isActive()
 				? parse(gson, configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY), debugLog) : Collections.emptyList();
 			cachedName = null;
 		}
@@ -94,18 +94,6 @@ class HealthIndicatorMarkers
 			cachedMarkers = match(entries, name);
 		}
 		return cachedMarkers;
-	}
-
-	private boolean isPluginActive()
-	{
-		for (Plugin plugin : pluginManager.getPlugins())
-		{
-			if (PLUGIN_NAME.equals(plugin.getName()))
-			{
-				return pluginManager.isPluginActive(plugin);
-			}
-		}
-		return false;
 	}
 
 	private static Marker[] match(List<Entry> entries, String name)

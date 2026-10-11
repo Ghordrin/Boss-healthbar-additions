@@ -34,15 +34,7 @@ class OpponentInfoOverride
 
 		if (!isHidden())
 		{
-			final String current = configManager.getConfiguration(GROUP, KEY);
-			if (current == null)
-			{
-				configManager.unsetConfiguration(BossHealthBarConfig.GROUP, SAVED_KEY);
-			}
-			else
-			{
-				configManager.setConfiguration(BossHealthBarConfig.GROUP, SAVED_KEY, current);
-			}
+			ConfigWrites.write(configManager, SAVED_KEY, configManager.getConfiguration(GROUP, KEY));
 			configManager.setConfiguration(BossHealthBarConfig.GROUP, HIDDEN_KEY, true);
 		}
 
@@ -56,15 +48,7 @@ class OpponentInfoOverride
 			return;
 		}
 
-		final String saved = configManager.getConfiguration(BossHealthBarConfig.GROUP, SAVED_KEY);
-		if (saved == null)
-		{
-			configManager.unsetConfiguration(GROUP, KEY);
-		}
-		else
-		{
-			configManager.setConfiguration(GROUP, KEY, saved);
-		}
+		ConfigWrites.write(configManager, GROUP, KEY, configManager.getConfiguration(BossHealthBarConfig.GROUP, SAVED_KEY));
 
 		configManager.unsetConfiguration(BossHealthBarConfig.GROUP, SAVED_KEY);
 		configManager.unsetConfiguration(BossHealthBarConfig.GROUP, HIDDEN_KEY);

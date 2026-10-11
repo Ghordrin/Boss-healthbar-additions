@@ -6,7 +6,6 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Predicate;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -18,7 +17,6 @@ import net.runelite.api.Skill;
 import net.runelite.api.SpritePixels;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.client.game.SkillIconManager;
-import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
@@ -45,60 +43,18 @@ class PartyDefence
 		Color color;
 	}
 
-	// Their info box can be gone for a tick while it's rebuilt, so the last reading is kept for one tick.
-	@VisibleForTesting
-	static class HeldReading
-	{
-		private String readingName;
-		private Reading reading;
-		private boolean missedTick;
-
-		void accept(String name, Reading found)
-		{
-			if (found != null)
-			{
-				readingName = name;
-				reading = found;
-				missedTick = false;
-			}
-			else if (reading != null && !missedTick && Objects.equals(name, readingName))
-			{
-				missedTick = true;
-			}
-			else
-			{
-				clear();
-			}
-		}
-
-		Reading readingFor(String name)
-		{
-			return name != null && name.equals(readingName) ? reading : null;
-		}
-
-		void clear()
-		{
-			readingName = null;
-			reading = null;
-			missedTick = false;
-		}
-	}
-
 	private final Client client;
 	private final BossHealthBarConfig config;
-	private final PluginManager pluginManager;
 	private final InfoBoxManager infoBoxManager;
 	private final SkillIconManager skillIconManager;
-	private final DebugLog debugLog;
-	// A broken info box fails every tick, so the debug log gets it once until a read works again.
-	private boolean failureLogged;
+	private final PluginReader plugin;
+	private final PluginReader betterPlugin;
+	private final PluginReader.ReadFailure readFailure;
 
-	private Boolean pluginActive;
-	private Boolean betterPluginActive;
 	private boolean available;
 	private boolean magicAvailable;
-	private final HeldReading defence = new HeldReading();
-	private final HeldReading magic = new HeldReading();
+	private final PluginReader.HeldReading<Reading> defence = new PluginReader.HeldReading<>();
+	private final PluginReader.HeldReading<Reading> magic = new PluginReader.HeldReading<>();
 	private BufferedImage icon;
 	private BufferedImage magicIcon;
 	private final MagicIconMatcher magicIconMatcher = new MagicIconMatcher();
@@ -111,22 +67,22 @@ class PartyDefence
 	{
 		this.client = client;
 		this.config = config;
-		this.pluginManager = pluginManager;
 		this.infoBoxManager = infoBoxManager;
 		this.skillIconManager = skillIconManager;
-		this.debugLog = debugLog;
+		this.plugin = new PluginReader(pluginManager, PLUGIN_NAME);
+		this.betterPlugin = new PluginReader(pluginManager, BETTER_PLUGIN_NAME);
+		this.readFailure = new PluginReader.ReadFailure(debugLog, "Couldn't read party defence info box");
 	}
 
 	void invalidatePlugin()
 	{
-		pluginActive = null;
-		betterPluginActive = null;
+		plugin.invalidate();
+		betterPlugin.invalidate();
 	}
 
 	void reset()
 	{
-		pluginActive = null;
-		betterPluginActive = null;
+		invalidatePlugin();
 		available = false;
 		magicAvailable = false;
 		defence.clear();
@@ -139,14 +95,8 @@ class PartyDefence
 	// Called each game tick, so the overlay doesn't go through the info boxes every frame.
 	void update(Actor opponent)
 	{
-		if (pluginActive == null)
-		{
-			pluginActive = isPluginActive(PLUGIN_NAME);
-		}
-		if (betterPluginActive == null)
-		{
-			betterPluginActive = isPluginActive(BETTER_PLUGIN_NAME);
-		}
+		final boolean pluginActive = plugin.isActive();
+		final boolean betterPluginActive = betterPlugin.isActive();
 		available = (pluginActive || betterPluginActive) && config.showPartyDefence();
 		magicAvailable = betterPluginActive && config.showMagicDefence();
 
@@ -176,16 +126,11 @@ class PartyDefence
 			{
 				magic.accept(name, findBetterMagic(infoBoxes, isMagic));
 			}
-			failureLogged = false;
+			readFailure.succeeded();
 		}
 		catch (RuntimeException e)
 		{
-			log.debug("Couldn't read party defence info box", e);
-			if (!failureLogged)
-			{
-				failureLogged = true;
-				debugLog.add("Couldn't read party defence info box: {}", e.toString());
-			}
+			readFailure.failed(log, e);
 			defence.clear();
 			magic.clear();
 		}
@@ -243,18 +188,6 @@ class PartyDefence
 		return magicIcon;
 	}
 
-	private boolean isPluginActive(String pluginName)
-	{
-		for (Plugin plugin : pluginManager.getPlugins())
-		{
-			if (pluginName.equals(plugin.getName()))
-			{
-				return pluginManager.isPluginActive(plugin);
-			}
-		}
-		return false;
-	}
-
 	@VisibleForTesting
 	static Reading find(List<InfoBox> infoBoxes, String opponentName)
 	{
@@ -264,10 +197,10 @@ class PartyDefence
 			{
 				continue;
 			}
-			final String text = infoBox.getText();
-			if (text != null && !text.isEmpty())
+			final Reading reading = reading(infoBox);
+			if (reading != null)
 			{
-				return new Reading(text, infoBox.getTextColor());
+				return reading;
 			}
 		}
 		return null;

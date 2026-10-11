@@ -30,7 +30,7 @@ import net.runelite.client.util.Filepath;
 @Singleton
 class DebugExport
 {
-	static final int KEEP_FILES = 10;
+	private static final int KEEP_FILES = 10;
 	private static final String FILE_PREFIX = "boss-health-bar-debug-";
 	private static final String FILE_SUFFIX = ".txt";
 	private static final Pattern FILE_NAME = Pattern.compile("boss-health-bar-debug-\\d{8}-\\d{6}\\.txt");
@@ -182,14 +182,12 @@ class DebugExport
 
 	private String pluginState(String name)
 	{
-		for (Plugin other : pluginManager.getPlugins())
+		final Plugin other = PluginState.find(pluginManager, name);
+		if (other == null)
 		{
-			if (name.equals(other.getName()))
-			{
-				return pluginManager.isPluginActive(other) ? "on" : "off";
-			}
+			return "not installed";
 		}
-		return "not installed";
+		return pluginManager.isPluginActive(other) ? "on" : "off";
 	}
 
 	static String fileName(LocalDateTime time)

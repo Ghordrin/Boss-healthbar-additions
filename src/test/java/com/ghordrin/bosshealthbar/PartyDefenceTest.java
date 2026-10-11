@@ -11,7 +11,6 @@ import net.runelite.client.ui.overlay.infobox.InfoBox;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -280,49 +279,5 @@ public class PartyDefenceTest
 		assertNull(PartyDefence.find(Collections.emptyList(), "Big Boss"));
 		assertNull(PartyDefence.find(Collections.singletonList(box("Small Boss", "5", Color.WHITE)), "Big Boss"));
 		assertNull(PartyDefence.find(Collections.singletonList(box("Big Boss", null, Color.WHITE)), "Big Boss"));
-	}
-
-	@Test
-	public void keepsTheReadingForOneTickWhenTheBoxIsMissing()
-	{
-		final PartyDefence.HeldReading defence = new PartyDefence.HeldReading();
-		final PartyDefence.Reading reading = new PartyDefence.Reading("24", Color.RED);
-
-		defence.accept("Big Boss", reading);
-		assertSame(reading, defence.readingFor("Big Boss"));
-
-		defence.accept("Big Boss", null);
-		assertSame(reading, defence.readingFor("Big Boss"));
-
-		defence.accept("Big Boss", null);
-		assertNull(defence.readingFor("Big Boss"));
-	}
-
-	@Test
-	public void aNewReadingResetsTheMissedTick()
-	{
-		final PartyDefence.HeldReading defence = new PartyDefence.HeldReading();
-		final PartyDefence.Reading first = new PartyDefence.Reading("24", Color.RED);
-		final PartyDefence.Reading second = new PartyDefence.Reading("20", Color.RED);
-
-		defence.accept("Big Boss", first);
-		defence.accept("Big Boss", null);
-		defence.accept("Big Boss", second);
-		defence.accept("Big Boss", null);
-		assertSame(second, defence.readingFor("Big Boss"));
-	}
-
-	@Test
-	public void readingIsOnlyForTheSameName()
-	{
-		final PartyDefence.HeldReading defence = new PartyDefence.HeldReading();
-		defence.accept("Big Boss", new PartyDefence.Reading("24", Color.RED));
-
-		assertNull(defence.readingFor("Small Boss"));
-		assertNull(defence.readingFor(null));
-
-		defence.accept("Small Boss", null);
-		assertNull(defence.readingFor("Big Boss"));
-		assertNull(defence.readingFor("Small Boss"));
 	}
 }

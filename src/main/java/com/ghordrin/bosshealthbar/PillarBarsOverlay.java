@@ -21,13 +21,13 @@ class PillarBarsOverlay extends Overlay
 	private static final float[] PREVIEW_FRACTIONS = {1f, 0.6f, 0.25f, 0f};
 	private static final boolean[] PREVIEW_FULL = {true, false, false, false};
 
-	static final int MIN_BAR_WIDTH = 64;
-	static final int LABEL_PADDING = 4;
-	static final int MIN_BAR_HEIGHT = 5;
-	static final int MAX_BAR_HEIGHT = 9;
-	static final int COLUMN_GAP = 6;
-	static final int ROW_GAP = 3;
-	static final int LABEL_GAP = 1;
+	private static final int MIN_BAR_WIDTH = 64;
+	private static final int LABEL_PADDING = 4;
+	private static final int MIN_BAR_HEIGHT = 5;
+	private static final int MAX_BAR_HEIGHT = 9;
+	private static final int COLUMN_GAP = 6;
+	private static final int ROW_GAP = 3;
+	private static final int LABEL_GAP = 1;
 	private static final float FULL_BRIGHTEN = 0.75f;
 
 	// The game's own colors, used with the Oldschool theme.

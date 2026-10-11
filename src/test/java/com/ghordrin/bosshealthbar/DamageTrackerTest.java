@@ -1,7 +1,7 @@
 package com.ghordrin.bosshealthbar;
 
-import static com.ghordrin.bosshealthbar.DamageTracker.NO_TICK;
 import static com.ghordrin.bosshealthbar.DamageTracker.isSameAttack;
+import static com.ghordrin.bosshealthbar.FightTimer.NO_TICK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

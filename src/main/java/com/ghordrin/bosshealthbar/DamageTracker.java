@@ -12,7 +12,6 @@ class DamageTracker
 {
 	static final Duration DISPLAY_HOLD = Duration.ofMillis(2500);
 	static final Duration PARTY_WINDOW = Duration.ofMillis(2500);
-	static final int NO_TICK = -1;
 
 	// Hits on the same or the next tick belong to one attack (multi-hit weapons and specs land a tick apart).
 	private static final int MAX_TICK_GAP = 1;
@@ -29,7 +28,7 @@ class DamageTracker
 	@Getter(AccessLevel.PACKAGE)
 	private long lastDamageDealtMillis;
 
-	private int comboStartTick = NO_TICK;
+	private int comboStartTick = FightTimer.NO_TICK;
 
 	void recordHit(Hitsplat hitsplat, int tick, boolean partyTotal)
 	{
@@ -81,7 +80,7 @@ class DamageTracker
 	{
 		comboDamage = 0;
 		lastDamageDealtMillis = 0;
-		comboStartTick = NO_TICK;
+		comboStartTick = FightTimer.NO_TICK;
 	}
 
 	void reset()
@@ -94,6 +93,6 @@ class DamageTracker
 	static boolean isSameAttack(int startTick, int tick)
 	{
 		final int gap = tick - startTick;
-		return startTick != NO_TICK && gap >= 0 && gap <= MAX_TICK_GAP;
+		return startTick != FightTimer.NO_TICK && gap >= 0 && gap <= MAX_TICK_GAP;
 	}
 }

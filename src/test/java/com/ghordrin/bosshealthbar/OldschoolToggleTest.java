@@ -3,8 +3,8 @@ package com.ghordrin.bosshealthbar;
 import static com.ghordrin.bosshealthbar.BossHealthBarConfig.MATCH_BOSS_COLORS_KEY;
 import static com.ghordrin.bosshealthbar.BossHealthBarConfig.OLDSCHOOL_THEME_KEY;
 import static com.ghordrin.bosshealthbar.BossHealthBarConfig.RARE_GOLD_BARS_KEY;
-import static com.ghordrin.bosshealthbar.BossHealthBarConfig.SAVED_MATCH_BOSS_COLORS_KEY;
-import static com.ghordrin.bosshealthbar.BossHealthBarConfig.SAVED_RARE_GOLD_BARS_KEY;
+import static com.ghordrin.bosshealthbar.OldschoolToggle.SAVED_MATCH_BOSS_COLORS_KEY;
+import static com.ghordrin.bosshealthbar.OldschoolToggle.SAVED_RARE_GOLD_BARS_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -53,9 +53,9 @@ public class OldschoolToggleTest
 			{
 				return;
 			}
-			for (OldschoolToggle.Write write : OldschoolToggle.writes(key, orDefault(key, old), orDefault(key, value), settings()))
+			for (ConfigWrites.Write write : OldschoolToggle.writes(key, orDefault(key, old), orDefault(key, value), settings()))
 			{
-				set(write.getKey(), write.getValue());
+				set(write.getKey(), (Boolean) write.getValue());
 			}
 		}
 
@@ -79,37 +79,37 @@ public class OldschoolToggleTest
 	@Test
 	public void tickingOnRemembersAndTurnsOffTheOtherBoxes()
 	{
-		final List<OldschoolToggle.Write> writes = OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, false, true,
+		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, false, true,
 			new OldschoolToggle.Settings(true, true, false, null, null));
 		assertEquals(Arrays.asList(
-			new OldschoolToggle.Write(SAVED_MATCH_BOSS_COLORS_KEY, true),
-			new OldschoolToggle.Write(SAVED_RARE_GOLD_BARS_KEY, false),
-			new OldschoolToggle.Write(MATCH_BOSS_COLORS_KEY, false),
-			new OldschoolToggle.Write(RARE_GOLD_BARS_KEY, false)), writes);
+			new ConfigWrites.Write(SAVED_MATCH_BOSS_COLORS_KEY, true),
+			new ConfigWrites.Write(SAVED_RARE_GOLD_BARS_KEY, false),
+			new ConfigWrites.Write(MATCH_BOSS_COLORS_KEY, false),
+			new ConfigWrites.Write(RARE_GOLD_BARS_KEY, false)), writes);
 	}
 
 	@Test
 	public void tickingOffClearsMemoryThenRestores()
 	{
-		final List<OldschoolToggle.Write> writes = OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, true, false,
+		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, true, false,
 			new OldschoolToggle.Settings(false, false, false, true, false));
 		assertEquals(Arrays.asList(
-			new OldschoolToggle.Write(SAVED_MATCH_BOSS_COLORS_KEY, null),
-			new OldschoolToggle.Write(SAVED_RARE_GOLD_BARS_KEY, null),
-			new OldschoolToggle.Write(MATCH_BOSS_COLORS_KEY, true),
-			new OldschoolToggle.Write(RARE_GOLD_BARS_KEY, false)), writes);
+			new ConfigWrites.Write(SAVED_MATCH_BOSS_COLORS_KEY, null),
+			new ConfigWrites.Write(SAVED_RARE_GOLD_BARS_KEY, null),
+			new ConfigWrites.Write(MATCH_BOSS_COLORS_KEY, true),
+			new ConfigWrites.Write(RARE_GOLD_BARS_KEY, false)), writes);
 	}
 
 	@Test
 	public void tickingAConflictTurnsOldschoolOffAndRestoresOnlyTheOther()
 	{
-		final List<OldschoolToggle.Write> writes = OldschoolToggle.writes(MATCH_BOSS_COLORS_KEY, false, true,
+		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(MATCH_BOSS_COLORS_KEY, false, true,
 			new OldschoolToggle.Settings(true, true, false, false, true));
 		assertEquals(Arrays.asList(
-			new OldschoolToggle.Write(SAVED_MATCH_BOSS_COLORS_KEY, null),
-			new OldschoolToggle.Write(SAVED_RARE_GOLD_BARS_KEY, null),
-			new OldschoolToggle.Write(RARE_GOLD_BARS_KEY, true),
-			new OldschoolToggle.Write(OLDSCHOOL_THEME_KEY, false)), writes);
+			new ConfigWrites.Write(SAVED_MATCH_BOSS_COLORS_KEY, null),
+			new ConfigWrites.Write(SAVED_RARE_GOLD_BARS_KEY, null),
+			new ConfigWrites.Write(RARE_GOLD_BARS_KEY, true),
+			new ConfigWrites.Write(OLDSCHOOL_THEME_KEY, false)), writes);
 	}
 
 	@Test
@@ -135,11 +135,11 @@ public class OldschoolToggleTest
 	@Test
 	public void tickingOnKeepsWhatIsAlreadyRemembered()
 	{
-		final List<OldschoolToggle.Write> writes = OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, false, true,
+		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(OLDSCHOOL_THEME_KEY, false, true,
 			new OldschoolToggle.Settings(true, false, false, true, true));
 		assertEquals(Arrays.asList(
-			new OldschoolToggle.Write(MATCH_BOSS_COLORS_KEY, false),
-			new OldschoolToggle.Write(RARE_GOLD_BARS_KEY, false)), writes);
+			new ConfigWrites.Write(MATCH_BOSS_COLORS_KEY, false),
+			new ConfigWrites.Write(RARE_GOLD_BARS_KEY, false)), writes);
 	}
 
 	@Test
@@ -184,13 +184,13 @@ public class OldschoolToggleTest
 	@Test
 	public void tickingRareGoldBarsTurnsOldschoolOffAndRestoresMatchBossColors()
 	{
-		final List<OldschoolToggle.Write> writes = OldschoolToggle.writes(RARE_GOLD_BARS_KEY, false, true,
+		final List<ConfigWrites.Write> writes = OldschoolToggle.writes(RARE_GOLD_BARS_KEY, false, true,
 			new OldschoolToggle.Settings(true, false, true, true, false));
 		assertEquals(Arrays.asList(
-			new OldschoolToggle.Write(SAVED_MATCH_BOSS_COLORS_KEY, null),
-			new OldschoolToggle.Write(SAVED_RARE_GOLD_BARS_KEY, null),
-			new OldschoolToggle.Write(MATCH_BOSS_COLORS_KEY, true),
-			new OldschoolToggle.Write(OLDSCHOOL_THEME_KEY, false)), writes);
+			new ConfigWrites.Write(SAVED_MATCH_BOSS_COLORS_KEY, null),
+			new ConfigWrites.Write(SAVED_RARE_GOLD_BARS_KEY, null),
+			new ConfigWrites.Write(MATCH_BOSS_COLORS_KEY, true),
+			new ConfigWrites.Write(OLDSCHOOL_THEME_KEY, false)), writes);
 	}
 
 	@Test
@@ -227,9 +227,9 @@ public class OldschoolToggleTest
 			{
 				config.set(key, RARE_GOLD_BARS_KEY.equals(key));
 			}
-			for (OldschoolToggle.Write write : OldschoolToggle.resetWrites())
+			for (ConfigWrites.Write write : OldschoolToggle.resetWrites())
 			{
-				config.set(write.getKey(), write.getValue());
+				config.set(write.getKey(), (Boolean) write.getValue());
 			}
 
 			final String name = Arrays.toString(order);

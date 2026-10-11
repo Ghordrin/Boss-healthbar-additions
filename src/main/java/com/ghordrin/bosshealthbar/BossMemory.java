@@ -115,9 +115,9 @@ class BossMemory
 		return entries.size();
 	}
 
-	static boolean isOutOfSight(boolean defeated, boolean playerDied, int distance)
+	static boolean isOutOfSight(boolean playerDied, int distance)
 	{
-		return !defeated && !playerDied && distance >= OUT_OF_SIGHT_DISTANCE;
+		return !playerDied && distance >= OUT_OF_SIGHT_DISTANCE;
 	}
 
 	static int tileDistance(int npcX, int npcY, int x, int y)

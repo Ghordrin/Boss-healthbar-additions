@@ -12,8 +12,7 @@ import net.runelite.client.util.ImageUtil;
 // here and compared pixel by pixel.
 class MagicIconMatcher
 {
-	@VisibleForTesting
-	static final int THEMED_ICON_SIZE = 16;
+	private static final int THEMED_ICON_SIZE = 16;
 	private static final int MAX_VERDICTS = 8;
 
 	private BufferedImage classicSource;

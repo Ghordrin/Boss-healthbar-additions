@@ -1,14 +1,12 @@
 package com.ghordrin.bosshealthbar;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Actor;
 import net.runelite.api.NPC;
-import net.runelite.client.game.NPCManager;
 import net.runelite.client.util.Text;
 
 // The NPCs that have been the opponent during the current fight, each with its last known health, so another boss
@@ -41,8 +39,7 @@ class FightGroup
 		}
 	}
 
-	private final GameBossBar gameBossBar;
-	private final NPCManager npcManager;
+	private final HealthReader healthReader;
 	private final DebugLog debugLog;
 	private final List<Member> members = new ArrayList<>(MAX_MEMBERS);
 	private int nextId;
@@ -51,10 +48,9 @@ class FightGroup
 	private Member partner;
 
 	@Inject
-	FightGroup(GameBossBar gameBossBar, NPCManager npcManager, DebugLog debugLog)
+	FightGroup(HealthReader healthReader, DebugLog debugLog)
 	{
-		this.gameBossBar = gameBossBar;
-		this.npcManager = npcManager;
+		this.healthReader = healthReader;
 		this.debugLog = debugLog;
 	}
 
@@ -205,9 +201,8 @@ class FightGroup
 			}
 			member.lastSeenTick = tick;
 			rename(member, npc);
-			final boolean gameBar = gameBossBar.isTracking(npc) && gameBossBar.hasHealth();
-			read(member, gameBar ? gameBossBar.health() : 0, gameBar ? gameBossBar.maxHealth() : 0,
-				npc.getHealthRatio(), npc.getHealthScale(), npcManager.getHealth(NpcUtil.currentId(npc)));
+			final HealthReader.Reading reading = healthReader.read(npc);
+			read(member, reading != null ? reading.health : null);
 			updateDead(member, npc.isDead());
 		}
 		expireAway(tick);
@@ -379,8 +374,8 @@ class FightGroup
 		}
 		if (member.state == null)
 		{
-			member.state = new BarState(member.name, 0, member.maxHealth, member.ratio, member.scale, member.exact, false,
-				BarState.NO_PHASE_MARKERS, HealthIndicatorMarkers.NONE, null, null, Collections.emptyList(), null);
+			member.state = BarState.healthOnly(member.name,
+				new Health(member.ratio, member.scale, member.exact, member.maxHealth, false));
 		}
 		return member;
 	}
@@ -397,32 +392,22 @@ class FightGroup
 		}
 	}
 
-	// The game's boss bar has exact health, then a fresh overhead bar. Without either, the last reading is kept,
-	// since the overhead bar of an NPC that isn't being hit soon goes away.
-	static boolean read(Member member, int barHealth, int barMaxHealth, int ratio, int scale, Integer maxHealth)
+	// Without a reading the last one is kept, since the overhead bar of an NPC that isn't being hit soon goes away.
+	static boolean read(Member member, Health health)
 	{
-		if (barMaxHealth > 0)
-		{
-			return set(member, barHealth, barMaxHealth, true, barMaxHealth);
-		}
-		if (scale > 0 && ratio >= 0)
-		{
-			return set(member, ratio, scale, false, maxHealth);
-		}
-		return false;
-	}
-
-	private static boolean set(Member member, int ratio, int scale, boolean exact, Integer maxHealth)
-	{
-		if (member.ratio == ratio && member.scale == scale && member.exact == exact
-			&& Objects.equals(member.maxHealth, maxHealth))
+		if (health == null || health.scale <= 0 || health.ratio < 0)
 		{
 			return false;
 		}
-		member.ratio = ratio;
-		member.scale = scale;
-		member.exact = exact;
-		member.maxHealth = maxHealth;
+		if (member.ratio == health.ratio && member.scale == health.scale && member.exact == health.exactHealth
+			&& Objects.equals(member.maxHealth, health.maxHealth))
+		{
+			return false;
+		}
+		member.ratio = health.ratio;
+		member.scale = health.scale;
+		member.exact = health.exactHealth;
+		member.maxHealth = health.maxHealth;
 		member.state = null;
 		return true;
 	}

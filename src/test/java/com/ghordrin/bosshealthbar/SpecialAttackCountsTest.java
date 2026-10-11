@@ -12,7 +12,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -111,36 +110,6 @@ public class SpecialAttackCountsTest
 	}
 
 	@Test
-	public void keepsTheReadingsForOneTickWhenTheBoxesAreMissing()
-	{
-		final SpecialAttackCounts counts = new SpecialAttackCounts(null, null, null, new DebugLog(null));
-		final List<SpecialAttackCounts.Reading> found = readings(new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE));
-
-		counts.accept(found);
-		assertSame(found, counts.readings());
-
-		counts.accept(Collections.emptyList());
-		assertSame(found, counts.readings());
-
-		counts.accept(Collections.emptyList());
-		assertTrue(counts.readings().isEmpty());
-	}
-
-	@Test
-	public void newReadingsResetTheMissedTick()
-	{
-		final SpecialAttackCounts counts = new SpecialAttackCounts(null, null, null, new DebugLog(null));
-		final List<SpecialAttackCounts.Reading> first = readings(new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE));
-		final List<SpecialAttackCounts.Reading> second = readings(new SpecialAttackCounts.Reading(MAUL, "3", Color.WHITE));
-
-		counts.accept(first);
-		counts.accept(Collections.emptyList());
-		counts.accept(second);
-		counts.accept(Collections.emptyList());
-		assertSame(second, counts.readings());
-	}
-
-	@Test
 	public void groupWidthCoversEveryWeapon()
 	{
 		final Graphics2D graphics = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
@@ -157,16 +126,5 @@ public class SpecialAttackCountsTest
 		final BufferedImage itemImage = new BufferedImage(36, 32, BufferedImage.TYPE_INT_ARGB);
 		final List<SpecialAttackCounts.Reading> withIcon = readings(new SpecialAttackCounts.Reading(itemImage, "2", Color.WHITE));
 		assertEquals(10 + 16 + metrics.stringWidth("2"), BarTextPainter.specialAttacksEnd(withIcon, metrics, 10, 13));
-	}
-
-	@Test
-	public void unchangedReadingsKeepTheSameList()
-	{
-		final SpecialAttackCounts counts = new SpecialAttackCounts(null, null, null, new DebugLog(null));
-		final List<SpecialAttackCounts.Reading> first = readings(new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE));
-
-		counts.accept(first);
-		counts.accept(readings(new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE)));
-		assertSame(first, counts.readings());
 	}
 }

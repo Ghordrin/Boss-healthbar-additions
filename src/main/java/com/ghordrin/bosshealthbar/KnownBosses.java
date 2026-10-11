@@ -1,8 +1,12 @@
 package com.ghordrin.bosshealthbar;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import lombok.Value;
@@ -20,15 +24,18 @@ final class KnownBosses
 	}
 
 	@Value
-	private static class Boss
+	static class Boss
 	{
 		Icon icon;
 		ThemeColors colors;
+		// The name RuneLite's Chat Commands plugin saves the kill count under.
+		String killCountKey;
 	}
 
 	// Matched by name, since most bosses have a separate NPC ID for each form. Raid bosses have no
 	// icon of their own, so they use their pet if they have one. Every form of a boss gets the same colors, so the bar
-	// never changes color mid-fight.
+	// never changes color mid-fight. The kill count is saved under the lowercased name unless killCount gives
+	// the name from the game's kill count message.
 	private static final Map<String, Boss> BOSSES = new Builder()
 		.sprite(SpriteID.IconBoss25x25.GENERAL_GRAARDOR, HealthBarTheme.BANDOS, "General Graardor")
 		.sprite(SpriteID.IconBoss25x25.KRIL_TSUTSAROTH, HealthBarTheme.ZAMORAK, "K'ril Tsutsaroth")
@@ -49,11 +56,14 @@ final class KnownBosses
 		.sprite(SpriteID.IconBoss25x25.THERMONUCLEAR_SMOKE_DEVIL, 0x6A6A7A, "Thermonuclear smoke devil")
 		.sprite(SpriteID.IconBoss25x25.ALCHEMICAL_HYDRA, 0x3A8A7A, "Alchemical Hydra")
 		.sprite(SpriteID.IconBoss25x25.GROTESQUE_GUARDIANS, 0x7A7E8A, "Dusk", "Dawn")
+			.killCount("grotesque guardians")
 		.sprite(SpriteID.IconBoss25x25.ARAXXOR, 0x5A9A2E, "Araxxor")
 		.sprite(SpriteID.IconBoss25x25.THE_LEVIATHAN, 0x2A5A9A, "The Leviathan")
+			.killCount("leviathan")
 		.sprite(SpriteID.IconBoss25x25.VARDORVIS, 0x9A1E2A, "Vardorvis")
 		.sprite(SpriteID.IconBoss25x25.DUKE_SUCELLUS, 0x5AA8C8, "Duke Sucellus")
 		.sprite(SpriteID.IconBoss25x25.THE_WHISPERER, 0x3A7A8A, "The Whisperer")
+			.killCount("whisperer")
 		.sprite(SpriteID.IconBoss25x25.ZULRAH, 0x2FA58A, "Zulrah")
 		.sprite(SpriteID.IconBoss25x25.VORKATH, 0xD2561E, "Vorkath")
 		.sprite(SpriteID.IconBoss25x25.GIANT_MOLE, 0x7A5A3A, "Giant Mole")
@@ -64,7 +74,9 @@ final class KnownBosses
 		.sprite(SpriteID.IconBoss25x25.DAGANNOTH_SUPREME, 0x3A7A6A, "Dagannoth Supreme")
 		.sprite(SpriteID.IconBoss25x25.CORPOREAL_BEAST, 0x6A8AC0, "Corporeal Beast")
 		.sprite(SpriteID.IconBoss25x25.SARACHNIS, 0x9A2A22, "Sarachnis")
-		.sprite(SpriteID.IconBoss25x25.NIGHTMARE, 0x5A3A7A, "The Nightmare", "Phosani's Nightmare")
+		.sprite(SpriteID.IconBoss25x25.NIGHTMARE, 0x5A3A7A, "The Nightmare")
+			.killCount("nightmare")
+		.sprite(SpriteID.IconBoss25x25.NIGHTMARE, 0x5A3A7A, "Phosani's Nightmare")
 		.sprite(SpriteID.IconBoss25x25.PHANTOM_MUSPAH, 0x4A6AC0, "Phantom Muspah")
 		.sprite(SpriteID.IconBoss25x25.SKOTIZO, 0x5A2A6A, "Skotizo")
 		.sprite(SpriteID.IconBoss25x25.OBOR, 0x8A6A4A, "Obor")
@@ -72,21 +84,30 @@ final class KnownBosses
 		.sprite(SpriteID.IconBoss25x25.HESPORI, 0x3E9A4A, "Hespori")
 		.sprite(SpriteID.IconBoss25x25.DERANGED_ARCHAEOLOGIST, 0x5E8A3A, "Deranged archaeologist")
 		.sprite(SpriteID.IconBoss25x25.MIMIC, 0xC8A040, "The Mimic")
+			.killCount("mimic")
 		.sprite(SpriteID.IconBoss25x25.SCURRIUS, 0x7A6A5A, "Scurrius")
 		.sprite(SpriteID.IconBoss25x25.AMOXLIATL, 0x7AB8E0, "Amoxliatl")
 		.sprite(SpriteID.IconBoss25x25.THE_HUEYCOATL, 0x2A9A7A, "The Hueycoatl")
+			.killCount("hueycoatl")
 		.sprite(SpriteID.IconBoss25x25.YAMA, 0xC03A1E, "Yama", "Judge of Yama")
+			.killCount("yama")
 		.sprite(SpriteID.IconBoss25x25.ROYAL_TITANS, 0x8A7A62, "Branda the Fire Queen", "Eldric the Ice King")
+			.killCount("royal titans")
 		.sprite(SpriteID.IconBoss25x25.DOOM_OF_MOKHAIOTL, 0xA0401E, "Doom of Mokhaiotl",
 			"Doom of Mokhaiotl (Shielded)", "Doom of Mokhaiotl (Burrowed)")
+			.killCount("doom of mokhaiotl")
 		.sprite(SpriteID.IconBoss25x25.LUNAR_CHESTS, 0x8AA0D0, "Blood Moon", "Blue Moon", "Eclipse Moon")
+			.killCount("lunar chest")
 		.sprite(SpriteID.IconBoss25x25.BARROWS_CHESTS, 0x5A6A5A, "Ahrim the Blighted", "Dharok the Wretched",
 			"Guthan the Infested", "Karil the Tainted", "Torag the Corrupted", "Verac the Defiled")
+			.killCount("barrows chests")
 		.sprite(SpriteID.IconBoss25x25.TZTOK_JAD, 0xE0701E, "TzTok-Jad")
 		.sprite(SpriteID.IconBoss25x25.TZKAL_ZUK, 0xC0301A, "TzKal-Zuk")
 		.sprite(SpriteID.IconBoss25x25.SOL_HEREDIT, 0xE0A030, "Sol Heredit")
 		.sprite(SpriteID.IconBoss25x25.THE_GAUNTLET, HealthBarTheme.SEREN, "Crystalline Hunllef")
+			.killCount("gauntlet")
 		.sprite(SpriteID.IconBoss25x25.THE_CORRUPTED_GAUNTLET, 0xC02A2A, "Corrupted Hunllef")
+			.killCount("corrupted gauntlet")
 		.sprite(SpriteID.IconBoss25x25.SHELLBANE_GRYPHON, 0xB08A4A, "Shellbane gryphon")
 		.sprite(SpriteID.IconBoss25x25.BRUTUS, 0x8A4A2A, "Brutus", "Demonic Brutus")
 		.sprite(SpriteID.IconBoss25x25.MAGGOT_KING, 0x9AA03A, "Maggot King")
@@ -121,30 +142,19 @@ final class KnownBosses
 
 	static boolean contains(String name)
 	{
-		return boss(name) != null;
+		return find(name) != null;
 	}
 
-	static Icon icon(String name)
+	static Boss find(String name)
 	{
-		final Boss boss = boss(name);
-		return boss != null ? boss.getIcon() : null;
-	}
-
-	static ThemeColors colors(String name)
-	{
-		final Boss boss = boss(name);
-		return boss != null ? boss.getColors() : null;
-	}
-
-	private static Boss boss(String name)
-	{
-		return name != null ? BOSSES.get(Text.removeTags(name).toLowerCase(Locale.ROOT)) : null;
+		return name != null ? BOSSES.get(Text.removeTags(name).trim().toLowerCase(Locale.ROOT)) : null;
 	}
 
 	private static final class Builder
 	{
-		private final ImmutableMap.Builder<String, Boss> bosses = ImmutableMap.builder();
+		private final Map<String, Boss> bosses = new LinkedHashMap<>();
 		private final Map<Integer, ThemeColors> palettes = new HashMap<>();
+		private final List<String> lastNames = new ArrayList<>();
 
 		Builder sprite(int spriteId, int color, String... names)
 		{
@@ -176,19 +186,32 @@ final class KnownBosses
 			return palettes.computeIfAbsent(color, rgb -> ThemeColors.fromBase(new Color(rgb)));
 		}
 
+		// Applies to every name of the entry before it.
+		Builder killCount(String key)
+		{
+			for (String name : lastNames)
+			{
+				final Boss boss = bosses.get(name);
+				bosses.put(name, new Boss(boss.getIcon(), boss.getColors(), key));
+			}
+			return this;
+		}
+
 		private Builder add(Icon icon, ThemeColors colors, String... names)
 		{
-			final Boss boss = new Boss(icon, colors);
+			lastNames.clear();
 			for (String name : names)
 			{
-				bosses.put(name.toLowerCase(Locale.ROOT), boss);
+				final String lower = name.toLowerCase(Locale.ROOT);
+				Preconditions.checkArgument(bosses.put(lower, new Boss(icon, colors, lower)) == null, name);
+				lastNames.add(lower);
 			}
 			return this;
 		}
 
 		Map<String, Boss> build()
 		{
-			return bosses.build();
+			return ImmutableMap.copyOf(bosses);
 		}
 	}
 }

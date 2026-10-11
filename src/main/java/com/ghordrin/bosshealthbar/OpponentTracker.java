@@ -36,6 +36,7 @@ class OpponentTracker
 	private final FightTimer fightTimer;
 	private final FightGroup group;
 	private final BossMemory memory;
+	private final HealthReader healthReader;
 	private final DebugLog debugLog;
 
 	@Getter(AccessLevel.PACKAGE)
@@ -64,7 +65,7 @@ class OpponentTracker
 	@Inject
 	OpponentTracker(Client client, BossHealthBarConfig config, GameBossBar gameBossBar, TobBossBar tobBossBar,
 		SuperiorTracker superiors, DamageTracker damage, FightTimer fightTimer, FightGroup group, BossMemory memory,
-		DebugLog debugLog)
+		HealthReader healthReader, DebugLog debugLog)
 	{
 		this.client = client;
 		this.config = config;
@@ -75,6 +76,7 @@ class OpponentTracker
 		this.fightTimer = fightTimer;
 		this.group = group;
 		this.memory = memory;
+		this.healthReader = healthReader;
 		this.debugLog = debugLog;
 	}
 
@@ -238,7 +240,7 @@ class OpponentTracker
 		{
 			return DespawnOutcome.DEFEATED;
 		}
-		return BossMemory.isOutOfSight(false, playerDied, distance) ? DespawnOutcome.OUT_OF_SIGHT : DespawnOutcome.LEFT;
+		return BossMemory.isOutOfSight(playerDied, distance) ? DespawnOutcome.OUT_OF_SIGHT : DespawnOutcome.LEFT;
 	}
 
 	static boolean isQuietFor(long interactionLostMillis, long lastHitTakenMillis, long lastOpponentHitMillis,
@@ -304,30 +306,10 @@ class OpponentTracker
 				|| (config.showSuperiors() && superiors.isSuperior(actor)));
 	}
 
-	// A confirmed defeat. Some bosses on the game's bar never set isDead() while they die, so 0 health there counts too.
-	// An overhead 0 doesn't, since a stun meter that empties looks the same.
 	boolean isDefeated(Actor actor)
 	{
-		if (actor.isDead())
-		{
-			return true;
-		}
-		final int nativeMaxHealth = gameBossBar.isTracking(actor) && gameBossBar.hasHealth() ? gameBossBar.maxHealth() : 0;
-		if (nativeMaxHealth > 0)
-		{
-			return gameBossBar.health() <= 0;
-		}
-		final int tobMaxHealth = tobBossBar.isTracking(actor) ? tobBossBar.maxHealth() : 0;
-		if (tobMaxHealth > 0)
-		{
-			return tobBossBar.health(tobMaxHealth) <= 0;
-		}
-		if (actor.getHealthScale() <= 0)
-		{
-			return false;
-		}
-		// Some turn into a form that can't be attacked as they die, before their bar reaches 0.
-		return actor.getHealthRatio() == 1 && actor instanceof NPC && !NpcUtil.isAttackable((NPC) actor);
+		final boolean npc = actor instanceof NPC;
+		return HealthReader.isDown(healthReader.read(actor), actor.isDead(), npc, npc && NpcUtil.isAttackable((NPC) actor));
 	}
 
 	private static boolean readsZero(Actor actor)
@@ -335,29 +317,16 @@ class OpponentTracker
 		return actor.getHealthScale() > 0 && actor.getHealthRatio() == 0;
 	}
 
-	// Back for another phase after being defeated: it can be attacked again with health to spare.
 	private static boolean isBackUp(Actor actor)
 	{
-		return actor instanceof NPC && !actor.isDead() && NpcUtil.isAttackable((NPC) actor)
-			&& actor.getHealthScale() > 0 && actor.getHealthRatio() > 1;
+		return HealthReader.isBackUp(actor.getHealthRatio(), actor.getHealthScale(), actor.isDead(), actor instanceof NPC,
+			HealthReader.canBeFought(actor));
 	}
 
 	// Which reading isDefeated went by, for the debug log.
 	private String defeatSource(Actor actor)
 	{
-		if (actor.isDead())
-		{
-			return "dead";
-		}
-		if (gameBossBar.isTracking(actor) && gameBossBar.hasHealth() && gameBossBar.maxHealth() > 0)
-		{
-			return "game boss bar at " + gameBossBar.health() + "/" + gameBossBar.maxHealth();
-		}
-		if (tobBossBar.isTracking(actor) && tobBossBar.maxHealth() > 0)
-		{
-			return "raid boss bar at 0/" + tobBossBar.maxHealth();
-		}
-		return "overhead bar at " + actor.getHealthRatio() + "/" + actor.getHealthScale();
+		return actor.isDead() ? "dead" : HealthReader.describe(healthReader.read(actor));
 	}
 
 	void reset()
@@ -455,9 +424,8 @@ class OpponentTracker
 	// Called once a tick. Kept for the despawn, when a boss bar may already have lost the health.
 	boolean updateOpponentDefeated()
 	{
-		// Once defeated it stays so, since some die by turning into a death form that still shows a bit of health.
 		final boolean defeated = opponent != null
-			&& (isDefeated(opponent) || opponentSeenDefeated && !isBackUp(opponent));
+			&& HealthReader.stillDown(opponentSeenDefeated, isDefeated(opponent), opponentSeenDefeated && isBackUp(opponent));
 		if (defeated && !opponentSeenDefeated)
 		{
 			debugLog.add("Opponent {} seen defeated ({})", DebugLog.describe(opponent), defeatSource(opponent));
@@ -507,8 +475,8 @@ class OpponentTracker
 		if (returned != null)
 		{
 			debugLog.add("Remembered opponent {} came back after {} ticks (remembered health {}/{}, fight start tick {})",
-				DebugLog.describe(target), tick - returned.tick, returned.state != null ? returned.state.ratio : -1,
-				returned.state != null ? returned.state.scale : -1, returned.fight.startTick);
+				DebugLog.describe(target), tick - returned.tick, returned.state != null ? returned.state.health.ratio : -1,
+				returned.state != null ? returned.state.health.scale : -1, returned.fight.startTick);
 			fightTimer.opponentReturned(target, returned.fight, tick);
 			group.restore(returned.fight.group, target, bossLike, tick);
 			resumedOpponent = target;

@@ -23,7 +23,7 @@ const IGNORED_SPRITES = new Set([
 const IGNORED_WEAKNESS_PAGES = new Set(['maggot king']);
 // Forms in our tables that the wiki's infoboxes don't list.
 const UNLISTED_IDS = new Set(['TOA_KEPHRI_BOSS_WEAK', 'NIGHTMARE_CHALLENGE_INITIAL']);
-// NpcID constants with SUPERIOR in the name that SuperiorIds leaves out on purpose: thralls, a quest
+// NpcID constants with SUPERIOR in the name that SuperiorTracker leaves out on purpose: thralls, a quest
 // monster, the death spawns a superior summons, and a wilderness monster that isn't tied to a slayer task.
 const IGNORED_SUPERIORS = new Set([
 	'ARCEUUS_THRALL_GHOST_SUPERIOR', 'ARCEUUS_THRALL_SKELETON_SUPERIOR', 'ARCEUUS_THRALL_ZOMBIE_SUPERIOR',
@@ -133,7 +133,8 @@ function parseBossStats(npcIds)
 
 function parseKnownBosses()
 {
-	const src = read('KnownBosses.java');
+	// Kill count names aren't boss names.
+	const src = read('KnownBosses.java').replace(/\.killCount\("[^"]*"\)/g, '');
 	const sprites = new Set([...src.matchAll(/IconBoss25x25\.(\w+)/g)].map(m => m[1]));
 	const names = new Set([...src.matchAll(/"([^"]+)"/g)].map(m => m[1].toLowerCase()));
 	return { sprites, names };
@@ -141,12 +142,14 @@ function parseKnownBosses()
 
 function parseSuperiorIds(npcIds)
 {
-	const names = new Set([...read('SuperiorIds.java').matchAll(/NpcID\.(\w+)/g)].map(m => m[1]));
+	const src = read('SuperiorTracker.java');
+	const start = src.indexOf('KNOWN_IDS = ');
+	const names = new Set([...src.slice(start, src.indexOf(');', start)).matchAll(/NpcID\.(\w+)/g)].map(m => m[1]));
 	for (const name of names)
 	{
 		if (!(name in npcIds))
 		{
-			throw new Error(`SuperiorIds uses NpcID.${name}, which the RuneLite API no longer has`);
+			throw new Error(`SuperiorTracker uses NpcID.${name}, which the RuneLite API no longer has`);
 		}
 	}
 	return names;
@@ -263,7 +266,7 @@ async function main()
 	// 3. Boss icons in the RuneLite API that KnownBosses doesn't use: usually a newly released boss.
 	const newSprites = Object.keys(spriteIds)
 		.filter(name => !/^_\d+$/.test(name) && !known.sprites.has(name) && !IGNORED_SPRITES.has(name))
-		.map(name => `\`SpriteID.IconBoss25x25.${name}\`: add the boss to KnownBosses (and BossStats, KillCounts if needed), or to IGNORED_SPRITES in this script`);
+		.map(name => `\`SpriteID.IconBoss25x25.${name}\`: add the boss to KnownBosses (and BossStats if needed), or to IGNORED_SPRITES in this script`);
 	section('New boss icons in the RuneLite API', newSprites);
 
 	// 4. Drain limits come from article text, so flag pages whose sentences about lowering defence changed.
@@ -349,10 +352,10 @@ async function main()
 	}
 	section('docs/bosses.md out of date', docProblems);
 
-	// 6. Superior NPC IDs in the RuneLite API that SuperiorIds doesn't have: usually a new superior.
+	// 6. Superior NPC IDs in the RuneLite API that SuperiorTracker doesn't have: usually a new superior.
 	const newSuperiors = Object.keys(npcIds)
 		.filter(name => /SUPERIOR/.test(name) && !superiorIds.has(name) && !IGNORED_SUPERIORS.has(name))
-		.map(name => `\`NpcID.${name}\` (${npcIds[name]}): add it to SuperiorIds, or to IGNORED_SUPERIORS in this script`);
+		.map(name => `\`NpcID.${name}\` (${npcIds[name]}): add it to SuperiorTracker, or to IGNORED_SUPERIORS in this script`);
 	section('New superior NPC IDs in the RuneLite API', newSuperiors);
 
 	if (update)

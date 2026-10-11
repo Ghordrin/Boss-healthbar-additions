@@ -31,8 +31,8 @@ class GameBossBar
 
 	private final Client client;
 	private final DebugLog debugLog;
+	private final HiddenWidget gameBar;
 
-	private boolean hidden;
 	private NPC npc;
 	private int searchedId = -1;
 	private int replacedId = -1;
@@ -52,6 +52,7 @@ class GameBossBar
 	{
 		this.client = client;
 		this.debugLog = debugLog;
+		this.gameBar = new HiddenWidget(client, debugLog, GAME_BAR);
 	}
 
 	void onGameTick()
@@ -157,10 +158,10 @@ class GameBossBar
 
 	boolean update(Actor opponent, boolean replaceEnabled, boolean opponentGetsBar)
 	{
-		final Widget bar = client.getWidget(GAME_BAR);
+		final Widget bar = gameBar.widget();
 		if (bar == null)
 		{
-			hidden = false;
+			gameBar.forget();
 			return false;
 		}
 
@@ -183,15 +184,8 @@ class GameBossBar
 
 		if (replace)
 		{
-			if (!bar.isSelfHidden())
-			{
-				bar.setHidden(true);
-				if (!hidden)
-				{
-					debugLog.add("Game boss bar hidden (tracked id {})", trackedNpcId());
-				}
-				hidden = true;
-			}
+			// replace is only set while the game's bar tracks replacedId.
+			gameBar.hide(bar, "Game boss bar hidden (tracked id {})", replacedId);
 		}
 		else
 		{
@@ -201,9 +195,9 @@ class GameBossBar
 		return replace;
 	}
 
-	void restore()
+	private void restore()
 	{
-		if (!hidden || trackedNpcId() == -1)
+		if (!gameBar.isHidden() || trackedNpcId() == -1)
 		{
 			return;
 		}
@@ -212,16 +206,7 @@ class GameBossBar
 
 	private void release()
 	{
-		if (hidden)
-		{
-			debugLog.add("Game boss bar shown again");
-			final Widget bar = client.getWidget(GAME_BAR);
-			if (bar != null)
-			{
-				bar.setHidden(false);
-			}
-		}
-		hidden = false;
+		gameBar.release("Game boss bar shown again");
 	}
 
 	void reset()
@@ -238,7 +223,7 @@ class GameBossBar
 
 	boolean isHidden()
 	{
-		return hidden;
+		return gameBar.isHidden();
 	}
 
 	int maxHealth()

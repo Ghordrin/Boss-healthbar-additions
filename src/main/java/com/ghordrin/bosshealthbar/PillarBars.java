@@ -40,6 +40,7 @@ class PillarBars
 
 	private final Client client;
 	private final DebugLog debugLog;
+	private final HiddenWidget totems;
 
 	private final float[] fractions = new float[CORNERS];
 	private final boolean[] full = new boolean[CORNERS];
@@ -49,13 +50,13 @@ class PillarBars
 	private boolean shown;
 	private boolean shownKnown;
 	private boolean seen;
-	private boolean hidden;
 
 	@Inject
 	PillarBars(Client client, DebugLog debugLog)
 	{
 		this.client = client;
 		this.debugLog = debugLog;
+		this.totems = new HiddenWidget(client, debugLog, InterfaceID.NightmareTotems.TOTEMS);
 	}
 
 	void onScript(int scriptId, Object[] args)
@@ -125,10 +126,10 @@ class PillarBars
 
 	void update(boolean replace)
 	{
-		final Widget totems = client.getWidget(InterfaceID.NightmareTotems.TOTEMS);
-		if (totems == null)
+		final Widget widget = totems.widget();
+		if (widget == null)
 		{
-			hidden = false;
+			totems.forget();
 			clear();
 			return;
 		}
@@ -141,15 +142,7 @@ class PillarBars
 
 		if (replace)
 		{
-			if (!totems.isSelfHidden())
-			{
-				totems.setHidden(true);
-				if (!hidden)
-				{
-					debugLog.add("Pillar bars: game's bars hidden");
-				}
-				hidden = true;
-			}
+			totems.hide(widget, "Pillar bars: game's bars hidden");
 		}
 		else
 		{
@@ -182,16 +175,7 @@ class PillarBars
 
 	private void release()
 	{
-		if (hidden)
-		{
-			debugLog.add("Pillar bars: game's bars released");
-			final Widget totems = client.getWidget(InterfaceID.NightmareTotems.TOTEMS);
-			if (totems != null)
-			{
-				totems.setHidden(false);
-			}
-		}
-		hidden = false;
+		totems.release("Pillar bars: game's bars released");
 	}
 
 	void reset()
@@ -214,7 +198,7 @@ class PillarBars
 
 	boolean isVisible()
 	{
-		return hidden && shown;
+		return totems.isHidden() && shown;
 	}
 
 	float fraction(int corner)
@@ -266,6 +250,6 @@ class PillarBars
 
 	boolean isHidingGameBars()
 	{
-		return hidden;
+		return totems.isHidden();
 	}
 }

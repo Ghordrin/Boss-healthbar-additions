@@ -1,6 +1,8 @@
 package com.ghordrin.bosshealthbar;
 
 import java.awt.Color;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.client.config.ConfigManager;
@@ -29,18 +31,35 @@ class CustomColors
 			return;
 		}
 
-		set("customFillHighColor", colors.getFillHigh());
-		set("customFillLowColor", colors.getFillLow());
-		set("customTrailColor", colors.getTrail());
-		set("customFrameColor", colors.getFrame());
-		set("customTextColor", colors.getText());
-		set("customLevelTextColor", colors.getLevelText());
-		set("customHitpointsTextColor", colors.getHitpointsText());
-		set("customDefeatedTextColor", colors.getDefeatedText());
+		keyedColors(colors).forEach((key, color) ->
+			configManager.setConfiguration(BossHealthBarConfig.GROUP, key, color));
 	}
 
-	private void set(String key, Color color)
+	static Map<String, Color> keyedColors(ThemeColors theme)
 	{
-		configManager.setConfiguration(BossHealthBarConfig.GROUP, key, color);
+		final Map<String, Color> colors = new LinkedHashMap<>();
+		colors.put(BossHealthBarConfig.CUSTOM_FILL_HIGH_COLOR_KEY, theme.getFillHigh());
+		colors.put(BossHealthBarConfig.CUSTOM_FILL_LOW_COLOR_KEY, theme.getFillLow());
+		colors.put(BossHealthBarConfig.CUSTOM_TRAIL_COLOR_KEY, theme.getTrail());
+		colors.put(BossHealthBarConfig.CUSTOM_FRAME_COLOR_KEY, theme.getFrame());
+		colors.put(BossHealthBarConfig.CUSTOM_TEXT_COLOR_KEY, theme.getText());
+		colors.put(BossHealthBarConfig.CUSTOM_LEVEL_TEXT_COLOR_KEY, theme.getLevelText());
+		colors.put(BossHealthBarConfig.CUSTOM_HITPOINTS_TEXT_COLOR_KEY, theme.getHitpointsText());
+		colors.put(BossHealthBarConfig.CUSTOM_DEFEATED_TEXT_COLOR_KEY, theme.getDefeatedText());
+		return colors;
+	}
+
+	static ThemeColors fromConfig(BossHealthBarConfig config)
+	{
+		return ThemeColors.builder()
+			.fillHigh(config.customFillHighColor())
+			.fillLow(config.customFillLowColor())
+			.trail(config.customTrailColor())
+			.frame(config.customFrameColor())
+			.text(config.customTextColor())
+			.levelText(config.customLevelTextColor())
+			.hitpointsText(config.customHitpointsTextColor())
+			.defeatedText(config.customDefeatedTextColor())
+			.build();
 	}
 }

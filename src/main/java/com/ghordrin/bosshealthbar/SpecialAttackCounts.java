@@ -11,7 +11,6 @@ import javax.inject.Singleton;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
-import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
@@ -35,96 +34,56 @@ class SpecialAttackCounts
 	}
 
 	private final BossHealthBarConfig config;
-	private final PluginManager pluginManager;
 	private final InfoBoxManager infoBoxManager;
-	private final DebugLog debugLog;
-	// A broken info box fails every tick, so the debug log gets it once until a read works again.
-	private boolean failureLogged;
+	private final PluginReader plugin;
+	private final PluginReader.ReadFailure readFailure;
 
-	private Boolean pluginActive;
 	private boolean available;
-	private List<Reading> readings = Collections.emptyList();
-	private boolean missedTick;
+	private final PluginReader.HeldReading<List<Reading>> readings = new PluginReader.HeldReading<>();
 
 	@Inject
 	SpecialAttackCounts(BossHealthBarConfig config, PluginManager pluginManager, InfoBoxManager infoBoxManager,
 		DebugLog debugLog)
 	{
 		this.config = config;
-		this.pluginManager = pluginManager;
 		this.infoBoxManager = infoBoxManager;
-		this.debugLog = debugLog;
+		this.plugin = new PluginReader(pluginManager, PLUGIN_NAME);
+		this.readFailure = new PluginReader.ReadFailure(debugLog, "Couldn't read Special Attack Counter info boxes");
 	}
 
 	void invalidatePlugin()
 	{
-		pluginActive = null;
+		plugin.invalidate();
 	}
 
 	void reset()
 	{
-		pluginActive = null;
+		plugin.invalidate();
 		available = false;
-		clear();
-	}
-
-	private void clear()
-	{
-		readings = Collections.emptyList();
-		missedTick = false;
+		readings.clear();
 	}
 
 	// Called each game tick, so the overlay doesn't go through the info boxes every frame.
 	void update(Actor opponent)
 	{
-		if (pluginActive == null)
-		{
-			pluginActive = isPluginActive();
-		}
-		available = pluginActive && config.showSpecialAttackCounts();
+		available = plugin.isActive() && config.showSpecialAttackCounts();
 
 		if (!available || opponent == null)
 		{
-			clear();
+			readings.clear();
 			return;
 		}
 
 		try
 		{
-			accept(find(infoBoxManager.getInfoBoxes()));
-			failureLogged = false;
+			final List<Reading> found = find(infoBoxManager.getInfoBoxes());
+			readings.accept(null, found.isEmpty() ? null : found);
+			readFailure.succeeded();
 		}
 		catch (RuntimeException e)
 		{
-			log.debug("Couldn't read Special Attack Counter info boxes", e);
-			if (!failureLogged)
-			{
-				failureLogged = true;
-				debugLog.add("Couldn't read Special Attack Counter info boxes: {}", e.toString());
-			}
-			clear();
-		}
-	}
-
-	// Their info boxes can be gone for a tick while they're rebuilt, so the last readings are kept for one tick.
-	@VisibleForTesting
-	void accept(List<Reading> found)
-	{
-		if (!found.isEmpty())
-		{
-			if (!found.equals(readings))
-			{
-				readings = found;
-			}
-			missedTick = false;
-		}
-		else if (!readings.isEmpty() && !missedTick)
-		{
-			missedTick = true;
-		}
-		else
-		{
-			clear();
+			readFailure.failed(log, e);
+			readings.clear();
 		}
 	}
 
@@ -135,19 +94,8 @@ class SpecialAttackCounts
 
 	List<Reading> readings()
 	{
-		return readings;
-	}
-
-	private boolean isPluginActive()
-	{
-		for (Plugin plugin : pluginManager.getPlugins())
-		{
-			if (PLUGIN_NAME.equals(plugin.getName()))
-			{
-				return pluginManager.isPluginActive(plugin);
-			}
-		}
-		return false;
+		final List<Reading> held = readings.reading();
+		return held != null ? held : Collections.emptyList();
 	}
 
 	@VisibleForTesting
