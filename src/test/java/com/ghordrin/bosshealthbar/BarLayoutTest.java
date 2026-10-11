@@ -18,7 +18,7 @@ import static com.ghordrin.bosshealthbar.BarTextPainter.SPECIAL_ATTACKS;
 import static com.ghordrin.bosshealthbar.BarTextPainter.TEXT_INSET;
 import static com.ghordrin.bosshealthbar.BarTextPainter.WEAKNESS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import org.junit.Test;
@@ -265,8 +265,8 @@ public class BarLayoutTest
 		assertEquals(BarPosition.BOTTOM_LEFT, defaults.weaknessPosition());
 		assertEquals(BarPosition.BOTTOM_LEFT, defaults.drainCapPosition());
 		assertEquals(BarPosition.TOP_CENTER, defaults.fightTimerPosition());
-		assertTrue(defaults.namePosition().isTop());
-		assertFalse(defaults.hitpointsPosition().isTop());
+		assertSame(BarPosition.Row.TOP, defaults.namePosition().getRow());
+		assertSame(BarPosition.Row.BOTTOM, defaults.hitpointsPosition().getRow());
 	}
 
 	// The checks below lay out the default positions the way the painter does and compare them with how the
@@ -478,7 +478,7 @@ public class BarLayoutTest
 		return positions;
 	}
 
-	private static int[] rowHeights(BossHealthBarConfig config, BarPosition[] positions, boolean others)
+	private static int rowHeight(BossHealthBarConfig config, BarPosition[] positions, boolean others, BarPosition.Row row)
 	{
 		final boolean[] available = new boolean[ITEM_COUNT];
 		BarTextPainter.itemsAvailable(config, others, others, others, others, others, available);
@@ -490,47 +490,47 @@ public class BarLayoutTest
 		Arrays.fill(below, SMALL_ROW - 12);
 		above[NAME] = above[DAMAGE_NUMBER] = 18;
 		below[NAME] = below[DAMAGE_NUMBER] = LARGE_ROW - 18;
-		return new int[]{
-			BarTextPainter.rowHeight(positions, available, true, above, below),
-			BarTextPainter.rowHeight(positions, available, false, above, below)};
+		return BarTextPainter.rowHeight(positions, available, row, above, below);
 	}
 
 	@Test
 	public void hitpointsNoneWithoutTheDefeatAnimationLeavesTheBottomRowEmpty()
 	{
-		final int[] heights = rowHeights(rowConfig(true, true, false, false), defaultPositions(), false);
-		assertEquals(LARGE_ROW, heights[0]);
-		assertEquals(0, heights[1]);
+		final BossHealthBarConfig config = rowConfig(true, true, false, false);
+		assertEquals(LARGE_ROW, rowHeight(config, defaultPositions(), false, BarPosition.Row.TOP));
+		assertEquals(0, rowHeight(config, defaultPositions(), false, BarPosition.Row.BOTTOM));
 	}
 
 	@Test
 	public void theDefeatAnimationReservesTheHitpointsRowEvenWithHitpointsNone()
 	{
-		final int[] heights = rowHeights(rowConfig(true, true, true, false), defaultPositions(), false);
-		assertEquals(LARGE_ROW, heights[0]);
-		assertEquals(SMALL_ROW, heights[1]);
+		final BossHealthBarConfig config = rowConfig(true, true, true, false);
+		assertEquals(LARGE_ROW, rowHeight(config, defaultPositions(), false, BarPosition.Row.TOP));
+		assertEquals(SMALL_ROW, rowHeight(config, defaultPositions(), false, BarPosition.Row.BOTTOM));
 
 		final BarPosition[] hitpointsOnTop = defaultPositions();
 		hitpointsOnTop[HITPOINTS] = BarPosition.TOP_CENTER;
-		final int[] moved = rowHeights(rowConfig(false, false, true, false), hitpointsOnTop, false);
-		assertEquals(SMALL_ROW, moved[0]);
-		assertEquals(0, moved[1]);
+		final BossHealthBarConfig moved = rowConfig(false, false, true, false);
+		assertEquals(SMALL_ROW, rowHeight(moved, hitpointsOnTop, false, BarPosition.Row.TOP));
+		assertEquals(0, rowHeight(moved, hitpointsOnTop, false, BarPosition.Row.BOTTOM));
 	}
 
 	@Test
 	public void everythingOnTopLeavesNoBottomRow()
 	{
-		final int[] heights = rowHeights(rowConfig(true, true, true, true), allAt(BarPosition.TOP_RIGHT), true);
-		assertEquals(LARGE_ROW, heights[0]);
-		assertEquals(0, heights[1]);
+		final BossHealthBarConfig config = rowConfig(true, true, true, true);
+		final BarPosition[] positions = allAt(BarPosition.TOP_RIGHT);
+		assertEquals(LARGE_ROW, rowHeight(config, positions, true, BarPosition.Row.TOP));
+		assertEquals(0, rowHeight(config, positions, true, BarPosition.Row.BOTTOM));
 	}
 
 	@Test
 	public void everythingOnTheBottomLeavesNoTopRow()
 	{
-		final int[] heights = rowHeights(rowConfig(true, true, true, true), allAt(BarPosition.BOTTOM_LEFT), true);
-		assertEquals(0, heights[0]);
-		assertEquals(LARGE_ROW, heights[1]);
+		final BossHealthBarConfig config = rowConfig(true, true, true, true);
+		final BarPosition[] positions = allAt(BarPosition.BOTTOM_LEFT);
+		assertEquals(0, rowHeight(config, positions, true, BarPosition.Row.TOP));
+		assertEquals(LARGE_ROW, rowHeight(config, positions, true, BarPosition.Row.BOTTOM));
 	}
 
 	@Test
@@ -538,8 +538,49 @@ public class BarLayoutTest
 	{
 		final BarPosition[] positions = defaultPositions();
 		positions[KILL_COUNT] = BarPosition.TOP_LEFT;
-		final int[] heights = rowHeights(rowConfig(false, false, false, true), positions, false);
-		assertEquals(SMALL_ROW, heights[0]);
-		assertEquals(0, heights[1]);
+		final BossHealthBarConfig config = rowConfig(false, false, false, true);
+		assertEquals(SMALL_ROW, rowHeight(config, positions, false, BarPosition.Row.TOP));
+		assertEquals(0, rowHeight(config, positions, false, BarPosition.Row.BOTTOM));
+	}
+
+	@Test
+	public void theInBarAndSecondBottomRowsAreSizedOnTheirOwn()
+	{
+		final BossHealthBarConfig config = rowConfig(true, true, true, true);
+		final BarPosition[] positions = defaultPositions();
+		positions[NAME] = BarPosition.IN_BAR_LEFT;
+		positions[DAMAGE_NUMBER] = BarPosition.IN_BAR_RIGHT;
+		positions[FIGHT_TIMER] = BarPosition.SECOND_BOTTOM_CENTER;
+		positions[KILL_COUNT] = BarPosition.SECOND_BOTTOM_LEFT;
+
+		assertEquals(0, rowHeight(config, positions, false, BarPosition.Row.TOP));
+		assertEquals(LARGE_ROW, rowHeight(config, positions, false, BarPosition.Row.IN_BAR));
+		assertEquals(SMALL_ROW, rowHeight(config, positions, false, BarPosition.Row.BOTTOM));
+		assertEquals(SMALL_ROW, rowHeight(config, positions, false, BarPosition.Row.BOTTOM_2));
+	}
+
+	@Test
+	public void inBarTextOnlyAsksForRoomWhenItIsTallerThanTheBar()
+	{
+		assertEquals(0, BarTextPainter.inBarOverflow(0, 7));
+		assertEquals(0, BarTextPainter.inBarOverflow(16, 20));
+		assertEquals(9, BarTextPainter.inBarOverflow(16, 7));
+	}
+
+	@Test
+	public void everySpotIsOfferedOnEveryRow()
+	{
+		for (BarPosition.Row row : BarPosition.Row.values())
+		{
+			for (BarLayout.Spot spot : BarLayout.Spot.values())
+			{
+				boolean found = false;
+				for (BarPosition position : BarPosition.values())
+				{
+					found |= position.getRow() == row && position.getSpot() == spot;
+				}
+				assertTrue(row + " " + spot, found);
+			}
+		}
 	}
 }

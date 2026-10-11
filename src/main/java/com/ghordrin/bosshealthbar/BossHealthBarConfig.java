@@ -88,7 +88,8 @@ public interface BossHealthBarConfig extends Config
 
 	@ConfigSection(
 		name = "Layout",
-		description = "Where each item goes around the bar.",
+		description = "Where each item goes: above the bar, inside it, or on one of the two rows below it."
+			+ " Text inside the bar suits a taller bar.",
 		position = 5,
 		closedByDefault = true
 	)

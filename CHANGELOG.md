@@ -6,6 +6,7 @@
 - New Second boss bar option (Boss info, on by default). The smaller bar under the main one now shows any other boss you're fighting at the same time, not only pairs, with its last known health while it's away
 - Bosses fought together count as one fight on the fight timer
 - The fight timer now starts once you go for the opponent and are near it, instead of at the first hit on it
+- New Layout spots: every item can now go inside the bar, or on a second row below the bottom row, as well as above or below the bar. Text inside the bar suits a taller bar
 - New Text edge option (Fonts): shadow, outline or nothing
 - The Oldschool theme can now take the boss's colours with Match boss colors
 

@@ -32,6 +32,11 @@ class BarTextPainter
 	private static final int SPECIAL_ATTACK_GAP = 6;
 	private static final int MAX_CACHED_ITEM_ICONS = 16;
 	private static final String ELLIPSIS = "…";
+	private static final BarPosition.Row[] ROWS = BarPosition.Row.values();
+	private static final int TOP_ROW = BarPosition.Row.TOP.ordinal();
+	private static final int IN_BAR_ROW = BarPosition.Row.IN_BAR.ordinal();
+	private static final int BOTTOM_ROW = BarPosition.Row.BOTTOM.ordinal();
+	private static final int BOTTOM_2_ROW = BarPosition.Row.BOTTOM_2.ordinal();
 
 	// The items around the bar, most important first.
 	static final int NAME = 0;
@@ -52,18 +57,14 @@ class BarTextPainter
 
 	private final BarPosition[] positions = new BarPosition[ITEM_COUNT];
 	private final boolean[] available = new boolean[ITEM_COUNT];
-	private final BarLayout topRow = new BarLayout(ITEM_COUNT);
-	private final BarLayout bottomRow = new BarLayout(ITEM_COUNT);
+	private final BarLayout[] rows = new BarLayout[BarPosition.ROW_COUNT];
 	private final int[] rowAbove = new int[ITEM_COUNT];
 	private final int[] rowBelow = new int[ITEM_COUNT];
-	private int topHeight;
-	private int bottomHeight;
-	private int topRowBaseline;
-	private int bottomRowBaseline;
+	private final int[] rowHeights = new int[BarPosition.ROW_COUNT];
+	private final int[] rowBaselines = new int[BarPosition.ROW_COUNT];
 
 	// What layoutText placed, for drawRow in the same frame.
-	private int topBaseline;
-	private int bottomBaseline;
+	private final int[] baselines = new int[BarPosition.ROW_COUNT];
 	private String nameText;
 	private String levelText;
 	private BufferedImage nameIcon;
@@ -113,6 +114,10 @@ class BarTextPainter
 		this.damageTracker = damageTracker;
 		this.config = config;
 		this.fonts = new BarFonts(config);
+		for (int row = 0; row < rows.length; row++)
+		{
+			rows[row] = new BarLayout(ITEM_COUNT);
+		}
 	}
 
 	void updateFonts()
@@ -168,10 +173,11 @@ class BarTextPainter
 			rowAbove[NAME] = Math.max(rowAbove[NAME], fonts.levelAbove());
 			rowBelow[NAME] = Math.max(rowBelow[NAME], fonts.levelBelow());
 		}
-		topRowBaseline = rowBaseline(positions, available, true, rowAbove);
-		bottomRowBaseline = rowBaseline(positions, available, false, rowAbove);
-		topHeight = rowHeight(positions, available, true, rowAbove, rowBelow);
-		bottomHeight = rowHeight(positions, available, false, rowAbove, rowBelow);
+		for (int row = 0; row < rows.length; row++)
+		{
+			rowBaselines[row] = rowBaseline(positions, available, ROWS[row], rowAbove);
+			rowHeights[row] = rowHeight(positions, available, ROWS[row], rowAbove, rowBelow);
+		}
 	}
 
 	// Rows are sized from the settings rather than what's showing, so they don't jump during a fight.
@@ -193,12 +199,12 @@ class BarTextPainter
 
 	// Everything on a row shares one baseline, low enough for the tallest text.
 	@VisibleForTesting
-	static int rowBaseline(BarPosition[] positions, boolean[] available, boolean top, int[] above)
+	static int rowBaseline(BarPosition[] positions, boolean[] available, BarPosition.Row row, int[] above)
 	{
 		int baseline = 0;
 		for (int item = 0; item < ITEM_COUNT; item++)
 		{
-			if (available[item] && positions[item].isTop() == top)
+			if (available[item] && positions[item].getRow() == row)
 			{
 				baseline = Math.max(baseline, above[item]);
 			}
@@ -207,9 +213,9 @@ class BarTextPainter
 	}
 
 	@VisibleForTesting
-	static int rowHeight(BarPosition[] positions, boolean[] available, boolean top, int[] above, int[] below)
+	static int rowHeight(BarPosition[] positions, boolean[] available, BarPosition.Row row, int[] above, int[] below)
 	{
-		final int baseline = rowBaseline(positions, available, top, above);
+		final int baseline = rowBaseline(positions, available, row, above);
 		if (baseline == 0)
 		{
 			return 0;
@@ -217,7 +223,7 @@ class BarTextPainter
 		int descent = 0;
 		for (int item = 0; item < ITEM_COUNT; item++)
 		{
-			if (available[item] && positions[item].isTop() == top)
+			if (available[item] && positions[item].getRow() == row)
 			{
 				descent = Math.max(descent, below[item]);
 			}
@@ -226,25 +232,14 @@ class BarTextPainter
 	}
 
 	@VisibleForTesting
-	int topRowBaseline()
+	int rowBaseline(BarPosition.Row row)
 	{
-		return topRowBaseline;
+		return rowBaselines[row.ordinal()];
 	}
 
-	@VisibleForTesting
-	int bottomRowBaseline()
+	int rowHeight(BarPosition.Row row)
 	{
-		return bottomRowBaseline;
-	}
-
-	int topRowHeight()
-	{
-		return topHeight;
-	}
-
-	int bottomRowHeight()
-	{
-		return bottomHeight;
+		return rowHeights[row.ordinal()];
 	}
 
 	// The partner bar's text row, in the Hitpoints font. Sized from the settings so it doesn't jump.
@@ -291,7 +286,7 @@ class BarTextPainter
 		PartyDefence.Reading defence,
 		BufferedImage defenceIcon, PartyDefence.Reading magicDefence, BufferedImage magicIcon,
 		List<SpecialAttackCounts.Reading> specialAttacks, String weaknessText,
-		BufferedImage weaknessIcon, String drainCapText, int width, int capWidth, int bottomTop)
+		BufferedImage weaknessIcon, String drainCapText, int width, int capWidth, int barMiddle, int bottomTop)
 	{
 		final FontMetrics textMetrics = fonts.metrics(NAME);
 		final int left = capWidth + TEXT_INSET;
@@ -310,8 +305,10 @@ class BarTextPainter
 		this.weaknessIcon = weaknessIcon;
 		this.drainCapText = drainCapText;
 
-		topRow.clear();
-		bottomRow.clear();
+		for (BarLayout row : rows)
+		{
+			row.clear();
+		}
 
 		final boolean showName = config.showBossName();
 		levelText = null;
@@ -397,8 +394,10 @@ class BarTextPainter
 			add(DRAIN_CAP, drainIconWidth + fonts.metrics(DRAIN_CAP).stringWidth(drainCapText));
 		}
 
-		topRow.layout(width, left, right, LEVEL_GAP);
-		bottomRow.layout(width, left, right, LEVEL_GAP);
+		for (BarLayout row : rows)
+		{
+			row.layout(width, left, right, LEVEL_GAP);
+		}
 
 		// The name never drops out. It's laid out at its shortest first, so the items sharing its row keep
 		// their space, then gets whatever room is left and is laid out again at the width it ends up with.
@@ -413,8 +412,18 @@ class BarTextPainter
 		defeatedX = defeated
 			? row(HITPOINTS).centredX(fonts.metrics(HITPOINTS).stringWidth(DEFEATED_TEXT), HITPOINTS) : BarLayout.NOT_PLACED;
 
-		topBaseline = topRowBaseline;
-		bottomBaseline = bottomTop + bottomRowBaseline;
+		baselines[TOP_ROW] = rowBaselines[TOP_ROW];
+		// The in-bar row is centred on the bar, so it straddles a bar shorter than its text.
+		baselines[IN_BAR_ROW] = barMiddle - rowHeights[IN_BAR_ROW] / 2 + rowBaselines[IN_BAR_ROW];
+		baselines[BOTTOM_ROW] = bottomTop + rowBaselines[BOTTOM_ROW];
+		baselines[BOTTOM_2_ROW] = bottomTop + rowHeights[BOTTOM_ROW] + rowBaselines[BOTTOM_2_ROW];
+	}
+
+	// How far the in-bar row reaches past a bar shorter than its text. The overlay keeps that much room free.
+	@VisibleForTesting
+	static int inBarOverflow(int inBarHeight, int barHeight)
+	{
+		return Math.max(0, inBarHeight - barHeight);
 	}
 
 	// Item images have a transparent border around the rune or weapon, so draw them larger to match the skill icon.
@@ -424,11 +433,11 @@ class BarTextPainter
 		return Math.round((metrics.getAscent() + 1) * RUNE_ICON_SCALE);
 	}
 
-	void drawRow(Graphics2D graphics, boolean top, ThemeColors colors)
+	void drawRow(Graphics2D graphics, BarPosition.Row row, ThemeColors colors)
 	{
-		final int baseline = top ? topBaseline : bottomBaseline;
+		final int baseline = baselines[row.ordinal()];
 
-		if (onRow(NAME, top))
+		if (onRow(NAME, row))
 		{
 			final FontMetrics textMetrics = fonts.metrics(NAME);
 			int x = x(NAME);
@@ -446,7 +455,7 @@ class BarTextPainter
 			}
 		}
 
-		if (onRow(DAMAGE_NUMBER, top))
+		if (onRow(DAMAGE_NUMBER, row))
 		{
 			drawDamageNumber(graphics, fonts.metrics(DAMAGE_NUMBER), row(DAMAGE_NUMBER), baseline, previewDamage, colors.getText());
 		}
@@ -454,53 +463,53 @@ class BarTextPainter
 		fonts.useFont(graphics, HITPOINTS);
 		if (defeated)
 		{
-			if (defeatedX != BarLayout.NOT_PLACED && positions[HITPOINTS].isTop() == top)
+			if (defeatedX != BarLayout.NOT_PLACED && positions[HITPOINTS].getRow() == row)
 			{
 				drawShadowedText(graphics, DEFEATED_TEXT, defeatedX, baseline, colors.getDefeatedText(), 1f);
 			}
 		}
-		else if (onRow(HITPOINTS, top))
+		else if (onRow(HITPOINTS, row))
 		{
 			drawShadowedText(graphics, hitpointsText, x(HITPOINTS), baseline, colors.getHitpointsText(), 1f);
 		}
 
-		if (fightTimeText != null && onRow(FIGHT_TIMER, top))
+		if (fightTimeText != null && onRow(FIGHT_TIMER, row))
 		{
 			fonts.useFont(graphics, FIGHT_TIMER);
-			final BarLayout row = row(FIGHT_TIMER);
-			drawShadowedText(graphics, fightTimeText, damageNumberX(row.spot(FIGHT_TIMER), row.x(FIGHT_TIMER),
+			final BarLayout timerRow = row(FIGHT_TIMER);
+			drawShadowedText(graphics, fightTimeText, damageNumberX(timerRow.spot(FIGHT_TIMER), timerRow.x(FIGHT_TIMER),
 				fightTimeSlotWidth, fightTimeWidth), baseline, colors.getLevelText(), 0.9f);
 		}
 
-		if (onRow(KILL_COUNT, top))
+		if (onRow(KILL_COUNT, row))
 		{
 			fonts.useFont(graphics, KILL_COUNT);
 			drawShadowedText(graphics, killCountText, x(KILL_COUNT), baseline, colors.getLevelText(), 0.9f);
 		}
 
 		final int defenceAscent = fonts.metrics(PARTY_DEFENCE).getAscent();
-		if (onRow(PARTY_DEFENCE, top))
+		if (onRow(PARTY_DEFENCE, row))
 		{
 			fonts.useFont(graphics, PARTY_DEFENCE);
 			drawDefence(graphics, defence, scaledDefenceIcon, defenceIconWidth, arrowWidth, defenceAscent,
 				x(PARTY_DEFENCE), baseline, colors);
 		}
 
-		if (onRow(MAGIC_DEFENCE, top))
+		if (onRow(MAGIC_DEFENCE, row))
 		{
 			fonts.useFont(graphics, MAGIC_DEFENCE);
 			drawDefence(graphics, magicDefence, scaledMagicIcon, magicIconWidth, arrowWidth, defenceAscent,
 				x(MAGIC_DEFENCE), baseline, colors);
 		}
 
-		if (onRow(SPECIAL_ATTACKS, top))
+		if (onRow(SPECIAL_ATTACKS, row))
 		{
 			fonts.useFont(graphics, SPECIAL_ATTACKS);
 			drawSpecialAttacks(graphics, specialAttacks, fonts.metrics(SPECIAL_ATTACKS), specialAttackIconSize,
 				x(SPECIAL_ATTACKS), baseline, colors);
 		}
 
-		if (onRow(WEAKNESS, top))
+		if (onRow(WEAKNESS, row))
 		{
 			int x = x(WEAKNESS);
 			if (weaknessIconWidth > 0)
@@ -513,7 +522,7 @@ class BarTextPainter
 			drawShadowedText(graphics, weaknessText, x, baseline, colors.getLevelText(), 0.9f);
 		}
 
-		if (onRow(DRAIN_CAP, top))
+		if (onRow(DRAIN_CAP, row))
 		{
 			int x = x(DRAIN_CAP);
 			if (scaledDrainIcon != null)
@@ -529,7 +538,7 @@ class BarTextPainter
 
 	private BarLayout row(int item)
 	{
-		return positions[item].isTop() ? topRow : bottomRow;
+		return rows[positions[item].getRow().ordinal()];
 	}
 
 	private void add(int item, int width)
@@ -537,9 +546,9 @@ class BarTextPainter
 		row(item).add(item, positions[item].getSpot(), width);
 	}
 
-	private boolean onRow(int item, boolean top)
+	private boolean onRow(int item, BarPosition.Row row)
 	{
-		return positions[item].isTop() == top && x(item) != BarLayout.NOT_PLACED;
+		return positions[item].getRow() == row && x(item) != BarLayout.NOT_PLACED;
 	}
 
 	private int x(int item)

@@ -452,8 +452,13 @@ class BossHealthBarOverlay extends Overlay
 		final String drainCapText = stats != null && config.showDrainCap() ? stats.getDrainCapText() : null;
 		textPainter.updateRows(partyDefence.isAvailable(), partyDefence.isMagicAvailable(),
 			specialAttackCounts.isAvailable(), weaknessText != null, drainCapText != null);
-		final int headerHeight = textPainter.topRowHeight();
-		final int footerHeight = textPainter.bottomRowHeight();
+		final int headerHeight = textPainter.rowHeight(BarPosition.Row.TOP);
+		final int footerHeight = textPainter.rowHeight(BarPosition.Row.BOTTOM);
+		final int secondFooterHeight = textPainter.rowHeight(BarPosition.Row.BOTTOM_2);
+		// Text inside a bar shorter than the text reaches past it, so that much room is kept above and below.
+		final int inBarOverflow = BarTextPainter.inBarOverflow(textPainter.rowHeight(BarPosition.Row.IN_BAR), barHeight);
+		final int inBarAbove = inBarOverflow / 2;
+		final int inBarBelow = inBarOverflow - inBarAbove;
 		final BarTheme theme = BarTheme.of(config);
 		final boolean flat = theme.isFlat();
 		final ThemeColors baseColors = baseColors();
@@ -473,9 +478,10 @@ class BossHealthBarOverlay extends Overlay
 			? Math.max(0, Math.round(crest.right.image.getWidth() / RASTER_SCALE) - crest.right.anchorX - CREST_OVERLAP) : 0;
 		final int width = barWidth(leftExtent + rightExtent);
 		final int barCenterOffset = capRise + barHeight / 2;
+		final int aboveBar = headerHeight + inBarAbove;
 		final int topOffset = crest != null
-			? Math.max(0, Math.max(crest.left.anchorY, crest.right.anchorY) - (headerHeight + barCenterOffset)) : 0;
-		final int barY = headerHeight + capRise;
+			? Math.max(0, Math.max(crest.left.anchorY, crest.right.anchorY) - (aboveBar + barCenterOffset)) : 0;
+		final int barY = aboveBar + capRise;
 
 		final IntroAnimation intro = config.introAnimation();
 		final int slideOffset = animation.slideOffset(intro, now);
@@ -504,14 +510,14 @@ class BossHealthBarOverlay extends Overlay
 			defence != null || drainCapText != null ? partyDefence.icon() : null,
 			magicDefence, magicDefence != null ? partyDefence.magicIcon() : null, specialAttacks, weaknessText,
 			weaknessText != null ? itemManager.getImage(stats.getWeaknessElement().getRuneItemId()) : null, drainCapText,
-			width, capWidth, barY + barHeight + capRise);
+			width, capWidth, barY + barHeight / 2, barY + barHeight + capRise + inBarBelow);
 
 		graphics.translate(leftExtent, topOffset + slideOffset);
 
 		if (headerHeight > 0)
 		{
 			setOpacity(graphics, originalComposite, opacity * textOpacity);
-			textPainter.drawRow(graphics, true, colors);
+			textPainter.drawRow(graphics, BarPosition.Row.TOP, colors);
 			setOpacity(graphics, originalComposite, opacity);
 		}
 
@@ -535,12 +541,15 @@ class BossHealthBarOverlay extends Overlay
 		graphics.translate(-shownInset, 0);
 
 		setOpacity(graphics, originalComposite, opacity * textOpacity);
-		textPainter.drawRow(graphics, false, colors);
+		textPainter.drawRow(graphics, BarPosition.Row.IN_BAR, colors);
+		textPainter.drawRow(graphics, BarPosition.Row.BOTTOM, colors);
+		textPainter.drawRow(graphics, BarPosition.Row.BOTTOM_2, colors);
 		setOpacity(graphics, originalComposite, opacity);
 
 		if (partnerArea)
 		{
-			final int partnerTop = barY + barHeight + capRise + footerHeight + PARTNER_GAP;
+			final int partnerTop = barY + barHeight + capRise + inBarBelow + footerHeight + secondFooterHeight
+				+ PARTNER_GAP;
 			drawPartner(graphics, originalComposite, opacity * animation.defeatTextOpacity(now, burnAway),
 				opacity * textOpacity, baseColors, partnerTop, partnerTop + partnerRowHeight + partnerCapRise, width,
 				shownWidth, shownInset, capWidth, partnerBarHeight, fillProgress, flat, ends);
@@ -549,8 +558,9 @@ class BossHealthBarOverlay extends Overlay
 
 		graphics.translate(-leftExtent, -(topOffset + slideOffset));
 
-		int totalHeight = topOffset + barY + barHeight + capRise + footerHeight + partnerHeight;
-		final int centerY = topOffset + headerHeight + barCenterOffset;
+		int totalHeight = topOffset + barY + barHeight + capRise + inBarBelow + footerHeight + secondFooterHeight
+			+ partnerHeight;
+		final int centerY = topOffset + aboveBar + barCenterOffset;
 		// Crests and sparkles burn away with the bar.
 		final Shape clip = burn > 0f ? graphics.getClip() : null;
 		if (burn > 0f)

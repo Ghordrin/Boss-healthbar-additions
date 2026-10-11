@@ -139,10 +139,10 @@ public class ItemFontsTest
 			// The old row was as tall as the name font. At the smallest sizes the text reached past that,
 			// and the row now grows to fit it.
 			final BarTextPainter painter = painter(config);
-			assertEquals("size " + size, Math.max(size, painter.bottomRowBaseline()), painter.bottomRowHeight());
+			assertEquals("size " + size, Math.max(size, painter.rowBaseline(BarPosition.Row.BOTTOM)), painter.rowHeight(BarPosition.Row.BOTTOM));
 			if (size >= 10)
 			{
-				assertEquals("size " + size, size, painter.bottomRowHeight());
+				assertEquals("size " + size, size, painter.rowHeight(BarPosition.Row.BOTTOM));
 			}
 		}
 	}
@@ -162,9 +162,9 @@ public class ItemFontsTest
 		above[KILL_COUNT] = 30;
 		below[KILL_COUNT] = 2;
 
-		assertEquals(30, BarTextPainter.rowBaseline(positions, available, true, above));
-		assertEquals(36, BarTextPainter.rowHeight(positions, available, true, above, below));
-		assertEquals(0, BarTextPainter.rowHeight(positions, available, false, above, below));
+		assertEquals(30, BarTextPainter.rowBaseline(positions, available, BarPosition.Row.TOP, above));
+		assertEquals(36, BarTextPainter.rowHeight(positions, available, BarPosition.Row.TOP, above, below));
+		assertEquals(0, BarTextPainter.rowHeight(positions, available, BarPosition.Row.BOTTOM, above, below));
 	}
 
 	@Test
@@ -197,10 +197,10 @@ public class ItemFontsTest
 		assertEquals(small, painter.fonts().font(HITPOINTS).getFamily());
 		assertEquals(16, painter.fonts().font(HITPOINTS).getSize());
 		assertEquals(small, painter.fonts().levelFont().getFamily());
-		assertEquals(24, painter.topRowHeight());
-		assertEquals(16, painter.bottomRowHeight());
-		assertEquals(18, painter.topRowBaseline());
-		assertEquals(12, painter.bottomRowBaseline());
+		assertEquals(24, painter.rowHeight(BarPosition.Row.TOP));
+		assertEquals(16, painter.rowHeight(BarPosition.Row.BOTTOM));
+		assertEquals(18, painter.rowBaseline(BarPosition.Row.TOP));
+		assertEquals(12, painter.rowBaseline(BarPosition.Row.BOTTOM));
 	}
 
 	@Test
@@ -220,10 +220,10 @@ public class ItemFontsTest
 		assertEquals(17, painter.fonts().font(NAME).getSize());
 		assertEquals(12, painter.fonts().font(HITPOINTS).getSize());
 		assertEquals(12, painter.fonts().levelFont().getSize());
-		assertEquals(26, painter.topRowHeight());
-		assertEquals(17, painter.bottomRowHeight());
-		assertEquals(20, painter.topRowBaseline());
-		assertEquals(smallAscent + 1, painter.bottomRowBaseline());
+		assertEquals(26, painter.rowHeight(BarPosition.Row.TOP));
+		assertEquals(17, painter.rowHeight(BarPosition.Row.BOTTOM));
+		assertEquals(20, painter.rowBaseline(BarPosition.Row.TOP));
+		assertEquals(smallAscent + 1, painter.rowBaseline(BarPosition.Row.BOTTOM));
 	}
 
 	@Test
@@ -236,8 +236,8 @@ public class ItemFontsTest
 		assertEquals(24, painter.fonts().font(NAME).getSize());
 		assertEquals(16, painter.fonts().font(DAMAGE_NUMBER).getSize());
 		assertEquals(16, painter.fonts().font(HITPOINTS).getSize());
-		assertEquals(36, painter.topRowHeight());
-		assertEquals(16, painter.bottomRowHeight());
+		assertEquals(36, painter.rowHeight(BarPosition.Row.TOP));
+		assertEquals(16, painter.rowHeight(BarPosition.Row.BOTTOM));
 	}
 
 	@Test
@@ -252,8 +252,8 @@ public class ItemFontsTest
 
 		assertEquals(32, painter.fonts().font(HITPOINTS).getSize());
 		assertEquals(40, painter.fonts().font(KILL_COUNT).getSize());
-		assertEquals(40, painter.topRowHeight());
-		assertEquals(32, painter.bottomRowHeight());
+		assertEquals(40, painter.rowHeight(BarPosition.Row.TOP));
+		assertEquals(32, painter.rowHeight(BarPosition.Row.BOTTOM));
 	}
 
 	@Test

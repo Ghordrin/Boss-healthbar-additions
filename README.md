@@ -49,7 +49,7 @@ Everything is in the RuneLite config panel, or right-click the bar and pick Conf
 | Fonts | Font and size of each text around the bar, Smooth text, and the text edge (shadow, outline or nothing) |
 | Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar |
 | Animations | Damage trail, heal speed, low health effect, flash on big hits, intro, defeat animation, burn away |
-| Layout | Where each item goes: left, centre or right, above or below the bar |
+| Layout | Where each item goes: left, centre or right, above the bar, inside it, or on one of the two rows below it |
 | Custom colors | The icon and colours of the Custom theme |
 | When to show | Which opponents get a bar, Also show for / Never show for, Hide after, what happens to the game's boss bar (replace it, show both, or hide this one), and the other plugins above |
 | Bug reports | Save debug log: saves the plugin's recent activity to a text file for bug reports |
