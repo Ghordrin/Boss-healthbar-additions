@@ -42,7 +42,7 @@ public class BossHealthBarPlugin extends Plugin
 	static final String NAME = "Boss Health Bar Additions";
 	static final String INTERNAL_NAME = "boss-health-bar-additions";
 	// Keep in step with the version in build.gradle and runelite-plugin.properties.
-	static final String VERSION = "1.6.0";
+	static final String VERSION = "1.7.0";
 	private static final int MAX_LOGGED_VALUE_LENGTH = 100;
 
 	@Inject
