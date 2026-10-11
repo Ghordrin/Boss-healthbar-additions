@@ -92,6 +92,8 @@ class BossHealthBarOverlay extends Overlay
 	private Actor trackedOpponent;
 	private int trackedLife;
 	private BarState lastState;
+	// The fight lastState was built in, so a held bar doesn't pick up a later fight's time.
+	private int lastStateFight = FightTimer.NO_TICK;
 	private Actor leftAlive;
 	private boolean showingPreview;
 	private long previewStartNanos;
@@ -194,6 +196,7 @@ class BossHealthBarOverlay extends Overlay
 	{
 		animation.reset();
 		lastState = null;
+		lastStateFight = FightTimer.NO_TICK;
 		leftAlive = null;
 		switchHoldUntilNanos = 0;
 		retargetPending = false;
@@ -277,6 +280,7 @@ class BossHealthBarOverlay extends Overlay
 				{
 					// With nothing remembered there is no bar to carry over, so the previous one isn't kept up.
 					lastState = null;
+					lastStateFight = FightTimer.NO_TICK;
 				}
 				debugLog.add("Bar: resumed {} from memory at {}/{}", DebugLog.describe(opponent),
 					resumed != null ? resumed.ratio : -1, resumed != null ? resumed.scale : -1);
@@ -329,6 +333,7 @@ class BossHealthBarOverlay extends Overlay
 				opponentTracker.healedOnReturn(opponent);
 			}
 			lastState = state;
+			lastStateFight = fightTimer.getStartTick();
 			resuming = false;
 			resumedHealth = null;
 			if (retargetPending)
@@ -358,9 +363,9 @@ class BossHealthBarOverlay extends Overlay
 
 		if ((animation.isDefeatPlaying() || holdingForNext) && lastState != null)
 		{
-			// A cleared timer leaves the held bar on its last time instead of dropping the line.
-			final String heldFightTime = fightTimer.getText();
-			if (heldFightTime != null && !Objects.equals(lastState.fightTime, heldFightTime))
+			final String heldFightTime = heldFightTime(lastState.fightTime, fightTimer.getText(), lastStateFight,
+				fightTimer.getStartTick());
+			if (!Objects.equals(lastState.fightTime, heldFightTime))
 			{
 				lastState = lastState.withFightTime(heldFightTime);
 			}
@@ -711,6 +716,13 @@ class BossHealthBarOverlay extends Overlay
 			return false;
 		}
 		return outcome == OpponentTracker.DespawnOutcome.DEFEATED || !outOfSight && (dead || lastRatio <= 0);
+	}
+
+	// A bar held up after its fight follows the timer while it is still that fight's, and keeps its last time once a
+	// cleared timer or another fight has taken it over.
+	static String heldFightTime(String heldTime, String timerText, int heldFight, int timerFight)
+	{
+		return timerText != null && timerFight == heldFight ? timerText : heldTime;
 	}
 
 	// Without crests, the boss's icon goes small before the name, as on the Oldschool theme.

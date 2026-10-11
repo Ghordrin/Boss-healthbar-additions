@@ -15,7 +15,7 @@ See the [changelog](CHANGELOG.md) for what's new in each version.
 - Replaces the opponent health bar with a wide, themed bar: name, combat level and hitpoints, a damage trail after each hit, a low health pulse, and the damage of your latest attack (or your party's)
 - Takes over the game's own boss health bar, using its exact hitpoints and phase markers. Other bars the game shows next to it, like pillar bars, are drawn in the same style in their own movable box
 - A smaller second bar shows another boss you're fighting at the same time, with its last known health while it's away
-- Remembers a boss you walk away from: come back and the bar carries on with its health and fight time, without "Defeated" or the intro
+- Remembers a boss you walk out of sight of: come back to it in the same area and the bar carries on with its health and fight time, without "Defeated" or the intro
 - Optional info around the bar: kill count, fight timer, elemental weakness, defence drain limit, party and magic defence, special attack counts
 - Themes: god themes, a custom theme with your own colours and icon, the boss's own icon and colours, a plain Oldschool look, and the game's textures over the fill
 

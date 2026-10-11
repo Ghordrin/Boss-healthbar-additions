@@ -16,6 +16,9 @@
 - The fight timer starts over when a defeated boss is back up for the next fight, instead of carrying the previous kill's time over
 - The fight timer and bar no longer carry a previous fight over when you leave the area or die and come back
 - The fight timer now runs until the boss is gone, so it matches the time the game reports
+- The bar and fight timer are kept when a fight moves you to another floor, into or out of an instance, or a long way in one step, as long as the boss is still there
+- The fight timer now starts from the moment you go for the opponent even if you were already attacking it before the bar picked it up
+- A defeated boss's bar no longer picks up the time of a new fight while it is still shown
 
 ## 1.6.0 (2026-10-10)
 

@@ -116,6 +116,20 @@ public class BossHealthBarOverlayTest
 		assertEquals(Switch.RESET, BossHealthBarOverlay.switchTo(true, false, true, false, true, false));
 	}
 
+	@Test
+	public void aHeldBarFollowsTheTimerOfItsOwnFight()
+	{
+		assertEquals("1:30", BossHealthBarOverlay.heldFightTime("1:28", "1:30", 100, 100));
+	}
+
+	// Attacking something else while the defeated bar is still up starts another fight, whose clock isn't this bar's.
+	@Test
+	public void aHeldBarKeepsItsTimeOnceAnotherFightHasStarted()
+	{
+		assertEquals("1:30", BossHealthBarOverlay.heldFightTime("1:30", "0:00", 100, 420));
+		assertEquals("1:30", BossHealthBarOverlay.heldFightTime("1:30", null, 100, FightTimer.NO_TICK));
+	}
+
 	private static boolean outOfSight(OpponentTracker.DespawnOutcome outcome)
 	{
 		return outcome == OUT_OF_SIGHT;

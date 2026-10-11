@@ -28,6 +28,50 @@ class OpponentTracker
 		LEFT
 	}
 
+	// Where the last scene load left the player, so the next one can tell whether they ended up somewhere else.
+	static final class Area
+	{
+		private boolean sceneReloaded;
+		private boolean sampled;
+		int plane;
+		int x;
+		int y;
+		boolean instance;
+
+		void sceneLoading()
+		{
+			sceneReloaded = true;
+		}
+
+		void clear()
+		{
+			sceneReloaded = false;
+			sampled = false;
+			plane = 0;
+			x = 0;
+			y = 0;
+			instance = false;
+		}
+
+		// Taken once per load. A no on arrival keeps the sample, in case the position isn't the destination yet, and
+		// lets the next tick decide.
+		boolean take(boolean onArrival, int toPlane, int toX, int toY, boolean toInstance)
+		{
+			final boolean left = leftArea(sceneReloaded && sampled, plane, x, y, instance, toPlane, toX, toY, toInstance);
+			if (!left && onArrival)
+			{
+				return false;
+			}
+			plane = toPlane;
+			x = toX;
+			y = toY;
+			instance = toInstance;
+			sampled = true;
+			sceneReloaded = false;
+			return left;
+		}
+	}
+
 	private final Client client;
 	private final BossHealthBarConfig config;
 	private final GameBossBar gameBossBar;
@@ -42,8 +86,6 @@ class OpponentTracker
 
 	@Getter(AccessLevel.PACKAGE)
 	private Actor opponent;
-	// What the player is going for, as the last interaction event left it.
-	private Actor interactingWith;
 	private long interactionLostMillis;
 	private long lastHitTakenMillis;
 	private long lastOpponentHitMillis;
@@ -64,9 +106,7 @@ class OpponentTracker
 	private String knownBossName;
 	private boolean knownBoss;
 
-	private boolean sceneReloaded;
-	private WorldPoint lastLocation;
-	private boolean lastInstance;
+	private final Area area = new Area();
 
 	private NpcFilter alsoShowFor = NpcFilter.EMPTY;
 	private NpcFilter neverShowFor = NpcFilter.EMPTY;
@@ -99,7 +139,6 @@ class OpponentTracker
 		}
 
 		final Actor target = event.getTarget();
-		interactingWith = target;
 		if (target == null)
 		{
 			interactionLostMillis = System.currentTimeMillis();
@@ -143,12 +182,12 @@ class OpponentTracker
 	void onNpcSpawned(NPC npc)
 	{
 		final int tick = client.getTickCount();
-		// A plain name lookup, so the line doesn't disturb the caches the bar's own checks keep.
-		if (KnownBosses.contains(npc.getName()))
+		final BossMemory.Entry entry = memory.find(npc.getIndex(), npc.getName(), tick);
+		// Only the spawns the bar could pick up, so a busy area doesn't push the current fight out of the log.
+		if (entry != null || (opponent != null && npc.getName() != null && npc.getName().equals(opponent.getName())))
 		{
 			debugLog.add("{} spawned on tick {}", DebugLog.describe(npc), tick);
 		}
-		final BossMemory.Entry entry = memory.find(npc.getIndex(), npc.getName(), tick);
 		if (entry == null || entry != heldEntry || opponent != null || !BossMemory.isHeld(entry.tick, tick)
 			|| isNeverShown(npc))
 		{
@@ -162,10 +201,6 @@ class OpponentTracker
 
 	void onNpcDespawned(NPC npc)
 	{
-		if (npc == interactingWith)
-		{
-			interactingWith = null;
-		}
 		if (npc != opponent)
 		{
 			if (memory.contains(npc.getIndex()) && isDown(npc))
@@ -254,7 +289,6 @@ class OpponentTracker
 			debugLog.add("Opponent {} timed out after {}s with no combat, clearing", DebugLog.describe(opponent),
 				config.hideDelay());
 			opponent = null;
-			interactingWith = null;
 			fightTimer.reset();
 			group.clear();
 			clearDown();
@@ -263,11 +297,11 @@ class OpponentTracker
 
 	void onSceneLoading()
 	{
-		sceneReloaded = true;
+		area.sceneLoading();
 	}
 
-	// Whether the player ended up somewhere else over the last scene load, taken once per load. A no on arrival keeps
-	// the sample, in case the position isn't the destination yet, and lets the next tick decide.
+	// Whether the fight is to be forgotten: the player ended up somewhere else over the last scene load and nothing of
+	// the fight is still here. Taken once per load.
 	boolean takeLeftArea(boolean onArrival)
 	{
 		final Player player = client.getLocalPlayer();
@@ -279,23 +313,30 @@ class OpponentTracker
 
 		final WorldPoint location = player.getWorldLocation();
 		final boolean instance = worldView.isInstance();
-		final WorldPoint from = lastLocation != null ? lastLocation : location;
-		final boolean left = leftArea(sceneReloaded && lastLocation != null, from.getPlane(), from.getX(), from.getY(),
-			lastInstance, location.getPlane(), location.getX(), location.getY(), instance);
-		if (!left && onArrival)
-		{
-			return false;
-		}
+		final int fromPlane = area.plane;
+		final int fromX = area.x;
+		final int fromY = area.y;
+		final boolean fromInstance = area.instance;
+		final boolean left = area.take(onArrival, location.getPlane(), location.getX(), location.getY(), instance);
 		if (left)
 		{
 			debugLog.add("Left the area over a scene load ({} tiles, plane {} to {}, instance {} to {})",
-				BossMemory.tileDistance(from.getX(), from.getY(), location.getX(), location.getY()),
-				from.getPlane(), location.getPlane(), lastInstance, instance);
+				BossMemory.tileDistance(fromX, fromY, location.getX(), location.getY()),
+				fromPlane, location.getPlane(), fromInstance, instance);
 		}
-		lastLocation = location;
-		lastInstance = instance;
-		sceneReloaded = false;
-		return left;
+		final boolean forgets = forgetsFight(left, opponent != null);
+		if (left && !forgets)
+		{
+			debugLog.add("Opponent {} is still here, so the fight carries on", DebugLog.describe(opponent));
+		}
+		return forgets;
+	}
+
+	// A fight itself can move the player far enough to reload the scene, so nothing is forgotten while the opponent is
+	// still here.
+	static boolean forgetsFight(boolean left, boolean opponentPresent)
+	{
+		return left && !opponentPresent;
 	}
 
 	// Far enough over a scene load that nothing we remembered can still be in sight.
@@ -449,7 +490,6 @@ class OpponentTracker
 	void reset()
 	{
 		opponent = null;
-		interactingWith = null;
 		interactionLostMillis = 0;
 		lastHitTakenMillis = 0;
 		lastOpponentHitMillis = 0;
@@ -467,9 +507,7 @@ class OpponentTracker
 		healthReader.reset();
 		despawnedOutcome = null;
 		resumedOpponent = null;
-		lastLocation = null;
-		lastInstance = false;
-		sceneReloaded = false;
+		area.clear();
 	}
 
 	void healedOnReturn(Actor actor)
@@ -498,7 +536,9 @@ class OpponentTracker
 		{
 			return;
 		}
-		final boolean engaged = actor == interactingWith;
+		// Only the local player's own target counts, and it is read live so an interaction from before counts too.
+		final Player player = client.getLocalPlayer();
+		final boolean engaged = player != null && actor == player.getInteracting();
 		final int distance = engaged ? combatDistanceTo(actor) : -1;
 		if (startsFight(engaged, attackable, dead, down, distance) && shouldShowBarFor(actor))
 		{

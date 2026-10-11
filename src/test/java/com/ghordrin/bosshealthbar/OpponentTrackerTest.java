@@ -207,6 +207,62 @@ public class OpponentTrackerTest
 	}
 
 	@Test
+	public void theFirstSampleHasNothingToCompareWith()
+	{
+		final OpponentTracker.Area area = new OpponentTracker.Area();
+		area.sceneLoading();
+		assertFalse(area.take(true, 0, 3200, 3200, false));
+	}
+
+	@Test
+	public void aSceneLoadIsTakenOnce()
+	{
+		final OpponentTracker.Area area = new OpponentTracker.Area();
+		area.take(false, 0, 3200, 3200, false);
+		area.sceneLoading();
+		assertTrue(area.take(false, 0, 3300, 3300, false));
+		assertFalse(area.take(false, 0, 3400, 3400, false));
+	}
+
+	// Arriving somewhere may not be at the destination yet, so the sample is kept for the next tick to decide.
+	@Test
+	public void aStayOnArrivalKeepsTheSample()
+	{
+		final OpponentTracker.Area area = new OpponentTracker.Area();
+		area.take(false, 0, 3200, 3200, false);
+		area.sceneLoading();
+		assertFalse(area.take(true, 0, 3200, 3200, false));
+		assertTrue(area.take(false, 0, 3300, 3300, false));
+	}
+
+	@Test
+	public void aMoveWithoutASceneLoadIsTakenAsStaying()
+	{
+		final OpponentTracker.Area area = new OpponentTracker.Area();
+		area.take(false, 0, 3200, 3200, false);
+		assertFalse(area.take(false, 1, 2500, 2500, true));
+	}
+
+	@Test
+	public void clearingStartsOver()
+	{
+		final OpponentTracker.Area area = new OpponentTracker.Area();
+		area.take(false, 0, 3200, 3200, false);
+		area.sceneLoading();
+		area.clear();
+		assertFalse(area.take(false, 0, 3300, 3300, false));
+	}
+
+	// A boss mechanic, a ladder or a door can move the player mid-fight, which reloads the scene with the fight still on.
+	@Test
+	public void aFightWithItsOpponentStillHereIsNotForgotten()
+	{
+		assertFalse(OpponentTracker.forgetsFight(true, true));
+		assertTrue(OpponentTracker.forgetsFight(true, false));
+		assertFalse(OpponentTracker.forgetsFight(false, false));
+	}
+
+	@Test
 	public void nearnessIsJustTheDistance()
 	{
 		assertTrue(OpponentTracker.isNearby(0));
