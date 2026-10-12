@@ -1,19 +1,12 @@
 package com.ghordrin.bosshealthbar;
 
-import static com.ghordrin.bosshealthbar.tracking.OpponentTracker.DespawnOutcome.DEFEATED;
-import static com.ghordrin.bosshealthbar.tracking.OpponentTracker.DespawnOutcome.LEFT;
-import static com.ghordrin.bosshealthbar.tracking.OpponentTracker.DespawnOutcome.OUT_OF_SIGHT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import com.ghordrin.bosshealthbar.BossHealthBarOverlay.DefeatStep;
-import com.ghordrin.bosshealthbar.BossHealthBarOverlay.Switch;
 import com.ghordrin.bosshealthbar.theme.FlatTheme;
 import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
 import com.ghordrin.bosshealthbar.theme.ThemeColors;
-import com.ghordrin.bosshealthbar.tracking.FightTimer;
-import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
 import org.junit.Test;
 
 public class BossHealthBarOverlayTest
@@ -38,107 +31,11 @@ public class BossHealthBarOverlayTest
 		assertFalse(BossHealthBarOverlay.showsGold(false, false));
 	}
 
-	// The bar's defeat follows a confirmed kill, so the input is the tracker's isOpponentDefeated, not isDead.
-	@Test
-	public void theDefeatStartsOnAKillAndStopsWhenItIsNoLongerOne()
-	{
-		assertEquals(DefeatStep.START, BossHealthBarOverlay.defeatStep(true, false, true));
-		assertEquals(DefeatStep.NONE, BossHealthBarOverlay.defeatStep(true, true, true));
-		assertEquals(DefeatStep.NONE, BossHealthBarOverlay.defeatStep(true, false, false));
-		assertEquals(DefeatStep.CANCEL, BossHealthBarOverlay.defeatStep(false, true, true));
-	}
 
-	@Test
-	public void withoutADespawnReadingItIsADefeatWhenDeadOrLastReadAtZeroInView()
-	{
-		assertTrue(BossHealthBarOverlay.defeatedAtDespawn(null, true, 20, false));
-		assertTrue(BossHealthBarOverlay.defeatedAtDespawn(null, false, 0, false));
-		assertFalse(BossHealthBarOverlay.defeatedAtDespawn(null, false, 20, false));
-		assertFalse(BossHealthBarOverlay.defeatedAtDespawn(null, true, 0, true));
-	}
 
-	@Test
-	public void theTrackersDespawnReadingDecides()
-	{
-		assertTrue(BossHealthBarOverlay.defeatedAtDespawn(DEFEATED, false, 1, false));
-		assertFalse(BossHealthBarOverlay.defeatedAtDespawn(LEFT, true, 0, false));
-		assertFalse(BossHealthBarOverlay.defeatedAtDespawn(OUT_OF_SIGHT, false, 20, true));
-		// The bar's own 0 wins over the distance.
-		assertTrue(BossHealthBarOverlay.defeatedAtDespawn(OUT_OF_SIGHT, false, 0, false));
-	}
 
-	@Test
-	public void theOutcomeAloneDecidesTheDefeatAtDespawn()
-	{
-		assertTrue(BossHealthBarOverlay.defeatedAtDespawn(DEFEATED, false, 1, outOfSight(DEFEATED)));
-		assertFalse(BossHealthBarOverlay.defeatedAtDespawn(OUT_OF_SIGHT, false, 0, outOfSight(OUT_OF_SIGHT)));
-		assertFalse(BossHealthBarOverlay.defeatedAtDespawn(LEFT, true, 0, outOfSight(LEFT)));
-		assertTrue(BossHealthBarOverlay.defeatedAtDespawn(null, true, 20, outOfSight(null)));
-		assertTrue(BossHealthBarOverlay.defeatedAtDespawn(null, false, 0, outOfSight(null)));
-	}
 
-	@Test
-	public void aResumedOpponentWinsOverMovingAndStartingOver()
-	{
-		assertEquals(Switch.RESUME, BossHealthBarOverlay.switchTo(true, true, true, true, false, true));
-		assertEquals(Switch.RESUME, BossHealthBarOverlay.switchTo(true, true, false, false, false, false));
-		assertEquals(Switch.RESUME, BossHealthBarOverlay.switchTo(true, true, true, false, true, false));
-		// Without an opponent there is nothing to resume.
-		assertEquals(Switch.RESET, BossHealthBarOverlay.switchTo(false, true, true, false, false, false));
-	}
 
-	@Test
-	public void noOpponentClearsTheBarUnlessTheDefeatIsPlaying()
-	{
-		assertEquals(Switch.RESET, BossHealthBarOverlay.switchTo(false, false, true, false, false, false));
-		assertEquals(Switch.KEEP, BossHealthBarOverlay.switchTo(false, false, true, false, true, false));
-	}
 
-	@Test
-	public void anOpponentThatLeftAliveHoldsTheBarForTheNextOne()
-	{
-		assertEquals(Switch.KEEP, BossHealthBarOverlay.switchTo(false, false, true, false, false, true));
-		assertEquals(Switch.MOVE, BossHealthBarOverlay.switchTo(true, false, true, true, false, true));
-		assertEquals(Switch.MOVE, BossHealthBarOverlay.switchTo(true, false, true, false, false, true));
-		// Once the hold runs out, the bar clears or starts over as before.
-		assertEquals(Switch.RESET, BossHealthBarOverlay.switchTo(false, false, true, false, false, false));
-	}
 
-	// The bar only moves when the fight timer carries on, so the two never disagree.
-	@Test
-	public void aNewOpponentMovesTheBarOnlyWhenItCarriesOnTheFight()
-	{
-		assertEquals(Switch.RESUME, BossHealthBarOverlay.switchTo(true, true, true, false, true, false));
-		assertEquals(Switch.MOVE, BossHealthBarOverlay.switchTo(true, false, true, true, false, false));
-		// Such as the next NPC clicked while the last one is still dying: a new fight, so a new bar.
-		assertEquals(Switch.RESET, BossHealthBarOverlay.switchTo(true, false, true, false, false, false));
-		assertEquals(Switch.RESET, BossHealthBarOverlay.switchTo(true, false, true, true, true, false));
-		assertEquals(Switch.RESET, BossHealthBarOverlay.switchTo(true, false, false, true, false, false));
-	}
-
-	// An opponent back up after being defeated reports no carried-on fight, which is what the bar asks about here.
-	@Test
-	public void anOpponentThatDoesNotCarryOnTheFightGetsANewBarEvenWhileADefeatPlays()
-	{
-		assertEquals(Switch.RESET, BossHealthBarOverlay.switchTo(true, false, true, false, true, false));
-	}
-
-	@Test
-	public void aHeldBarFollowsTheTimerOfItsOwnFight()
-	{
-		assertEquals("1:30", BossHealthBarOverlay.heldFightTime("1:28", "1:30", 100, 100));
-	}
-
-	// Attacking something else while the defeated bar is still up starts another fight, whose clock isn't this bar's.
-	@Test
-	public void aHeldBarKeepsItsTimeOnceAnotherFightHasStarted()
-	{
-		assertEquals("1:30", BossHealthBarOverlay.heldFightTime("1:30", "0:00", 100, 420));
-		assertEquals("1:30", BossHealthBarOverlay.heldFightTime("1:30", null, 100, FightTimer.NO_TICK));
-	}
-
-	private static boolean outOfSight(OpponentTracker.DespawnOutcome outcome)
-	{
-		return outcome == OUT_OF_SIGHT;
-	}
 }
