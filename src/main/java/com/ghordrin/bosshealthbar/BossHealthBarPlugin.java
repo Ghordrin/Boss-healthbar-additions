@@ -1,5 +1,30 @@
 package com.ghordrin.bosshealthbar;
 
+import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
+import com.ghordrin.bosshealthbar.config.ConfigMigrations;
+import com.ghordrin.bosshealthbar.config.OldschoolToggle;
+import com.ghordrin.bosshealthbar.config.Pickers;
+import com.ghordrin.bosshealthbar.data.Health;
+import com.ghordrin.bosshealthbar.debug.DebugExport;
+import com.ghordrin.bosshealthbar.debug.DebugLog;
+import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
+import com.ghordrin.bosshealthbar.gamebars.PillarBars;
+import com.ghordrin.bosshealthbar.gamebars.PillarBarsOverlay;
+import com.ghordrin.bosshealthbar.gamebars.TobBossBar;
+import com.ghordrin.bosshealthbar.integrations.BossBarPartyHit;
+import com.ghordrin.bosshealthbar.integrations.HealthIndicatorMarkers;
+import com.ghordrin.bosshealthbar.integrations.KillCounts;
+import com.ghordrin.bosshealthbar.integrations.OpponentInfoOverride;
+import com.ghordrin.bosshealthbar.integrations.PartyDamage;
+import com.ghordrin.bosshealthbar.integrations.PartyDefence;
+import com.ghordrin.bosshealthbar.integrations.SpecialAttackCounts;
+import com.ghordrin.bosshealthbar.theme.CustomColors;
+import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
+import com.ghordrin.bosshealthbar.tracking.DamageTracker;
+import com.ghordrin.bosshealthbar.tracking.FightGroup;
+import com.ghordrin.bosshealthbar.tracking.FightTimer;
+import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
+import com.ghordrin.bosshealthbar.tracking.SuperiorTracker;
 import com.google.inject.Provides;
 import java.io.IOException;
 import javax.inject.Inject;
@@ -39,10 +64,10 @@ import net.runelite.client.util.Text;
 )
 public class BossHealthBarPlugin extends Plugin
 {
-	static final String NAME = "Boss Health Bar Additions";
-	static final String INTERNAL_NAME = "boss-health-bar-additions";
+	public static final String NAME = "Boss Health Bar Additions";
+	public static final String INTERNAL_NAME = "boss-health-bar-additions";
 	// Keep in step with the version in build.gradle and runelite-plugin.properties.
-	static final String VERSION = "1.7.0";
+	public static final String VERSION = "1.7.0";
 	private static final int MAX_LOGGED_VALUE_LENGTH = 100;
 
 	@Inject
@@ -166,7 +191,7 @@ public class BossHealthBarPlugin extends Plugin
 		});
 	}
 
-	Filepath dataDirectory() throws IOException
+	public Filepath dataDirectory() throws IOException
 	{
 		return getPluginDirectory();
 	}

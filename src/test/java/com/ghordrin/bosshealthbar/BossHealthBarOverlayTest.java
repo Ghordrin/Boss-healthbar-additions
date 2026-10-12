@@ -1,14 +1,19 @@
 package com.ghordrin.bosshealthbar;
 
-import com.ghordrin.bosshealthbar.BossHealthBarOverlay.DefeatStep;
-import com.ghordrin.bosshealthbar.BossHealthBarOverlay.Switch;
-import static com.ghordrin.bosshealthbar.OpponentTracker.DespawnOutcome.DEFEATED;
-import static com.ghordrin.bosshealthbar.OpponentTracker.DespawnOutcome.LEFT;
-import static com.ghordrin.bosshealthbar.OpponentTracker.DespawnOutcome.OUT_OF_SIGHT;
+import static com.ghordrin.bosshealthbar.tracking.OpponentTracker.DespawnOutcome.DEFEATED;
+import static com.ghordrin.bosshealthbar.tracking.OpponentTracker.DespawnOutcome.LEFT;
+import static com.ghordrin.bosshealthbar.tracking.OpponentTracker.DespawnOutcome.OUT_OF_SIGHT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import com.ghordrin.bosshealthbar.BossHealthBarOverlay.DefeatStep;
+import com.ghordrin.bosshealthbar.BossHealthBarOverlay.Switch;
+import com.ghordrin.bosshealthbar.theme.FlatTheme;
+import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
+import com.ghordrin.bosshealthbar.theme.ThemeColors;
+import com.ghordrin.bosshealthbar.tracking.FightTimer;
+import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
 import org.junit.Test;
 
 public class BossHealthBarOverlayTest

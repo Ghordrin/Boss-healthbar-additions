@@ -1,11 +1,50 @@
 package com.ghordrin.bosshealthbar;
 
+import static com.ghordrin.bosshealthbar.render.BarAnimation.clamp01;
+import static com.ghordrin.bosshealthbar.render.BarPainter.RASTER_SCALE;
+import static com.ghordrin.bosshealthbar.render.BarPainter.capRise;
+import static com.ghordrin.bosshealthbar.render.BarPainter.capWidth;
+import static com.ghordrin.bosshealthbar.render.BarPainter.drawRasterImage;
+import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
+import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
+import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
+import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
+import com.ghordrin.bosshealthbar.config.Pickers;
+import com.ghordrin.bosshealthbar.data.BarState;
+import com.ghordrin.bosshealthbar.data.BossStats;
+import com.ghordrin.bosshealthbar.data.Health;
+import com.ghordrin.bosshealthbar.data.KnownBosses;
+import com.ghordrin.bosshealthbar.data.NpcUtil;
+import com.ghordrin.bosshealthbar.debug.DebugExport;
+import com.ghordrin.bosshealthbar.debug.DebugLog;
+import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
+import com.ghordrin.bosshealthbar.gamebars.TobBossBar;
+import com.ghordrin.bosshealthbar.integrations.HealthIndicatorMarkers;
+import com.ghordrin.bosshealthbar.integrations.KillCounts;
+import com.ghordrin.bosshealthbar.integrations.PartyDefence;
+import com.ghordrin.bosshealthbar.integrations.SpecialAttackCounts;
+import com.ghordrin.bosshealthbar.render.BarAnimation;
+import com.ghordrin.bosshealthbar.render.BarEffects;
+import com.ghordrin.bosshealthbar.render.BarEnds;
+import com.ghordrin.bosshealthbar.render.BarPainter;
+import com.ghordrin.bosshealthbar.render.BarPosition;
+import com.ghordrin.bosshealthbar.render.BarTextPainter;
+import com.ghordrin.bosshealthbar.render.CrestRenderer;
+import com.ghordrin.bosshealthbar.render.GoldBar;
+import com.ghordrin.bosshealthbar.render.HealthText;
+import com.ghordrin.bosshealthbar.render.HitpointsTextMode;
+import com.ghordrin.bosshealthbar.render.IntroAnimation;
+import com.ghordrin.bosshealthbar.theme.BarTheme;
+import com.ghordrin.bosshealthbar.theme.CustomColors;
+import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
+import com.ghordrin.bosshealthbar.theme.ThemeColors;
+import com.ghordrin.bosshealthbar.tracking.BossMemory;
+import com.ghordrin.bosshealthbar.tracking.DamageTracker;
+import com.ghordrin.bosshealthbar.tracking.FightGroup;
+import com.ghordrin.bosshealthbar.tracking.FightTimer;
+import com.ghordrin.bosshealthbar.tracking.HealthReader;
+import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
 import com.google.common.base.Strings;
-import static com.ghordrin.bosshealthbar.BarAnimation.clamp01;
-import static com.ghordrin.bosshealthbar.BarPainter.RASTER_SCALE;
-import static com.ghordrin.bosshealthbar.BarPainter.drawRasterImage;
-import static com.ghordrin.bosshealthbar.BarPainter.capRise;
-import static com.ghordrin.bosshealthbar.BarPainter.capWidth;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
@@ -28,11 +67,8 @@ import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 import net.runelite.api.ParamID;
 import net.runelite.api.gameval.ItemID;
-import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
-import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
-import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -40,7 +76,7 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 @Singleton
-class BossHealthBarOverlay extends Overlay
+public class BossHealthBarOverlay extends Overlay
 {
 	private static final String PREVIEW_NAME = "Preview";
 	private static final int PREVIEW_COMBAT_LEVEL = 450;
@@ -211,13 +247,13 @@ class BossHealthBarOverlay extends Overlay
 		themeColors = null;
 	}
 
-	boolean isShowingPreview()
+	public boolean isShowingPreview()
 	{
 		return showingPreview;
 	}
 
 	// The bar's colors before any gold, for other boxes drawn in the bar's style.
-	ThemeColors baseColors()
+	public ThemeColors baseColors()
 	{
 		return barColors(updateThemeColors(), config.matchBossColors() && !showingPreview ? infoBossColors : null,
 			BarTheme.of(config).isFlat());

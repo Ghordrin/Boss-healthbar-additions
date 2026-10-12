@@ -103,7 +103,7 @@ const read = file => fs.readFileSync(path.join(SRC, file), 'utf8');
 
 function parseBossStats(npcIds)
 {
-	const src = read('BossStats.java');
+	const src = read('data/BossStats.java');
 	const weakness = new Map();
 	const drainCap = new Map();
 	const resolve = list => list.split(',').map(s => s.trim()).filter(Boolean).map(s => {
@@ -134,7 +134,7 @@ function parseBossStats(npcIds)
 function parseKnownBosses()
 {
 	// Kill count names aren't boss names.
-	const src = read('KnownBosses.java').replace(/\.killCount\("[^"]*"\)/g, '');
+	const src = read('data/KnownBosses.java').replace(/\.killCount\("[^"]*"\)/g, '');
 	const sprites = new Set([...src.matchAll(/IconBoss25x25\.(\w+)/g)].map(m => m[1]));
 	const names = new Set([...src.matchAll(/"([^"]+)"/g)].map(m => m[1].toLowerCase()));
 	return { sprites, names };
@@ -142,7 +142,7 @@ function parseKnownBosses()
 
 function parseSuperiorIds(npcIds)
 {
-	const src = read('SuperiorTracker.java');
+	const src = read('tracking/SuperiorTracker.java');
 	const start = src.indexOf('KNOWN_IDS = ');
 	const names = new Set([...src.slice(start, src.indexOf(');', start)).matchAll(/NpcID\.(\w+)/g)].map(m => m[1]));
 	for (const name of names)

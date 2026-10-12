@@ -1,0 +1,153 @@
+package com.ghordrin.bosshealthbar.render;
+
+import static com.ghordrin.bosshealthbar.render.BarAnimation.clamp01;
+import static com.ghordrin.bosshealthbar.render.BarAnimation.easeOut;
+import static com.ghordrin.bosshealthbar.render.BarAnimation.progress;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import java.time.Duration;
+import org.junit.Test;
+
+public class BarAnimationTest
+{
+	@Test
+	public void lostHealthLeavesATrail()
+	{
+		final BarAnimation animation = new BarAnimation();
+		animation.tick(1f, 1f, true, System.currentTimeMillis());
+		animation.tick(0.4f, 1f, true, System.currentTimeMillis());
+
+		assertEquals(0.4f, animation.getDisplayedFraction(), 0.001f);
+		assertTrue(animation.getTrailFraction() > 0.9f);
+	}
+
+	@Test
+	public void retargetJumpsToTheNewHealthWithoutATrail()
+	{
+		final BarAnimation animation = new BarAnimation();
+		animation.tick(0.4f, 1f, true, System.currentTimeMillis());
+		animation.retarget();
+		animation.tick(1f, 1f, true, System.currentTimeMillis());
+
+		assertEquals(1f, animation.getDisplayedFraction(), 0.001f);
+		assertEquals(1f, animation.getTrailFraction(), 0.001f);
+
+		animation.retarget();
+		animation.tick(0.2f, 1f, true, System.currentTimeMillis());
+
+		assertEquals(0.2f, animation.getDisplayedFraction(), 0.001f);
+		assertEquals(0.2f, animation.getTrailFraction(), 0.001f);
+	}
+
+	@Test
+	public void defeatEndsAfterTheFadeOrTheBurn()
+	{
+		final long hold = BarAnimation.DEFEAT_HOLD.toNanos();
+		for (boolean burnAway : new boolean[]{false, true})
+		{
+			final BarAnimation animation = new BarAnimation();
+			animation.startDefeat(1_000L);
+			final long end = 1_000L + hold + (burnAway ? BarEffects.BURN_DURATION : BarAnimation.DEFEAT_FADE).toNanos();
+			assertEquals(1f, animation.defeatOpacity(1_000L + hold, burnAway), 0.001f);
+			assertTrue(animation.defeatOpacity(end - 1_000_000L, burnAway) >= 0f);
+			assertEquals(-1f, animation.defeatOpacity(end, burnAway), 0f);
+		}
+	}
+
+	@Test
+	public void aHeldDefeatStaysOnDefeatedAndFadesOnceLetGo()
+	{
+		final long hold = BarAnimation.DEFEAT_HOLD.toNanos();
+		final long fade = BarAnimation.DEFEAT_FADE.toNanos();
+		final BarAnimation animation = new BarAnimation();
+		animation.startDefeat(1_000L);
+		final long later = 1_000L + hold + fade * 3;
+		animation.holdDefeat(later, fade * 10);
+		assertEquals(1f, animation.defeatOpacity(later, false), 0f);
+		assertEquals(0, animation.defeatEffectMillis(later));
+		assertEquals(-1f, animation.defeatOpacity(later + fade, false), 0f);
+	}
+
+	@Test
+	public void aDefeatIsOnlyHeldUpToTheLimit()
+	{
+		final long hold = BarAnimation.DEFEAT_HOLD.toNanos();
+		final long limit = hold * 3;
+		final BarAnimation animation = new BarAnimation();
+		animation.startDefeat(1_000L);
+		animation.holdDefeat(1_000L + limit - 1, limit);
+		assertEquals(0, animation.defeatEffectMillis(1_000L + limit - 1));
+		// Past the limit it fades even while still held.
+		final long past = 1_000L + limit + hold;
+		animation.holdDefeat(past, limit);
+		assertTrue(animation.defeatEffectMillis(past) > 0);
+		// A limit below the normal hold still holds that long.
+		final BarAnimation shortLimit = new BarAnimation();
+		shortLimit.startDefeat(1_000L);
+		shortLimit.holdDefeat(1_000L + hold - 1, 0);
+		assertEquals(1f, shortLimit.defeatOpacity(1_000L + hold - 1, false), 0f);
+	}
+
+	@Test
+	public void burnAwayFadesOnlyTheText()
+	{
+		final BarAnimation animation = new BarAnimation();
+		animation.startDefeat(1_000L);
+		final long halfway = 1_000L + BarAnimation.DEFEAT_HOLD.toNanos() + BarAnimation.DEFEAT_FADE.toNanos() / 2;
+
+		assertEquals(0.5f, animation.defeatOpacity(halfway, false), 0.01f);
+		assertEquals(1f, animation.defeatTextOpacity(halfway, false), 0f);
+		assertEquals(1f, animation.defeatOpacity(halfway, true), 0f);
+		assertEquals(0.5f, animation.defeatTextOpacity(halfway, true), 0.01f);
+		assertEquals(BarAnimation.DEFEAT_FADE.toMillis() / 2, animation.defeatEffectMillis(halfway));
+	}
+
+	@Test
+	public void noDefeatMeansNoDefeatEffect()
+	{
+		final BarAnimation animation = new BarAnimation();
+		assertEquals(1f, animation.defeatOpacity(5_000_000_000L, true), 0f);
+		assertEquals(1f, animation.defeatTextOpacity(5_000_000_000L, true), 0f);
+		assertTrue(animation.defeatEffectMillis(5_000_000_000L) < 0);
+	}
+
+	@Test
+	public void clampKeepsFractionsInRange()
+	{
+		assertEquals(0f, clamp01(-5f), 0f);
+		assertEquals(1f, clamp01(5f), 0f);
+		assertEquals(0.25f, clamp01(0.25f), 0f);
+	}
+
+	@Test
+	public void progressRunsFromZeroToOneAcrossTheDuration()
+	{
+		final Duration delay = Duration.ofMillis(100);
+		final Duration duration = Duration.ofMillis(400);
+
+		assertEquals(0f, progress(Duration.ofMillis(50).toNanos(), delay, duration), 0.0001f);
+		assertEquals(0f, progress(delay.toNanos(), delay, duration), 0.0001f);
+		assertEquals(0.5f, progress(Duration.ofMillis(300).toNanos(), delay, duration), 0.0001f);
+		assertEquals(1f, progress(Duration.ofMillis(500).toNanos(), delay, duration), 0.0001f);
+		assertEquals(1f, progress(Duration.ofSeconds(10).toNanos(), delay, duration), 0.0001f);
+		assertEquals(1f, progress(Long.MAX_VALUE, delay, duration), 0.0001f);
+	}
+
+	@Test
+	public void easeOutKeepsItsEndsAndOnlyMovesForward()
+	{
+		assertEquals(0f, easeOut(0f), 0.0001f);
+		assertEquals(1f, easeOut(1f), 0.0001f);
+
+		float previous = -1f;
+		for (int i = 0; i <= 100; i++)
+		{
+			final float eased = easeOut(i / 100f);
+			assertTrue("eased value went backwards at " + i, eased > previous);
+			assertTrue("eased value left the range at " + i, eased >= 0f && eased <= 1f);
+			previous = eased;
+		}
+
+		assertTrue(easeOut(0.5f) > 0.5f);
+	}
+}
