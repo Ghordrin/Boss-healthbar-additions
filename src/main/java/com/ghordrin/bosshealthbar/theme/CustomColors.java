@@ -1,6 +1,7 @@
 package com.ghordrin.bosshealthbar.theme;
 
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
+import com.google.common.annotations.VisibleForTesting;
 import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,6 +42,9 @@ public class CustomColors
 		final Map<String, Color> colors = new LinkedHashMap<>();
 		colors.put(BossHealthBarConfig.CUSTOM_FILL_HIGH_COLOR_KEY, theme.getFillHigh());
 		colors.put(BossHealthBarConfig.CUSTOM_FILL_LOW_COLOR_KEY, theme.getFillLow());
+		// A theme without a background of its own leaves the picker transparent, so the dark one stays.
+		colors.put(BossHealthBarConfig.CUSTOM_TRACK_COLOR_KEY,
+			theme.getTrack() != null ? theme.getTrack() : BossHealthBarConfig.TRANSPARENT);
 		colors.put(BossHealthBarConfig.CUSTOM_TRAIL_COLOR_KEY, theme.getTrail());
 		colors.put(BossHealthBarConfig.CUSTOM_FRAME_COLOR_KEY, theme.getFrame());
 		colors.put(BossHealthBarConfig.CUSTOM_TEXT_COLOR_KEY, theme.getText());
@@ -50,11 +54,19 @@ public class CustomColors
 		return colors;
 	}
 
+	// Null is what the painter reads as "draw the themed background", so a color left transparent means that.
+	@VisibleForTesting
+	static Color pickedTrack(Color track)
+	{
+		return track == null || track.getAlpha() == 0 ? null : track;
+	}
+
 	public static ThemeColors fromConfig(BossHealthBarConfig config)
 	{
 		return ThemeColors.builder()
 			.fillHigh(config.customFillHighColor())
 			.fillLow(config.customFillLowColor())
+			.track(pickedTrack(config.customTrackColor()))
 			.trail(config.customTrailColor())
 			.frame(config.customFrameColor())
 			.text(config.customTextColor())

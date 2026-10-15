@@ -4,6 +4,7 @@
 
 ### New
 
+- New Background color in Custom colors: the color behind the fill, where the health is missing. Left transparent it keeps the dark background the themes use, so a green fill on a red background is now possible without the Oldschool theme
 - New Support section at the top of the settings with Open the Discord, which opens the plugin's Discord in your browser for help, bug reports and sharing setups
 
 ### Changed
