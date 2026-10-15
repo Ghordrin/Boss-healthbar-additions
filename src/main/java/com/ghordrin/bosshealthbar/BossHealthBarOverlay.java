@@ -12,6 +12,7 @@ import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.config.Pickers;
 import com.ghordrin.bosshealthbar.data.BarState;
 import com.ghordrin.bosshealthbar.data.BossStats;
+import com.ghordrin.bosshealthbar.data.KnownBosses;
 import com.ghordrin.bosshealthbar.data.OpponentInfo;
 import com.ghordrin.bosshealthbar.debug.DebugExport;
 import com.ghordrin.bosshealthbar.debug.DebugLog;
@@ -199,6 +200,14 @@ public class BossHealthBarOverlay extends Overlay
 		return barColors(updateThemeColors(), bossColors, BarTheme.of(config).isFlat());
 	}
 
+	// The second bar follows its own boss, so two bosses at once don't both take the first one's color.
+	private ThemeColors partnerColors(BarState partner, boolean flat)
+	{
+		final KnownBosses.Boss boss = config.matchBossColors() && !selector.isShowingPreview()
+			? KnownBosses.find(partner.name) : null;
+		return barColors(updateThemeColors(), boss != null ? boss.getColors() : null, flat);
+	}
+
 	private ThemeColors updateThemeColors()
 	{
 		if (themeColors == null)
@@ -370,7 +379,7 @@ public class BossHealthBarOverlay extends Overlay
 			final int partnerTop = barY + barHeight + capRise + inBarBelow + footerHeight + secondFooterHeight
 				+ PARTNER_GAP;
 			drawPartner(graphics, originalComposite, opacity * animation.defeatTextOpacity(now, burnAway),
-				opacity * textOpacity, baseColors, partnerTop, partnerTop + partnerRowHeight + partnerCapRise, width,
+				opacity * textOpacity, partnerTop, partnerTop + partnerRowHeight + partnerCapRise, width,
 				shownWidth, shownInset, capWidth, partnerBarHeight, fillProgress, flat, ends);
 			setOpacity(graphics, originalComposite, opacity);
 		}
@@ -422,7 +431,7 @@ public class BossHealthBarOverlay extends Overlay
 
 	// Another boss of the same fight, in the main bar's colours but without its extras.
 	private void drawPartner(Graphics2D graphics, Composite originalComposite, float barOpacity, float textOpacity,
-		ThemeColors colors, int rowTop, int barY, int width, int shownWidth, int shownInset, int capWidth, int barHeight,
+		int rowTop, int barY, int width, int shownWidth, int shownInset, int capWidth, int barHeight,
 		float fillProgress, boolean flat, BarEnds ends)
 	{
 		final FightGroup.Member member = selector.isShowingPreview() ? null : group.partner();
@@ -449,6 +458,8 @@ public class BossHealthBarOverlay extends Overlay
 		}
 		partnerAnimation.tick(dead ? 0f : clamp01(partner.health.ratio / (float) partner.health.scale),
 			config.animationSpeed(), config.showDamageTrail(), 0);
+
+		final ThemeColors colors = partnerColors(partner, flat);
 
 		setOpacity(graphics, originalComposite, textOpacity);
 		textPainter.drawPartnerRow(graphics, partner.name, partnerHitpointsText(partner), dead, colors, width, capWidth,
