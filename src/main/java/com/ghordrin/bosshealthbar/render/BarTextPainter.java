@@ -250,33 +250,43 @@ public class BarTextPainter
 		return rowHeights[row.ordinal()];
 	}
 
-	// The partner bar's text row, in the Hitpoints font. Sized from the settings so it doesn't jump.
+	// The partner bar's text row, in the same fonts as the main bar. Sized from the settings so it doesn't jump.
 	public int partnerRowHeight()
 	{
-		return partnerRowHeight(available[NAME], available[HITPOINTS], fonts.above(HITPOINTS), fonts.below(HITPOINTS));
+		return partnerRowHeight(available[NAME], available[HITPOINTS],
+			fonts.above(NAME), fonts.below(NAME), fonts.above(HITPOINTS), fonts.below(HITPOINTS));
+	}
+
+	// The name and the hitpoints share a baseline, so the row fits whichever of the two shown fonts reaches furthest.
+	@VisibleForTesting
+	static int partnerRowHeight(boolean showName, boolean showHitpoints,
+		int nameAbove, int nameBelow, int hitpointsAbove, int hitpointsBelow)
+	{
+		return partnerBaseline(showName, showHitpoints, nameAbove, hitpointsAbove)
+			+ Math.max(showName ? nameBelow : 0, showHitpoints ? hitpointsBelow : 0);
 	}
 
 	@VisibleForTesting
-	static int partnerRowHeight(boolean showName, boolean showHitpoints, int above, int below)
+	static int partnerBaseline(boolean showName, boolean showHitpoints, int nameAbove, int hitpointsAbove)
 	{
-		return showName || showHitpoints ? above + below : 0;
+		return Math.max(showName ? nameAbove : 0, showHitpoints ? hitpointsAbove : 0);
 	}
 
 	// Name on the left, hitpoints or "Defeated" on the right, between the bar's caps.
 	public void drawPartnerRow(Graphics2D graphics, String name, String hitpointsText, boolean defeated, ThemeColors colors,
 		int width, int capWidth, int top)
 	{
-		final FontMetrics fontMetrics = fonts.metrics(HITPOINTS);
 		final int left = capWidth + TEXT_INSET;
 		final int right = width - capWidth - TEXT_INSET;
-		final int baseline = top + fonts.above(HITPOINTS);
-		fonts.useFont(graphics, HITPOINTS);
+		final int baseline = top + partnerBaseline(available[NAME], available[HITPOINTS],
+			fonts.above(NAME), fonts.above(HITPOINTS));
 
 		final String rightText = defeated ? (available[HITPOINTS] ? DEFEATED_TEXT : null) : hitpointsText;
 		int nameRight = right;
 		if (rightText != null)
 		{
-			final int textWidth = fontMetrics.stringWidth(rightText);
+			fonts.useFont(graphics, HITPOINTS);
+			final int textWidth = fonts.metrics(HITPOINTS).stringWidth(rightText);
 			drawShadowedText(graphics, rightText, right - textWidth, baseline,
 				defeated ? colors.getDefeatedText() : colors.getHitpointsText(), 1f);
 			nameRight -= textWidth + LEVEL_GAP;
@@ -284,7 +294,8 @@ public class BarTextPainter
 
 		if (available[NAME] && name != null && nameRight > left)
 		{
-			drawShadowedText(graphics, partnerName.get(name, fontMetrics, nameRight - left), left, baseline,
+			fonts.useFont(graphics, NAME);
+			drawShadowedText(graphics, partnerName.get(name, fonts.metrics(NAME), nameRight - left), left, baseline,
 				colors.getText(), 1f);
 		}
 	}

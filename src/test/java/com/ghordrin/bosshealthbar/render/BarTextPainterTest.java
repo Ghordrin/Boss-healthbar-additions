@@ -37,12 +37,23 @@ public class BarTextPainterTest
 	}
 
 
+	// The name font is usually the taller of the two, so the row has to follow it and not the hitpoints font.
 	@Test
-	public void thePartnerRowFitsTheHitpointsFontWhileItHasText()
+	public void thePartnerRowFitsTheTallestFontThatHasText()
 	{
-		assertEquals(14, BarTextPainter.partnerRowHeight(true, false, 10, 4));
-		assertEquals(14, BarTextPainter.partnerRowHeight(false, true, 10, 4));
-		assertEquals(0, BarTextPainter.partnerRowHeight(false, false, 10, 4));
+		assertEquals(24, BarTextPainter.partnerRowHeight(true, true, 18, 6, 10, 4));
+		assertEquals(24, BarTextPainter.partnerRowHeight(true, false, 18, 6, 10, 4));
+		assertEquals(14, BarTextPainter.partnerRowHeight(false, true, 18, 6, 10, 4));
+		assertEquals(0, BarTextPainter.partnerRowHeight(false, false, 18, 6, 10, 4));
+	}
+
+	// Each side reaches a different distance above its baseline, so one of them sets where the shared baseline sits.
+	@Test
+	public void thePartnerRowMixesTheTwoFontsOnOneBaseline()
+	{
+		assertEquals(26, BarTextPainter.partnerRowHeight(true, true, 18, 2, 10, 8));
+		assertEquals(18, BarTextPainter.partnerBaseline(true, true, 18, 10));
+		assertEquals(10, BarTextPainter.partnerBaseline(false, true, 18, 10));
 	}
 
 	@Test

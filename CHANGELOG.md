@@ -8,7 +8,8 @@
 
 ### Fixed
 
-- The delve level is shown after the boss's name again, the way the game's own boss bar shows it. On a narrow bar the name shortens to make room for it
+- The delve level is shown after the boss's name again, the way the game's own boss bar shows it. On a narrow bar the name shortens to make room for it
+- The name on the second boss bar uses the Name font instead of the Hitpoints font, so both bars read the same
 
 ## 1.7.0 (2026-10-11)
 
