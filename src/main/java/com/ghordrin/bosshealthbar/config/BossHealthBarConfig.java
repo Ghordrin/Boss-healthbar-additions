@@ -942,8 +942,9 @@ public interface BossHealthBarConfig extends Config
 	@Alpha
 	@ConfigItem(
 		keyName = CUSTOM_LEVEL_TEXT_COLOR_KEY,
-		name = "Combat level text",
-		description = "The color of the combat level, fight timer, kill count, elemental weakness and defence drain limit.",
+		name = "Combat level and info text",
+		description = "The color of the combat level, fight timer, kill count, elemental weakness and defence"
+			+ " drain limit, which share one color and are drawn a little dimmer than the name.",
 		position = 7,
 		section = customColorsSection
 	)

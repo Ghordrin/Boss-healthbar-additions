@@ -4,6 +4,7 @@
 
 ### New
 
+- New delve level after the boss's name, the way the game's own boss bar shows it. On a narrow bar the name shortens to make room for it
 - New Background color in Custom colors: the color behind the fill, where the health is missing. Left transparent it keeps the dark background the themes use, so a green fill on a red background is now possible without the Oldschool theme
 - New Support section at the top of the settings with Open the Discord, which opens the plugin's Discord in your browser for help, bug reports and sharing setups
 
@@ -13,7 +14,6 @@
 
 ### Fixed
 
-- The delve level is shown after the boss's name again, the way the game's own boss bar shows it. On a narrow bar the name shortens to make room for it
 - The name on the second boss bar uses the Name font instead of the Hitpoints font, so both bars read the same
 
 ## 1.7.0 (2026-10-11)
