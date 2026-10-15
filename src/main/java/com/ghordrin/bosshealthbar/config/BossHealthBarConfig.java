@@ -170,7 +170,8 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = CUSTOM_ICON_ITEM_ID_KEY,
 		name = "Custom icon item",
-		description = "The item whose icon the Custom theme shows at the bar ends. Set by right-clicking the bar and choosing \"Choose custom icon\".",
+		description = "The item whose icon the Custom theme shows, wherever Icon placement puts it."
+			+ " Set by right-clicking the bar and choosing \"Choose custom icon\".",
 		hidden = true
 	)
 	default int customIconItemId()
@@ -860,7 +861,8 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = CUSTOM_FILL_HIGH_COLOR_KEY,
 		name = "Fill (full health)",
-		description = "The fill color at full health. It blends towards the low health color as health drops.",
+		description = "The fill color at full health. It blends towards the low health color as health drops,"
+			+ " and tints the crests and the other bars the game shows next to the boss bar.",
 		position = 1,
 		section = customColorsSection
 	)
@@ -913,7 +915,8 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = CUSTOM_FRAME_COLOR_KEY,
 		name = "Frame",
-		description = "The color of the frame, end pieces, underline and phase markers.",
+		description = "The color of the frame, the bar ends, the crests, the underline, the phase markers"
+			+ " and the outline of the other bars the game shows.",
 		position = 5,
 		section = customColorsSection
 	)
@@ -926,7 +929,8 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = CUSTOM_TEXT_COLOR_KEY,
 		name = "Name and damage text",
-		description = "The color of the name and the damage number, and of the party and magic defence and special attack counts when they have no color of their own.",
+		description = "The color of the name, the delve level and the damage number, on both bars, and of the party"
+			+ " and magic defence and special attack counts when they have no color of their own.",
 		position = 6,
 		section = customColorsSection
 	)
@@ -952,7 +956,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = CUSTOM_HITPOINTS_TEXT_COLOR_KEY,
 		name = "Hitpoints text",
-		description = "The color of the hitpoints text.",
+		description = "The color of the hitpoints text on both bars, and of the labels on the other bars the game shows.",
 		position = 8,
 		section = customColorsSection
 	)
@@ -965,7 +969,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = CUSTOM_DEFEATED_TEXT_COLOR_KEY,
 		name = "Defeated text",
-		description = "The color of the \"Defeated\" label.",
+		description = "The color of the \"Defeated\" label on both bars.",
 		position = 9,
 		section = customColorsSection
 	)
