@@ -241,7 +241,9 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = ICON_PLACEMENT_KEY,
 		name = "Icon placement",
-		description = "Where the icon goes: a crest at both ends of the bar, at one end only, small before the name, or nowhere. With Use Oldschool theme on it always goes before the name.",
+		description = "Where the icon goes. Crests puts one at each end of the bar, Crest left and Crest right only"
+			+ " on that end, and Before the name puts a small one there. With Use Oldschool theme on it always"
+			+ " goes before the name.",
 		position = 4,
 		section = lookSection
 	)
@@ -942,7 +944,7 @@ public interface BossHealthBarConfig extends Config
 	@Alpha
 	@ConfigItem(
 		keyName = CUSTOM_LEVEL_TEXT_COLOR_KEY,
-		name = "Combat level and info text",
+		name = "Level and info text",
 		description = "The color of the combat level, fight timer, kill count, elemental weakness and defence"
 			+ " drain limit, which share one color and are drawn a little dimmer than the name.",
 		position = 7,
