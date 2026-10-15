@@ -32,6 +32,8 @@ public final class KnownBosses
 		ThemeColors colors;
 		// The name RuneLite's Chat Commands plugin saves the kill count under.
 		String killCountKey;
+		// A shorter name for when the full one doesn't fit the bar, or null when the boss has none.
+		String shortName;
 	}
 
 	// Matched by name, since most bosses have a separate NPC ID for each form. Raid bosses have no
@@ -98,6 +100,7 @@ public final class KnownBosses
 		.sprite(SpriteID.IconBoss25x25.DOOM_OF_MOKHAIOTL, 0xA0401E, "Doom of Mokhaiotl",
 			"Doom of Mokhaiotl (Shielded)", "Doom of Mokhaiotl (Burrowed)")
 			.killCount("doom of mokhaiotl")
+			.shortName("Doom")
 		.sprite(SpriteID.IconBoss25x25.LUNAR_CHESTS, 0x8AA0D0, "Blood Moon", "Blue Moon", "Eclipse Moon")
 			.killCount("lunar chest")
 		.sprite(SpriteID.IconBoss25x25.BARROWS_CHESTS, 0x5A6A5A, "Ahrim the Blighted", "Dharok the Wretched",
@@ -157,6 +160,8 @@ public final class KnownBosses
 		private final Map<String, Boss> bosses = new LinkedHashMap<>();
 		private final Map<Integer, ThemeColors> palettes = new HashMap<>();
 		private final List<String> lastNames = new ArrayList<>();
+		// The same names as written, since the short name keeps the bracketed form with its original case.
+		private final List<String> lastWrittenNames = new ArrayList<>();
 
 		Builder sprite(int spriteId, int color, String... names)
 		{
@@ -194,19 +199,42 @@ public final class KnownBosses
 			for (String name : lastNames)
 			{
 				final Boss boss = bosses.get(name);
-				bosses.put(name, new Boss(boss.getIcon(), boss.getColors(), key));
+				bosses.put(name, new Boss(boss.getIcon(), boss.getColors(), key, boss.getShortName()));
 			}
 			return this;
+		}
+
+		// Applies to every name of the entry before it, keeping the bracketed form a name ends with, so a form
+		// still reads as one after the base is shortened.
+		Builder shortName(String base)
+		{
+			for (int i = 0; i < lastNames.size(); i++)
+			{
+				final String name = lastNames.get(i);
+				final Boss boss = bosses.get(name);
+				bosses.put(name, new Boss(boss.getIcon(), boss.getColors(), boss.getKillCountKey(),
+					base + form(lastWrittenNames.get(i))));
+			}
+			return this;
+		}
+
+		// The bracketed form at the end of a name, like " (Burrowed)", or nothing when the name has none.
+		private static String form(String written)
+		{
+			final int bracket = written.indexOf(" (");
+			return bracket == -1 ? "" : written.substring(bracket);
 		}
 
 		private Builder add(Icon icon, ThemeColors colors, String... names)
 		{
 			lastNames.clear();
+			lastWrittenNames.clear();
 			for (String name : names)
 			{
 				final String lower = name.toLowerCase(Locale.ROOT);
-				Preconditions.checkArgument(bosses.put(lower, new Boss(icon, colors, lower)) == null, name);
+				Preconditions.checkArgument(bosses.put(lower, new Boss(icon, colors, lower, null)) == null, name);
 				lastNames.add(lower);
+				lastWrittenNames.add(name);
 			}
 			return this;
 		}

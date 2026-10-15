@@ -3,10 +3,12 @@ package com.ghordrin.bosshealthbar.render;
 import static com.ghordrin.bosshealthbar.render.BarAnimation.clamp01;
 import static com.ghordrin.bosshealthbar.theme.ColorUtil.withAlpha;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
+import com.ghordrin.bosshealthbar.data.BarState;
 import com.ghordrin.bosshealthbar.integrations.PartyDefence;
 import com.ghordrin.bosshealthbar.integrations.SpecialAttackCounts;
 import com.ghordrin.bosshealthbar.theme.ThemeColors;
 import com.ghordrin.bosshealthbar.tracking.DamageTracker;
+import com.ghordrin.bosshealthbar.tracking.DelveLevel;
 import com.google.common.annotations.VisibleForTesting;
 import java.awt.Color;
 import java.awt.Font;
@@ -72,6 +74,7 @@ public class BarTextPainter
 	private final int[] baselines = new int[BarPosition.ROW_COUNT];
 	private String nameText;
 	private String levelText;
+	private String delveText;
 	private BufferedImage nameIcon;
 	private String hitpointsText;
 	private boolean defeated;
@@ -286,7 +289,8 @@ public class BarTextPainter
 		}
 	}
 
-	public void layoutText(String name, int combatLevel, BufferedImage nameIcon, String hitpointsText,
+	public void layoutText(String name, String shortName, int combatLevel, int delveLevel, BufferedImage nameIcon,
+		String hitpointsText,
 		boolean defeated, int previewDamage, boolean showFightTime, String fightTimeText, String killCountText,
 		PartyDefence.Reading defence,
 		BufferedImage defenceIcon, PartyDefence.Reading magicDefence, BufferedImage magicIcon,
@@ -317,6 +321,7 @@ public class BarTextPainter
 
 		final boolean showName = config.showBossName();
 		levelText = null;
+		delveText = null;
 		nameText = null;
 		int nameFixedWidth = 0;
 		final int ellipsisWidth = textMetrics.stringWidth(ELLIPSIS);
@@ -330,6 +335,12 @@ public class BarTextPainter
 			{
 				levelText = "LV " + combatLevel;
 				nameFixedWidth += LEVEL_GAP + fonts.levelMetrics().stringWidth(levelText);
+			}
+			// The delve level keeps its room like the combat level, so the name gives way to it instead of it dropping.
+			if (delveLevel > BarState.NO_DELVE_LEVEL)
+			{
+				delveText = DelveLevel.text(delveLevel);
+				nameFixedWidth += LEVEL_GAP + textMetrics.stringWidth(delveText);
 			}
 			row(NAME).addKept(NAME, positions[NAME].getSpot(), nameFixedWidth + ellipsisWidth);
 		}
@@ -409,7 +420,8 @@ public class BarTextPainter
 		if (showName)
 		{
 			final BarLayout nameRow = row(NAME);
-			nameText = ellipsizedName.get(name, textMetrics, ellipsisWidth + nameRow.room(NAME));
+			final int nameRoom = ellipsisWidth + nameRow.room(NAME);
+			nameText = ellipsizedName.get(fittedName(name, shortName, textMetrics, nameRoom), textMetrics, nameRoom);
 			nameRow.setWidth(NAME, nameFixedWidth + textMetrics.stringWidth(nameText));
 			nameRow.layout(width, left, right, LEVEL_GAP);
 		}
@@ -422,6 +434,14 @@ public class BarTextPainter
 		baselines[IN_BAR_ROW] = barMiddle - rowHeights[IN_BAR_ROW] / 2 + rowBaselines[IN_BAR_ROW];
 		baselines[BOTTOM_ROW] = bottomTop + rowBaselines[BOTTOM_ROW];
 		baselines[BOTTOM_2_ROW] = bottomTop + rowHeights[BOTTOM_ROW] + rowBaselines[BOTTOM_2_ROW];
+	}
+
+	// A boss with a short name uses it only once the full name no longer fits, so a wide bar still spells it out.
+	// Anything that still doesn't fit is ellipsized after this.
+	@VisibleForTesting
+	static String fittedName(String name, String shortName, FontMetrics metrics, int room)
+	{
+		return shortName == null || metrics.stringWidth(name) <= room ? name : shortName;
 	}
 
 	// How far the in-bar row reaches past a bar shorter than its text. The overlay keeps that much room free.
@@ -452,11 +472,19 @@ public class BarTextPainter
 			}
 			fonts.useFont(graphics, NAME);
 			drawShadowedText(graphics, nameText, x, baseline, colors.getText(), 1f);
+			int after = x + textMetrics.stringWidth(nameText);
 			if (levelText != null)
 			{
 				fonts.useLevelFont(graphics);
-				drawShadowedText(graphics, levelText, x + textMetrics.stringWidth(nameText) + LEVEL_GAP, baseline,
-					colors.getLevelText(), 0.9f);
+				after += LEVEL_GAP;
+				drawShadowedText(graphics, levelText, after, baseline, colors.getLevelText(), 0.9f);
+				after += fonts.levelMetrics().stringWidth(levelText);
+			}
+			// Last in the row, in the name's font, since the level belongs to the name rather than to the stats.
+			if (delveText != null)
+			{
+				fonts.useFont(graphics, NAME);
+				drawShadowedText(graphics, delveText, after + LEVEL_GAP, baseline, colors.getText(), 1f);
 			}
 		}
 

@@ -13,6 +13,7 @@ import com.ghordrin.bosshealthbar.integrations.KillCounts;
 import com.ghordrin.bosshealthbar.integrations.PartyDefence;
 import com.ghordrin.bosshealthbar.integrations.SpecialAttackCounts;
 import com.ghordrin.bosshealthbar.tracking.BossMemory;
+import com.ghordrin.bosshealthbar.tracking.DelveLevel;
 import com.ghordrin.bosshealthbar.tracking.FightGroup;
 import com.ghordrin.bosshealthbar.tracking.FightTimer;
 import com.ghordrin.bosshealthbar.tracking.HealthReader;
@@ -59,6 +60,7 @@ public class BarStateSelector
 	private final GameBossBar gameBossBar;
 	private final TobBossBar tobBossBar;
 	private final FightTimer fightTimer;
+	private final DelveLevel delveLevel;
 	private final FightGroup group;
 	private final OpponentInfo opponentInfo;
 	private final HealthIndicatorMarkers indicatorMarkers;
@@ -90,6 +92,7 @@ public class BarStateSelector
 		GameBossBar gameBossBar,
 		TobBossBar tobBossBar,
 		FightTimer fightTimer,
+		DelveLevel delveLevel,
 		FightGroup group,
 		OpponentInfo opponentInfo,
 		HealthIndicatorMarkers indicatorMarkers,
@@ -104,6 +107,7 @@ public class BarStateSelector
 		this.gameBossBar = gameBossBar;
 		this.tobBossBar = tobBossBar;
 		this.fightTimer = fightTimer;
+		this.delveLevel = delveLevel;
 		this.group = group;
 		this.opponentInfo = opponentInfo;
 		this.indicatorMarkers = indicatorMarkers;
@@ -410,7 +414,8 @@ public class BarStateSelector
 	private BarState barState(Actor opponent, Health health, float[] phaseMarkers)
 	{
 		final String name = opponentInfo.name();
-		return new BarState(name, opponent.getCombatLevel(), health, phaseMarkers,
+		return new BarState(name, opponentInfo.shortName(), opponent.getCombatLevel(),
+			delveLevel.forOpponent(name), health, phaseMarkers,
 			indicatorMarkers.markersFor(name), opponentInfo.killCountKey(), opponentInfo.stats(),
 			specialAttackCounts.readings(), fightTimer.getText());
 	}
@@ -441,7 +446,7 @@ public class BarStateSelector
 	private BarState previewState(long now)
 	{
 		final int step = (int) ((now - previewStartNanos) / PREVIEW_STEP.toNanos() % PREVIEW_HEALTH.length);
-		return new BarState(PREVIEW_NAME, PREVIEW_COMBAT_LEVEL,
+		return new BarState(PREVIEW_NAME, null, PREVIEW_COMBAT_LEVEL, BarState.NO_DELVE_LEVEL,
 			new Health(PREVIEW_HEALTH[step], PREVIEW_MAX_HEALTH, true, PREVIEW_MAX_HEALTH, false),
 			config.showPhaseMarkers() ? PREVIEW_PHASE_MARKERS : BarState.NO_PHASE_MARKERS,
 			HealthIndicatorMarkers.NONE, null, PREVIEW_STATS,

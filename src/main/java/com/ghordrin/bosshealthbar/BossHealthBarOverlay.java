@@ -314,7 +314,8 @@ public class BossHealthBarOverlay extends Overlay
 
 		textPainter.applyTextHints(graphics);
 		final BufferedImage nameIcon = flat ? icon : barIcons.nameIcon(opponentInfo.bossIcon(), selector.isShowingPreview());
-		textPainter.layoutText(state.name, state.combatLevel, nameIcon, hitpointsText, defeated,
+		textPainter.layoutText(state.name, state.shortName, state.combatLevel, state.delveLevel, nameIcon,
+			hitpointsText, defeated,
 			selector.isShowingPreview() ? BarStateSelector.PREVIEW_DAMAGE : 0, showFightTime, fightTimeText,
 			killCountText, defence,
 			defence != null || drainCapText != null ? partyDefence.icon() : null,

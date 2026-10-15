@@ -79,6 +79,35 @@ public class KnownBossesTest
 		assertNull(icon(null));
 	}
 
+	private static String shortName(String name)
+	{
+		final KnownBosses.Boss boss = KnownBosses.find(name);
+		return boss != null ? boss.getShortName() : null;
+	}
+
+	@Test
+	public void theShortNameKeepsTheFormTheNameSpellsOut()
+	{
+		assertEquals("Doom", shortName("Doom of Mokhaiotl"));
+		assertEquals("Doom (Shielded)", shortName("Doom of Mokhaiotl (Shielded)"));
+		assertEquals("Doom (Burrowed)", shortName("Doom of Mokhaiotl (Burrowed)"));
+	}
+
+	@Test
+	public void bossesWithoutAShortNameHaveNone()
+	{
+		assertNull(shortName("General Graardor"));
+		assertNull(shortName("Tekton (enraged)"));
+		assertNull(shortName("Mithril dragon"));
+	}
+
+	@Test
+	public void theShortNameAndTheKillCountKeyBothSurvive()
+	{
+		assertEquals("doom of mokhaiotl", KnownBosses.find("Doom of Mokhaiotl (Burrowed)").getKillCountKey());
+		assertEquals("Doom (Burrowed)", shortName("Doom of Mokhaiotl (Burrowed)"));
+	}
+
 	@Test
 	public void everyFormOfABossSharesItsColors()
 	{

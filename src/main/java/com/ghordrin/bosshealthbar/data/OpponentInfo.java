@@ -17,6 +17,7 @@ public class OpponentInfo
 	private Actor actor;
 	private int npcId = -1;
 	private String name;
+	private String shortName;
 	private String killCountKey;
 	private BossStats.Info stats;
 	private KnownBosses.Icon bossIcon;
@@ -25,6 +26,11 @@ public class OpponentInfo
 	public String name()
 	{
 		return name;
+	}
+
+	public String shortName()
+	{
+		return shortName;
 	}
 
 	public String killCountKey()
@@ -67,6 +73,7 @@ public class OpponentInfo
 		bossIcon = null;
 		bossColors = null;
 		killCountKey = null;
+		shortName = null;
 		stats = null;
 		if (opponent instanceof NPC)
 		{
@@ -76,6 +83,7 @@ public class OpponentInfo
 				bossIcon = boss.getIcon();
 				bossColors = boss.getColors();
 				killCountKey = boss.getKillCountKey();
+				shortName = boss.getShortName();
 			}
 			stats = BossStats.info(NpcUtil.currentId((NPC) opponent));
 			if (composition != null)
