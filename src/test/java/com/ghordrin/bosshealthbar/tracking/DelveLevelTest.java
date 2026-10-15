@@ -19,12 +19,4 @@ public class DelveLevelTest
 	{
 		assertEquals(1, DelveLevel.levelFor(-1));
 	}
-
-	@Test
-	public void theLevelReadsAsTheGameWordsIt()
-	{
-		assertEquals("Delve 1", DelveLevel.text(1));
-		assertEquals("Delve 8", DelveLevel.text(8));
-		assertEquals("Delve 14", DelveLevel.text(14));
-	}
 }

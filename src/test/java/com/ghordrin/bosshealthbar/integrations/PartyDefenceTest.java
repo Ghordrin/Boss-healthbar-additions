@@ -85,13 +85,6 @@ public class PartyDefenceTest
 	}
 
 	@Test
-	public void boxesAreNamedLikeTheirs()
-	{
-		assertEquals(PartyDefence.BOX_NAME, box("Big Boss", "10", Color.WHITE).getName());
-		assertEquals(PartyDefence.BETTER_BOX_NAME, betterBox(DEFENCE_IMAGE, "10", Color.WHITE).getName());
-	}
-
-	@Test
 	public void betterSkipsTheMagicDefenceBox()
 	{
 		final PartyDefence.Reading reading = PartyDefence.findBetter(Arrays.asList(

@@ -28,16 +28,29 @@ public class KillCountsTest
 		assertEquals("grotesque guardians", key("<col=00ffff>Dusk</col>"));
 	}
 
+	// Every form of a boss has to land on the one key the game counts it under.
 	@Test
 	public void formsOfOneBossShareAKey()
 	{
 		assertEquals("grotesque guardians", key("Dawn"));
+		assertEquals("grotesque guardians", key("Dusk"));
 		assertEquals("barrows chests", key("Dharok the Wretched"));
+		assertEquals("barrows chests", key("Ahrim the Blighted"));
+		assertEquals("barrows chests", key("Guthan the Infested"));
+		assertEquals("barrows chests", key("Karil the Tainted"));
+		assertEquals("barrows chests", key("Torag the Corrupted"));
+		assertEquals("barrows chests", key("Verac the Defiled"));
 		assertEquals("lunar chest", key("Eclipse Moon"));
+		assertEquals("lunar chest", key("Blood Moon"));
+		assertEquals("lunar chest", key("Blue Moon"));
 		assertEquals("royal titans", key("Eldric the Ice King"));
+		assertEquals("royal titans", key("Branda the Fire Queen"));
 		assertEquals("doom of mokhaiotl", key("Doom of Mokhaiotl"));
 		assertEquals("doom of mokhaiotl", key("Doom of Mokhaiotl (Burrowed)"));
+		assertEquals("doom of mokhaiotl", key("Doom of Mokhaiotl (Shielded)"));
+		assertEquals("mimic", key("The Mimic"));
 		assertEquals("yama", key("Judge of Yama"));
+		assertEquals("yama", key("Yama"));
 	}
 
 	@Test
@@ -65,23 +78,6 @@ public class KillCountsTest
 	{
 		assertNull(key("Mithril dragon"));
 		assertNull(key("Wintertodt"));
-	}
-
-	@Test
-	public void everyFormSharingACountUsesItsName()
-	{
-		assertEquals("grotesque guardians", key("Dusk"));
-		assertEquals("barrows chests", key("Ahrim the Blighted"));
-		assertEquals("barrows chests", key("Guthan the Infested"));
-		assertEquals("barrows chests", key("Karil the Tainted"));
-		assertEquals("barrows chests", key("Torag the Corrupted"));
-		assertEquals("barrows chests", key("Verac the Defiled"));
-		assertEquals("lunar chest", key("Blood Moon"));
-		assertEquals("lunar chest", key("Blue Moon"));
-		assertEquals("royal titans", key("Branda the Fire Queen"));
-		assertEquals("mimic", key("The Mimic"));
-		assertEquals("yama", key("Yama"));
-		assertEquals("doom of mokhaiotl", key("Doom of Mokhaiotl (Shielded)"));
 	}
 
 	@Test

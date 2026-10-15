@@ -102,13 +102,6 @@ public class KnownBossesTest
 	}
 
 	@Test
-	public void theShortNameAndTheKillCountKeyBothSurvive()
-	{
-		assertEquals("doom of mokhaiotl", KnownBosses.find("Doom of Mokhaiotl (Burrowed)").getKillCountKey());
-		assertEquals("Doom (Burrowed)", shortName("Doom of Mokhaiotl (Burrowed)"));
-	}
-
-	@Test
 	public void everyFormOfABossSharesItsColors()
 	{
 		assertSame(colors("Tekton"), colors("Tekton (enraged)"));

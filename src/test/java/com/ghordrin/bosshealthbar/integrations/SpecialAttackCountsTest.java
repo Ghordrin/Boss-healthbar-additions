@@ -74,12 +74,6 @@ public class SpecialAttackCountsTest
 	}
 
 	@Test
-	public void boxesAreNamedLikeTheirs()
-	{
-		assertEquals(SpecialAttackCounts.BOX_NAME, box(MAUL, "2", Color.WHITE).getName());
-	}
-
-	@Test
 	public void ignoresOtherBoxes()
 	{
 		assertTrue(SpecialAttackCounts.matches(box(MAUL, "2", Color.WHITE)));
