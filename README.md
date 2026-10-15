@@ -2,6 +2,8 @@
 
 A bigger, themed health bar for the boss you're fighting, with a damage trail, your latest hit and extra boss info around it.
 
+Join the [support Discord](https://discord.gg/YPugUP8rg2) for help, bugs and ideas, or tick Open the Discord in the plugin's Support settings.
+
 See the [changelog](CHANGELOG.md) for what's new in each version.
 
 ![The bar on a boss](docs/example-boss.png)
@@ -44,6 +46,7 @@ Everything is in the RuneLite config panel, or right-click the bar and pick Conf
 
 | Section | What's in it |
 |---|---|
+| Support | Open the Discord: opens the support Discord in your browser |
 | Look | Theme, Oldschool theme, boss colours, rare gold bars, icons, bar ends, fill texture, phase markers, size |
 | Text | Name, combat level, hitpoints text (percentage, value, both or none), damage number and whose hits it counts |
 | Fonts | Font and size of each text around the bar, Smooth text, and the text edge (shadow, outline or nothing) |
@@ -58,7 +61,7 @@ The tooltip on each setting explains it in more detail.
 
 ## Reporting a bug
 
-Right after the bar does something wrong, tick Save debug log (Bug reports section) or right-click the bar and pick Save debug log. The file goes to `.runelite/plugin-data/boss-health-bar-additions/` and the chat says where. Attach it to a GitHub issue. It holds the plugin and RuneLite versions, your settings for this plugin, which related plugins are on, and the plugin's last 1000 events (NPC names and IDs, times, game ticks). No player names, chat or account details; it's kept in memory only and nothing is sent anywhere.
+Right after the bar does something wrong, tick Save debug log (Bug reports section) or right-click the bar and pick Save debug log. The file goes to `.runelite/plugin-data/boss-health-bar-additions/` and the chat says where. Attach it to a GitHub issue or post it in the [Discord](https://discord.gg/YPugUP8rg2). It holds the plugin and RuneLite versions, your settings for this plugin, which related plugins are on, and the plugin's last 1000 events (NPC names and IDs, times, game ticks). No player names, chat or account details; it's kept in memory only and nothing is sent anywhere.
 
 ## Data
 
@@ -66,7 +69,7 @@ The elemental weaknesses and defence drain limits come from the [Old School Rune
 
 ## Contact
 
-Questions, ideas or bugs? Open an [issue on GitHub](https://github.com/Ghordrin/Boss-healthbar-additions/issues), or reach me on Discord at comrade9932 (Kuringe), or in game at Ultra Cringe.
+Questions, ideas or bugs? Join the [support Discord](https://discord.gg/YPugUP8rg2), open an [issue on GitHub](https://github.com/Ghordrin/Boss-healthbar-additions/issues), or reach me on Discord at comrade9932 (Kuringe), or in game at Ultra Cringe.
 
 ## License
 

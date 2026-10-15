@@ -59,25 +59,34 @@ public interface BossHealthBarConfig extends Config
 	String DRAIN_CAP_FONT_KEY = "drainCapFont";
 	String FIGHT_TIMER_FONT_KEY = "fightTimerFont";
 	String SAVE_DEBUG_LOG_KEY = "saveDebugLog";
+	String OPEN_DISCORD_KEY = "openDiscord";
+	String DISCORD_URL = "https://discord.gg/YPugUP8rg2";
+
+	@ConfigSection(
+		name = "Support",
+		description = "Where to ask for help, report a problem or share your setup.",
+		position = 0
+	)
+	String supportSection = "support";
 
 	@ConfigSection(
 		name = "Look",
 		description = "Theme, icons and size of the bar.",
-		position = 0
+		position = 1
 	)
 	String lookSection = "look";
 
 	@ConfigSection(
 		name = "Text",
 		description = "The name and numbers around the bar.",
-		position = 1
+		position = 2
 	)
 	String textSection = "text";
 
 	@ConfigSection(
 		name = "Fonts",
 		description = "The font and size of each text around the bar.",
-		position = 2,
+		position = 3,
 		closedByDefault = true
 	)
 	String fontsSection = "fonts";
@@ -85,7 +94,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigSection(
 		name = "Boss info",
 		description = "Extra details about the boss shown around the bar.",
-		position = 3,
+		position = 4,
 		closedByDefault = true
 	)
 	String bossInfoSection = "bossInfo";
@@ -93,7 +102,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigSection(
 		name = "Animations",
 		description = "How the bar moves when health changes, appears and goes.",
-		position = 4,
+		position = 5,
 		closedByDefault = true
 	)
 	String animationsSection = "animations";
@@ -102,7 +111,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Layout",
 		description = "Where each item goes: above the bar, inside it, or on one of the two rows below it."
 			+ " Text inside the bar suits a taller bar.",
-		position = 5,
+		position = 6,
 		closedByDefault = true
 	)
 	String layoutSection = "layout";
@@ -110,7 +119,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigSection(
 		name = "Custom colors",
 		description = "The icon and colors of the Custom theme.",
-		position = 6,
+		position = 7,
 		closedByDefault = true
 	)
 	String customColorsSection = "customColors";
@@ -118,7 +127,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigSection(
 		name = "When to show",
 		description = "Which opponents get a bar, and how it works with other health bars.",
-		position = 7,
+		position = 8,
 		closedByDefault = true
 	)
 	String whenToShowSection = "whenToShow";
@@ -126,10 +135,22 @@ public interface BossHealthBarConfig extends Config
 	@ConfigSection(
 		name = "Bug reports",
 		description = "Save what the plugin did recently, to attach to a bug report.",
-		position = 8,
+		position = 9,
 		closedByDefault = true
 	)
 	String bugReportsSection = "bugReports";
+
+	@ConfigItem(
+		keyName = OPEN_DISCORD_KEY,
+		name = "Open the Discord",
+		description = "Opens the plugin's Discord in your browser, for help, bug reports and sharing setups.",
+		position = 0,
+		section = supportSection
+	)
+	default boolean openDiscord()
+	{
+		return false;
+	}
 
 	@ConfigItem(
 		keyName = "showPreview",

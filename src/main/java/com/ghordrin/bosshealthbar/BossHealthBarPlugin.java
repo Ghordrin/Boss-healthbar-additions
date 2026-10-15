@@ -54,6 +54,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Filepath;
+import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.Text;
 
 @PluginDescriptor(
@@ -302,6 +303,12 @@ public class BossHealthBarPlugin extends Plugin
 			final boolean defaultValue = BossHealthBarConfig.RARE_GOLD_BARS_KEY.equals(event.getKey());
 			OldschoolToggle.apply(configManager, config, event.getKey(), parseBoolean(event.getOldValue(), defaultValue),
 				parseBoolean(event.getNewValue(), defaultValue));
+		}
+
+		if (BossHealthBarConfig.OPEN_DISCORD_KEY.equals(event.getKey()) && "true".equals(event.getNewValue()))
+		{
+			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.OPEN_DISCORD_KEY, false);
+			LinkBrowser.browse(BossHealthBarConfig.DISCORD_URL);
 		}
 
 		// The config screen has no buttons, so these two checkboxes act as one: ticking opens the
