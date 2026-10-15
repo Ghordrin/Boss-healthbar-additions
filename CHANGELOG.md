@@ -17,8 +17,10 @@
 
 ### Fixed
 
+- The Zaros theme shows the Zarosian icon instead of a prayer icon, and the Seren theme now has an icon of its own
+- The prompt that offers to switch the theme to Custom is offered again after the theme is changed, instead of staying away for the rest of the session once it was declined
 - The Custom theme's Background color now reaches under Subtle bar ends, which kept their own dark fill and showed black at both ends of the bar
-- The name on the second boss bar uses the Name font instead of the Hitpoints font, so both bars read the same
+- The name on the second boss bar uses the Name font instead of the Hitpoints font, so both bars read the same
 
 ## 1.7.0 (2026-10-11)
 

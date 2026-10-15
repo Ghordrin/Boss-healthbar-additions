@@ -39,7 +39,7 @@ public class OldschoolThemeTest
 		final ThemeColors colors = FlatTheme.OLDSCHOOL.getColors();
 		assertNotNull(colors.getTrack());
 		assertEquals(colors.getFillHigh(), colors.getFillLow());
-		assertNull(FlatTheme.OLDSCHOOL.getGodIconSpriteId());
+		assertNull(FlatTheme.OLDSCHOOL.getIcon());
 		assertNull(HealthBarTheme.ZAMORAK.getColors().getTrack());
 	}
 

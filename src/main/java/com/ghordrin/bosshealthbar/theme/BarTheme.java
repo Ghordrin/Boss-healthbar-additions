@@ -17,7 +17,8 @@ public interface BarTheme
 	// Null for the Custom theme, whose colors come from the config.
 	ThemeColors getColors();
 
-	Integer getGodIconSpriteId();
+	// Null for a theme with no icon of its own.
+	ThemeIcon getIcon();
 
 	// A flat theme has a plain fill and outline: no ornaments, crest, shine, texture, boss colors or gold bar.
 	boolean isFlat();

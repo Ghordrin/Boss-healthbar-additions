@@ -73,6 +73,12 @@ public class Pickers
 		});
 	}
 
+	// Picking a theme writes its colors over the section again, so whatever was declined before is moot.
+	public void themeChanged()
+	{
+		declinedFor = null;
+	}
+
 	// A picked color only shows on the Custom theme, so offer the switch rather than change nothing. The theme
 	// it asked about is kept so a decline doesn't ask again for every other color of the same theme.
 	public void confirmCustomTheme()

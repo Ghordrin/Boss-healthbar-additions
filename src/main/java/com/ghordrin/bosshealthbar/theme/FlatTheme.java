@@ -31,7 +31,7 @@ public enum FlatTheme implements BarTheme
 	}
 
 	@Override
-	public Integer getGodIconSpriteId()
+	public ThemeIcon getIcon()
 	{
 		return null;
 	}

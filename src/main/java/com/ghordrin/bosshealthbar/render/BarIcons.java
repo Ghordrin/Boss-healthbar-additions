@@ -4,6 +4,7 @@ import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.data.KnownBosses;
 import com.ghordrin.bosshealthbar.theme.BarTheme;
 import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
+import com.ghordrin.bosshealthbar.theme.ThemeIcon;
 import java.awt.image.BufferedImage;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -11,8 +12,8 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.util.ImageUtil;
 
-// The icons the bar draws: the one in the crests and the one in front of the name. The boss sprite is kept at the
-// size the crest wants, so it is only resized when the boss changes.
+// The icons the bar draws: the one in the crests and the one in front of the name. A sprite is kept at the
+// size the crest wants, so it is only resized when the icon changes.
 @Singleton
 public class BarIcons
 {
@@ -20,8 +21,8 @@ public class BarIcons
 	private final SpriteManager spriteManager;
 	private final ItemManager itemManager;
 
-	private int bossSpriteId = -1;
-	private BufferedImage bossSprite;
+	private int spriteId = -1;
+	private BufferedImage paddedSprite;
 
 	@Inject
 	private BarIcons(BossHealthBarConfig config, SpriteManager spriteManager, ItemManager itemManager)
@@ -50,7 +51,7 @@ public class BarIcons
 	{
 		if (config.useBossIcon() && !showingPreview && icon != null)
 		{
-			final BufferedImage bossIcon = bossIcon(icon);
+			final BufferedImage bossIcon = image(icon.isItem(), icon.getId());
 			if (bossIcon != null)
 			{
 				return bossIcon;
@@ -63,29 +64,29 @@ public class BarIcons
 			return itemId > 0 ? itemManager.getImage(itemId) : null;
 		}
 
-		final Integer godIconSpriteId = theme.getGodIconSpriteId();
-		return godIconSpriteId != null ? spriteManager.getSprite(godIconSpriteId, 0) : null;
+		final ThemeIcon themeIcon = theme.getIcon();
+		return themeIcon != null ? image(themeIcon.isItem(), themeIcon.getId()) : null;
 	}
 
-	private BufferedImage bossIcon(KnownBosses.Icon icon)
+	private BufferedImage image(boolean item, int id)
 	{
-		if (icon.isItem())
+		if (item)
 		{
-			return itemManager.getImage(icon.getId());
+			return itemManager.getImage(id);
 		}
 
-		if (icon.getId() != bossSpriteId)
+		if (id != spriteId)
 		{
-			final BufferedImage sprite = spriteManager.getSprite(icon.getId(), 0);
+			final BufferedImage sprite = spriteManager.getSprite(id, 0);
 			if (sprite == null)
 			{
 				return null;
 			}
 			// The crest draws its icon into a square, so pad the sprite rather than stretch it.
 			final int size = Math.max(sprite.getWidth(), sprite.getHeight());
-			bossSprite = ImageUtil.resizeCanvas(sprite, size, size);
-			bossSpriteId = icon.getId();
+			paddedSprite = ImageUtil.resizeCanvas(sprite, size, size);
+			spriteId = id;
 		}
-		return bossSprite;
+		return paddedSprite;
 	}
 }

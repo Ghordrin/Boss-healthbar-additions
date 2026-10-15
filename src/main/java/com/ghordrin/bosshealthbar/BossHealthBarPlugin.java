@@ -294,10 +294,13 @@ public class BossHealthBarPlugin extends Plugin
 
 		// The Custom colors are a template of the theme in the dropdown, so they follow it until Custom is
 		// picked, which leaves them alone to be tweaked from there.
-		if (BossHealthBarConfig.THEME_KEY.equals(event.getKey())
-			&& !HealthBarTheme.CUSTOM.name().equals(event.getNewValue()))
+		if (BossHealthBarConfig.THEME_KEY.equals(event.getKey()))
 		{
-			customColors.copyFrom(event.getNewValue());
+			pickers.themeChanged();
+			if (!HealthBarTheme.CUSTOM.name().equals(event.getNewValue()))
+			{
+				customColors.copyFrom(event.getNewValue());
+			}
 		}
 
 		if (CustomColors.isColorKey(event.getKey()) && !customColors.isCopying())
