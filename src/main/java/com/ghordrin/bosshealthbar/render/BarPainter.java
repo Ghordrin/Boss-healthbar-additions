@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import javax.inject.Inject;
 import net.runelite.api.Client;
@@ -86,6 +87,7 @@ public class BarPainter
 	private int barImageWidth;
 	private int barImageHeight;
 	private Color barImageFrameColor;
+	private Color barImageTrack;
 	private BarEnds barImageEnds;
 
 	private final Map<Integer, BufferedImage> fillTextureCache = new HashMap<>();
@@ -125,6 +127,7 @@ public class BarPainter
 		final float[] phaseMarkers = defeated ? BarState.NO_PHASE_MARKERS : state.phaseMarkers;
 		final float lowHealthPulse = !pulse ? 0f : animation.lowHealthPulse(defeated, config.lowHealthEffect(), config.lowHealthThreshold());
 		final Color frameColor = colors.getFrame();
+		final Color track = colors.getTrack();
 		final int barX = capWidth(height, flat, ends);
 		final int barWidth = width - barX * 2;
 
@@ -144,7 +147,7 @@ public class BarPainter
 		{
 			if (useImageCache)
 			{
-				updateBarImages(width, height, frameColor, ends);
+				updateBarImages(width, height, frameColor, track, ends);
 				graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 				drawRasterImage(graphics, backdropImage, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD, width + BAR_IMAGE_PAD * 2, height + BAR_IMAGE_PAD * 2);
 			}
@@ -168,7 +171,6 @@ public class BarPainter
 
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-		final Color track = colors.getTrack();
 		graphics.setPaint(track != null ? track : new GradientPaint(0, y, TRACK_TOP, 0, y + height, TRACK_BOTTOM));
 		graphics.fillRect(barX, y, barWidth, height);
 
@@ -260,7 +262,7 @@ public class BarPainter
 			}
 			else
 			{
-				drawEnds(graphics, barX, y, barWidth, height, frameColor, ends);
+				drawEnds(graphics, barX, y, barWidth, height, frameColor, track, ends);
 			}
 		}
 
@@ -469,10 +471,10 @@ public class BarPainter
 		graphics.drawLine(x + 1, y, x + width - 2, y);
 	}
 
-	private void updateBarImages(int width, int height, Color frameColor, BarEnds ends)
+	private void updateBarImages(int width, int height, Color frameColor, Color track, BarEnds ends)
 	{
 		if (backdropImage != null && width == barImageWidth && height == barImageHeight
-			&& frameColor.equals(barImageFrameColor) && ends == barImageEnds)
+			&& frameColor.equals(barImageFrameColor) && Objects.equals(track, barImageTrack) && ends == barImageEnds)
 		{
 			return;
 		}
@@ -480,10 +482,11 @@ public class BarPainter
 		final int barX = capWidth(height, false, ends);
 		final int barWidth = width - barX * 2;
 		backdropImage = barImage(width, height, g -> drawBackdrop(g, barX, BAR_IMAGE_PAD, barWidth, height));
-		endsImage = barImage(width, height, g -> drawEnds(g, barX, BAR_IMAGE_PAD, barWidth, height, frameColor, ends));
+		endsImage = barImage(width, height, g -> drawEnds(g, barX, BAR_IMAGE_PAD, barWidth, height, frameColor, track, ends));
 		barImageWidth = width;
 		barImageHeight = height;
 		barImageFrameColor = frameColor;
+		barImageTrack = track;
 		barImageEnds = ends;
 	}
 
@@ -517,18 +520,19 @@ public class BarPainter
 	}
 
 	private static void drawEnds(Graphics2D graphics, int barX, int y, int barWidth, int height, Color frameColor,
-		BarEnds ends)
+		Color track, BarEnds ends)
 	{
 		if (ends == BarEnds.SUBTLE)
 		{
-			drawBrackets(graphics, barX, y, barWidth, height, frameColor);
+			drawBrackets(graphics, barX, y, barWidth, height, frameColor, track);
 			return;
 		}
 		drawFinials(graphics, barX, y, barWidth, height, frameColor);
 		drawUnderline(graphics, barX, y + height + 1, barWidth, frameColor);
 	}
 
-	private static void drawBrackets(Graphics2D graphics, int barX, int y, int barWidth, int height, Color frameColor)
+	private static void drawBrackets(Graphics2D graphics, int barX, int y, int barWidth, int height, Color frameColor,
+		Color track)
 	{
 		final float s = capScale(height);
 		final int rightEdge = barX + barWidth;
@@ -539,7 +543,9 @@ public class BarPainter
 		// Unantialiased strokes are shifted a quarter pixel right, so a wide right end line also takes the
 		// fill's last column.
 		final int rightCover = (int) Math.ceil(scaledFrameStroke(height) / 2f + 0.25f);
-		graphics.setPaint(new GradientPaint(0, y, BRACKET_FILL_TOP, 0, y + height, BRACKET_FILL_BOTTOM));
+		// The strip under the bracket is part of the bar.s background, so a chosen one has to reach it too.
+		graphics.setPaint(track != null ? track
+			: new GradientPaint(0, y, BRACKET_FILL_TOP, 0, y + height, BRACKET_FILL_BOTTOM));
 		graphics.fill(new Rectangle2D.Float(leftVx, y + 1, barX + 1 - leftVx, height - 2));
 		graphics.fill(new Rectangle2D.Float(rightEdge - rightCover, y + 1, rightVx - (rightEdge - rightCover), height - 2));
 
