@@ -4,6 +4,8 @@
 
 ### New
 
+- Right-click the bar and pick Support Discord to open the plugin's Discord in your browser, for help, bug reports and sharing setups
+- Picking a theme now fills the Custom colors section with that theme's colors, so it can be used as a starting point. Changing one of those colors while a theme is picked asks whether to switch the theme to Custom, since that is the only theme that uses them
 - New delve level after the boss's name, the way the game's own boss bar shows it. On a narrow bar the name shortens to make room for it
 - New Background color in Custom colors: the color behind the fill, where the health is missing. Left transparent it keeps the dark background the themes use, so a green fill on a red background is now possible without the Oldschool theme
 

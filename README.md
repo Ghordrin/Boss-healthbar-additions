@@ -2,7 +2,7 @@
 
 A bigger, themed health bar for the boss you're fighting, with a damage trail, your latest hit and extra boss info around it.
 
-Join the [support Discord](https://discord.gg/YPugUP8rg2) for help, bugs and ideas, or tick Open the Discord in the plugin's Support settings.
+Join the [support Discord](https://discord.gg/YPugUP8rg2) for help, bugs and ideas, or right-click the bar and pick Support Discord.
 
 See the [changelog](CHANGELOG.md) for what's new in each version.
 
@@ -46,7 +46,6 @@ Everything is in the RuneLite config panel, or right-click the bar and pick Conf
 
 | Section | What's in it |
 |---|---|
-| Support | Open the Discord: opens the support Discord in your browser |
 | Look | Theme, Oldschool theme, boss colours, rare gold bars, icons, bar ends, fill texture, phase markers, size |
 | Text | Name, combat level, hitpoints text (percentage, value, both or none), damage number and whose hits it counts |
 | Fonts | Font and size of each text around the bar, Smooth text, and the text edge (shadow, outline or nothing) |

@@ -58,6 +58,7 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.Text;
 
 @Singleton
@@ -157,6 +158,8 @@ public class BossHealthBarOverlay extends Overlay
 		addMenuEntry(RUNELITE_OVERLAY, "Save debug log", BossHealthBarPlugin.NAME, menuEntry -> debugExport.save());
 		addMenuEntry(RUNELITE_OVERLAY, "Choose custom icon", BossHealthBarPlugin.NAME, menuEntry -> pickers.openIconPicker());
 		addMenuEntry(RUNELITE_OVERLAY, "Choose fill texture", BossHealthBarPlugin.NAME, menuEntry -> pickers.openFillTexturePicker());
+		addMenuEntry(RUNELITE_OVERLAY, "Support Discord", BossHealthBarPlugin.NAME,
+			menuEntry -> LinkBrowser.browse(BossHealthBarPlugin.DISCORD_URL));
 	}
 
 	void reset()

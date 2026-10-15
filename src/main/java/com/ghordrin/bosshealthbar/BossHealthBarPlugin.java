@@ -54,7 +54,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Filepath;
-import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.Text;
 
 @PluginDescriptor(
@@ -67,6 +66,7 @@ public class BossHealthBarPlugin extends Plugin
 {
 	public static final String NAME = "Boss Health Bar Additions";
 	public static final String INTERNAL_NAME = "boss-health-bar-additions";
+	public static final String DISCORD_URL = "https://discord.gg/YPugUP8rg2";
 	// Keep in step with the version in build.gradle and runelite-plugin.properties.
 	public static final String VERSION = "1.7.0";
 	private static final int MAX_LOGGED_VALUE_LENGTH = 100;
@@ -292,10 +292,17 @@ public class BossHealthBarPlugin extends Plugin
 		debugLog.add("Setting {}: {} -> {}", event.getKey(), DebugLog.cut(event.getOldValue(), MAX_LOGGED_VALUE_LENGTH),
 			DebugLog.cut(event.getNewValue(), MAX_LOGGED_VALUE_LENGTH));
 
+		// The Custom colors are a template of the theme in the dropdown, so they follow it until Custom is
+		// picked, which leaves them alone to be tweaked from there.
 		if (BossHealthBarConfig.THEME_KEY.equals(event.getKey())
-			&& HealthBarTheme.CUSTOM.name().equals(event.getNewValue()))
+			&& !HealthBarTheme.CUSTOM.name().equals(event.getNewValue()))
 		{
-			customColors.copyFrom(event.getOldValue());
+			customColors.copyFrom(event.getNewValue());
+		}
+
+		if (CustomColors.isColorKey(event.getKey()) && !customColors.isCopying())
+		{
+			pickers.confirmCustomTheme();
 		}
 
 		if (OldschoolToggle.handles(event.getKey()))
@@ -303,12 +310,6 @@ public class BossHealthBarPlugin extends Plugin
 			final boolean defaultValue = BossHealthBarConfig.RARE_GOLD_BARS_KEY.equals(event.getKey());
 			OldschoolToggle.apply(configManager, config, event.getKey(), parseBoolean(event.getOldValue(), defaultValue),
 				parseBoolean(event.getNewValue(), defaultValue));
-		}
-
-		if (BossHealthBarConfig.OPEN_DISCORD_KEY.equals(event.getKey()) && "true".equals(event.getNewValue()))
-		{
-			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.OPEN_DISCORD_KEY, false);
-			LinkBrowser.browse(BossHealthBarConfig.DISCORD_URL);
 		}
 
 		// The config screen has no buttons, so these two checkboxes act as one: ticking opens the

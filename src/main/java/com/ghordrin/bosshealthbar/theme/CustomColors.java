@@ -3,8 +3,10 @@ package com.ghordrin.bosshealthbar.theme;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.google.common.annotations.VisibleForTesting;
 import java.awt.Color;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.client.config.ConfigManager;
@@ -14,12 +16,29 @@ import net.runelite.client.config.ConfigManager;
 @Singleton
 public class CustomColors
 {
+	// Read off the list keyedColors writes, so a color added there can't be missed here.
+	private static final Set<String> COLOR_KEYS =
+		Collections.unmodifiableSet(keyedColors(ThemeColors.builder().build()).keySet());
+
 	private final ConfigManager configManager;
+
+	// Set while copyFrom writes, whose own writes would otherwise read as the user picking a color.
+	private boolean copying;
 
 	@Inject
 	CustomColors(ConfigManager configManager)
 	{
 		this.configManager = configManager;
+	}
+
+	public static boolean isColorKey(String key)
+	{
+		return COLOR_KEYS.contains(key);
+	}
+
+	public boolean isCopying()
+	{
+		return copying;
 	}
 
 	// previousThemeName is the saved name of the previous theme, or null when it was the default.
@@ -33,8 +52,16 @@ public class CustomColors
 			return;
 		}
 
-		keyedColors(colors).forEach((key, color) ->
-			configManager.setConfiguration(BossHealthBarConfig.GROUP, key, color));
+		copying = true;
+		try
+		{
+			keyedColors(colors).forEach((key, color) ->
+				configManager.setConfiguration(BossHealthBarConfig.GROUP, key, color));
+		}
+		finally
+		{
+			copying = false;
+		}
 	}
 
 	static Map<String, Color> keyedColors(ThemeColors theme)

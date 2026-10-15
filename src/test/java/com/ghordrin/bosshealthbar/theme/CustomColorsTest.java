@@ -1,7 +1,9 @@
 package com.ghordrin.bosshealthbar.theme;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import java.awt.Color;
 import java.util.ArrayList;
@@ -42,6 +44,19 @@ public class CustomColorsTest
 	{
 		assertEquals(BossHealthBarConfig.TRANSPARENT,
 			CustomColors.keyedColors(COLORS).get("customTrackColor"));
+	}
+
+	// The prompt to switch themes hangs off this, so a color the set doesn't know about would change
+	// nothing and say nothing.
+	@Test
+	public void everyColorTheThemeWritesCountsAsAColorKey()
+	{
+		for (String key : CustomColors.keyedColors(COLORS).keySet())
+		{
+			assertTrue(key, CustomColors.isColorKey(key));
+		}
+		assertFalse(CustomColors.isColorKey(BossHealthBarConfig.THEME_KEY));
+		assertFalse(CustomColors.isColorKey(BossHealthBarConfig.CUSTOM_ICON_ITEM_ID_KEY));
 	}
 
 	// The painter reads null as "draw the themed background", which is what an unpicked color has to mean.
