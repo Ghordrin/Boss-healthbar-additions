@@ -11,6 +11,8 @@
 
 ### Changed
 
+- With Match boss colors on, the second boss bar now takes the colors of its own boss instead of the first one's, so two bosses at once no longer share one color
+- The pillar bars now use the same fill blend and shading as the main bar: the fill moves from the full health color to the low health color as the charge drops, and the outline takes the frame's gradient. They keep a single line for a frame and no end pieces, which at their height would leave no room for the bar
 - Show icons is now an Icon placement dropdown: Crests, Crest left, Crest right, Before the name, or No icon. A single crest leaves the other end with its Bar ends ornament, and the bar only gives up room on the side that has one. The icon before the name used to be the result of turning Show icons off while Use boss icon stayed on, which was hard to find. Your setting carries over, and Use boss icon now only picks which icon is used, so the theme's icon can go before the name too
 
 ### Fixed

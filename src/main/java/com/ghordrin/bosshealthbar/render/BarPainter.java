@@ -591,7 +591,7 @@ public class BarPainter
 		path.quadTo(ex - dir * 0.2f * s, bot, ex - dir * 0.6f * s, bot + 2.4f * s);
 	}
 
-	private static LinearGradientPaint verticalSheen(int y, int height, Color base, float lift, float shade)
+	public static LinearGradientPaint verticalSheen(int y, int height, Color base, float lift, float shade)
 	{
 		return new LinearGradientPaint(
 			0, y, 0, y + Math.max(1, height),

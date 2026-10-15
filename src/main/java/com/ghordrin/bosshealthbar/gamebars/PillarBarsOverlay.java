@@ -1,6 +1,8 @@
 package com.ghordrin.bosshealthbar.gamebars;
 
+import static com.ghordrin.bosshealthbar.render.BarAnimation.clamp01;
 import static com.ghordrin.bosshealthbar.theme.ColorUtil.brighten;
+import static com.ghordrin.bosshealthbar.theme.ColorUtil.lerp;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import com.ghordrin.bosshealthbar.BossHealthBarOverlay;
@@ -36,6 +38,11 @@ public class PillarBarsOverlay extends Overlay
 	private static final int ROW_GAP = 3;
 	private static final int LABEL_GAP = 1;
 	private static final float FULL_BRIGHTEN = 0.75f;
+	// The lift and shade the main bar gives its frame and its fill.
+	private static final float FRAME_LIFT = 0.45f;
+	private static final float FRAME_SHADE = 0.25f;
+	private static final float FILL_LIFT = 0.3f;
+	private static final float FILL_SHADE = 0.45f;
 
 	// The game's own colors, used with the Oldschool theme.
 	private static final Color FLAT_TRACK = new Color(0x2D2B00);
@@ -95,8 +102,9 @@ public class PillarBarsOverlay extends Overlay
 
 		final ThemeColors colors = barOverlay.baseColors();
 		final boolean flat = BarTheme.of(config).isFlat();
-		final Color fill = flat ? FLAT_FILL : colors.getFillHigh();
-		final Color full = flat ? FLAT_FULL : fullColor(fill);
+		final Color fillHigh = flat ? FLAT_FILL : colors.getFillHigh();
+		final Color fillLow = flat ? FLAT_FILL : colors.getFillLow();
+		final Color full = flat ? FLAT_FULL : fullColor(fillHigh);
 		final Color outline = flat ? FLAT_OUTLINE : colors.getFrame();
 		final Color labelColor = colors.getHitpointsText();
 		updateTrackPaints(barHeight, cellHeight);
@@ -114,25 +122,28 @@ public class PillarBarsOverlay extends Overlay
 			final Paint track = flat ? FLAT_TRACK : colors.getTrack() != null ? colors.getTrack() : trackPaints[row];
 			final float fraction = live ? pillarBars.fraction(corner) : PREVIEW_FRACTIONS[corner];
 			final boolean isFull = live ? pillarBars.isFull(corner) : PREVIEW_FULL[corner];
-			drawBar(graphics, x, y + labelHeight + LABEL_GAP, barHeight, fraction, isFull, track,
-				isFull ? full : fill, outline);
+			// The same blend the main bar uses, so these follow it from full health down to the low color.
+			final Color fill = isFull ? full : lerp(fillLow, fillHigh, clamp01(fraction));
+			drawBar(graphics, x, y + labelHeight + LABEL_GAP, barHeight, fraction, isFull, track, fill, outline, flat);
 		}
 
 		return gridSize(barWidth, cellHeight);
 	}
 
+	// The main bar's look at a tenth of its height: the frame is a single line of its gradient rather than a
+	// moulding, and there are no end pieces, which at this size would leave no room for the bar itself.
 	private void drawBar(Graphics2D graphics, int x, int y, int height, float fraction, boolean isFull, Paint track,
-		Color fill, Color outline)
+		Color fill, Color outline, boolean flat)
 	{
 		final int innerWidth = barWidth - 2;
-		graphics.setColor(outline);
+		graphics.setPaint(flat ? outline : BarPainter.verticalSheen(y, height, outline, FRAME_LIFT, FRAME_SHADE));
 		graphics.drawRect(x, y, barWidth - 1, height - 1);
 		graphics.setPaint(track);
 		graphics.fillRect(x + 1, y + 1, innerWidth, height - 2);
 		final int filled = filledWidth(innerWidth, fraction, isFull);
 		if (filled > 0)
 		{
-			graphics.setColor(fill);
+			graphics.setPaint(flat ? fill : BarPainter.verticalSheen(y + 1, height - 2, fill, FILL_LIFT, FILL_SHADE));
 			graphics.fillRect(x + 1, y + 1, filled, height - 2);
 		}
 	}
