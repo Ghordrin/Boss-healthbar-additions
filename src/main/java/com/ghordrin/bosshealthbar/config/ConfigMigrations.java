@@ -3,6 +3,7 @@ package com.ghordrin.bosshealthbar.config;
 import com.ghordrin.bosshealthbar.config.ConfigWrites.Write;
 import com.ghordrin.bosshealthbar.gamebars.NativeBossBarMode;
 import com.ghordrin.bosshealthbar.render.BarFonts;
+import com.ghordrin.bosshealthbar.render.BarIconPlacement;
 import com.google.common.collect.ImmutableList;
 import java.awt.Font;
 import java.util.ArrayList;
@@ -22,6 +23,9 @@ public class ConfigMigrations
 	// Remembered what Match boss colors was before the Oldschool theme turned it off. The two now work together,
 	// so the key is dropped. Its value isn't restored, which leaves the look unchanged.
 	static final String OLD_SAVED_MATCH_BOSS_COLORS_KEY = "oldschoolSavedMatchBossColors";
+	// The checkbox iconPlacement replaced. It read as where the icon goes rather than whether it shows, so its
+	// saved value is moved over together with Use boss icon, which stays on as the icon's source.
+	static final String OLD_SHOW_ICONS_KEY = "showIcons";
 	// Set once the old default font has been checked for a switch to the new one. Not a config item, so Reset keeps it.
 	static final String FONT_DEFAULT_MIGRATED_KEY = "fontDefaultMigrated";
 	// Set once a RuneScape font's saved size has been put back to its native size. Not a config item either.
@@ -52,6 +56,7 @@ public class ConfigMigrations
 	public void migrate()
 	{
 		migrateReplaceNativeBossBar();
+		migrateShowIcons();
 		apply(savedMatchBossColorsWrites(
 			configManager.getConfiguration(BossHealthBarConfig.GROUP, OLD_SAVED_MATCH_BOSS_COLORS_KEY)));
 		migrateFont(FONT_DEFAULT_MIGRATED_KEY, BossHealthBarConfig.FONT_KEY, ConfigMigrations::defaultFontWrites);
@@ -71,6 +76,19 @@ public class ConfigMigrations
 
 		apply(replaceNativeBossBarWrites(oldSaved,
 			configManager.getConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.NATIVE_BOSS_BAR_MODE_KEY)));
+	}
+
+	private void migrateShowIcons()
+	{
+		final String oldSaved = configManager.getConfiguration(BossHealthBarConfig.GROUP, OLD_SHOW_ICONS_KEY);
+		if (oldSaved == null)
+		{
+			return;
+		}
+
+		apply(showIconsWrites(oldSaved,
+			ConfigWrites.savedBoolean(configManager, BossHealthBarConfig.USE_BOSS_ICON_KEY),
+			configManager.getConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.ICON_PLACEMENT_KEY)));
 	}
 
 	private void migrateFont(String migratedKey, String fontKey, Function<FontType, List<Write>> writes)
@@ -101,6 +119,40 @@ public class ConfigMigrations
 		}
 		writes.add(new Write(OLD_REPLACE_NATIVE_BOSS_BAR_KEY, null));
 		return writes;
+	}
+
+	static List<Write> showIconsWrites(String oldSaved, Boolean savedUseBossIcon, String savedPlacement)
+	{
+		final List<Write> writes = new ArrayList<>();
+		final BarIconPlacement placement = iconPlacement(oldSaved, savedUseBossIcon, savedPlacement);
+		if (placement != null)
+		{
+			writes.add(new Write(BossHealthBarConfig.ICON_PLACEMENT_KEY, placement));
+			// With no icon shown, the old Use boss icon was never a choice of source, so it goes back to its default.
+			if (placement == BarIconPlacement.NONE)
+			{
+				writes.add(new Write(BossHealthBarConfig.USE_BOSS_ICON_KEY, true));
+			}
+		}
+		writes.add(new Write(OLD_SHOW_ICONS_KEY, null));
+		return writes;
+	}
+
+	// The old pair: Show icons on put the icon in the crests, and off moved it before the name, where Use boss
+	// icon doubled as whether it showed at all. RuneLite saves the default before the plugin starts, so a saved
+	// Crests may not be the user's choice.
+	static BarIconPlacement iconPlacement(String oldSaved, Boolean savedUseBossIcon, String savedPlacement)
+	{
+		if (oldSaved == null
+			|| (savedPlacement != null && !BarIconPlacement.CRESTS.name().equals(savedPlacement)))
+		{
+			return null;
+		}
+		if (Boolean.parseBoolean(oldSaved))
+		{
+			return BarIconPlacement.CRESTS;
+		}
+		return savedUseBossIcon == null || savedUseBossIcon ? BarIconPlacement.BEFORE_NAME : BarIconPlacement.NONE;
 	}
 
 	static List<Write> savedMatchBossColorsWrites(String saved)

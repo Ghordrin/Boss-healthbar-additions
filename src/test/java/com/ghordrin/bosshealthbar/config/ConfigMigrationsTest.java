@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import com.ghordrin.bosshealthbar.gamebars.NativeBossBarMode;
+import com.ghordrin.bosshealthbar.render.BarIconPlacement;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,6 +68,9 @@ public class ConfigMigrationsTest
 		assertEquals("itemFontsMigrated", ConfigMigrations.ITEM_FONTS_MIGRATED_KEY);
 		assertEquals("fightTimerFontMigrated", ConfigMigrations.FIGHT_TIMER_FONT_MIGRATED_KEY);
 		assertEquals("oldschoolSavedMatchBossColors", ConfigMigrations.OLD_SAVED_MATCH_BOSS_COLORS_KEY);
+		assertEquals("showIcons", ConfigMigrations.OLD_SHOW_ICONS_KEY);
+		assertEquals("iconPlacement", BossHealthBarConfig.ICON_PLACEMENT_KEY);
+		assertEquals("useBossIcon", BossHealthBarConfig.USE_BOSS_ICON_KEY);
 		assertEquals("oldschoolSavedRareGoldBars", OldschoolToggle.SAVED_RARE_GOLD_BARS_KEY);
 	}
 
@@ -98,6 +102,48 @@ public class ConfigMigrationsTest
 	{
 		assertEquals(Collections.singletonList(write(ConfigMigrations.OLD_REPLACE_NATIVE_BOSS_BAR_KEY, null)),
 			ConfigMigrations.replaceNativeBossBarWrites("false", NativeBossBarMode.BOTH.name()));
+	}
+
+	@Test
+	public void oldShowIconsBecomesThePlacementItStoodFor()
+	{
+		assertEquals(Arrays.asList(
+			write(BossHealthBarConfig.ICON_PLACEMENT_KEY, BarIconPlacement.CRESTS),
+			write(ConfigMigrations.OLD_SHOW_ICONS_KEY, null)),
+			ConfigMigrations.showIconsWrites("true", true, null));
+		assertEquals(Arrays.asList(
+			write(BossHealthBarConfig.ICON_PLACEMENT_KEY, BarIconPlacement.BEFORE_NAME),
+			write(ConfigMigrations.OLD_SHOW_ICONS_KEY, null)),
+			ConfigMigrations.showIconsWrites("false", true, null));
+	}
+
+	// Use boss icon was on by default, so a key RuneLite never wrote means the icon was shown, not hidden.
+	@Test
+	public void anUnsavedBossIconCountsAsOn()
+	{
+		assertEquals(BarIconPlacement.BEFORE_NAME, ConfigMigrations.iconPlacement("false", null, null));
+		assertEquals(BarIconPlacement.CRESTS, ConfigMigrations.iconPlacement("true", null, null));
+	}
+
+	// Off with the boss icon off showed nothing at all, so the source goes back to its default with it.
+	@Test
+	public void bothOffBecomesNoIconAndRestoresTheSource()
+	{
+		assertEquals(Arrays.asList(
+			write(BossHealthBarConfig.ICON_PLACEMENT_KEY, BarIconPlacement.NONE),
+			write(BossHealthBarConfig.USE_BOSS_ICON_KEY, true),
+			write(ConfigMigrations.OLD_SHOW_ICONS_KEY, null)),
+			ConfigMigrations.showIconsWrites("false", false, null));
+	}
+
+	@Test
+	public void oldShowIconsKeepsAPlacementTheUserChose()
+	{
+		assertEquals(Collections.singletonList(write(ConfigMigrations.OLD_SHOW_ICONS_KEY, null)),
+			ConfigMigrations.showIconsWrites("true", true, BarIconPlacement.NONE.name()));
+		assertEquals(BarIconPlacement.CRESTS,
+			ConfigMigrations.iconPlacement("true", true, BarIconPlacement.CRESTS.name()));
+		assertNull(ConfigMigrations.iconPlacement(null, true, null));
 	}
 
 	@Test

@@ -4,6 +4,7 @@ import com.ghordrin.bosshealthbar.data.DamageNumberSource;
 import com.ghordrin.bosshealthbar.data.Health;
 import com.ghordrin.bosshealthbar.gamebars.NativeBossBarMode;
 import com.ghordrin.bosshealthbar.render.BarEnds;
+import com.ghordrin.bosshealthbar.render.BarIconPlacement;
 import com.ghordrin.bosshealthbar.render.BarPosition;
 import com.ghordrin.bosshealthbar.render.HitpointsTextMode;
 import com.ghordrin.bosshealthbar.render.IntroAnimation;
@@ -41,6 +42,8 @@ public interface BossHealthBarConfig extends Config
 	String OLDSCHOOL_THEME_KEY = "oldschoolTheme";
 	String MATCH_BOSS_COLORS_KEY = "matchBossColors";
 	String RARE_GOLD_BARS_KEY = "rareGoldBars";
+	String ICON_PLACEMENT_KEY = "iconPlacement";
+	String USE_BOSS_ICON_KEY = "useBossIcon";
 	String FONT_KEY = "font";
 	FontType DEFAULT_FONT = FontType.REGULAR;
 	String NATIVE_BOSS_BAR_MODE_KEY = "nativeBossBarMode";
@@ -211,21 +214,21 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showIcons",
-		name = "Show icons",
-		description = "Show an icon in a crest at the bar ends, or small before the name with Use Oldschool theme on.",
+		keyName = ICON_PLACEMENT_KEY,
+		name = "Icon placement",
+		description = "Where the icon goes: a crest at both ends of the bar, at one end only, small before the name, or nowhere. With Use Oldschool theme on it always goes before the name.",
 		position = 4,
 		section = lookSection
 	)
-	default boolean showIcons()
+	default BarIconPlacement iconPlacement()
 	{
-		return true;
+		return BarIconPlacement.CRESTS;
 	}
 
 	@ConfigItem(
-		keyName = "useBossIcon",
+		keyName = USE_BOSS_ICON_KEY,
 		name = "Use boss icon",
-		description = "Use the icon of the boss you're fighting instead of the theme's. Raid bosses show their pet. With Show icons off, it shows small before the name instead, except with Use Oldschool theme on.",
+		description = "Use the icon of the boss you're fighting instead of the theme's. Raid bosses show their pet.",
 		position = 5,
 		section = lookSection
 	)
@@ -237,7 +240,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "barEnds",
 		name = "Bar ends",
-		description = "The ornament at each end of the bar. Only visible with Show icons off. Not used with Use Oldschool theme on.",
+		description = "The ornament at each end of the bar. A crest covers the end it sits on, so an end only shows this when Icon placement leaves it free. Not used with Use Oldschool theme on.",
 		position = 6,
 		section = lookSection
 	)

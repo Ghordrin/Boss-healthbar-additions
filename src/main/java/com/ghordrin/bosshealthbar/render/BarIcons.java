@@ -31,23 +31,23 @@ public class BarIcons
 		this.itemManager = itemManager;
 	}
 
-	// Without crests, the boss's icon goes small before the name, as on the Oldschool theme.
-	public BufferedImage nameIcon(KnownBosses.Icon icon, boolean showingPreview)
+	public BufferedImage nameIcon(BarTheme theme, KnownBosses.Icon icon, boolean showingPreview)
 	{
-		if (config.showIcons() || !config.useBossIcon() || showingPreview || icon == null)
-		{
-			return null;
-		}
-		return bossIcon(icon);
+		return placement(theme) == BarIconPlacement.BEFORE_NAME ? icon(theme, icon, showingPreview) : null;
 	}
 
 	public BufferedImage crestIcon(BarTheme theme, KnownBosses.Icon icon, boolean showingPreview)
 	{
-		if (!config.showIcons())
-		{
-			return null;
-		}
+		return placement(theme).hasCrest() ? icon(theme, icon, showingPreview) : null;
+	}
 
+	private BarIconPlacement placement(BarTheme theme)
+	{
+		return config.iconPlacement().onTheme(theme.isFlat());
+	}
+
+	private BufferedImage icon(BarTheme theme, KnownBosses.Icon icon, boolean showingPreview)
+	{
 		if (config.useBossIcon() && !showingPreview && icon != null)
 		{
 			final BufferedImage bossIcon = bossIcon(icon);

@@ -23,6 +23,7 @@ import com.ghordrin.bosshealthbar.integrations.SpecialAttackCounts;
 import com.ghordrin.bosshealthbar.render.BarAnimation;
 import com.ghordrin.bosshealthbar.render.BarEffects;
 import com.ghordrin.bosshealthbar.render.BarEnds;
+import com.ghordrin.bosshealthbar.render.BarIconPlacement;
 import com.ghordrin.bosshealthbar.render.BarIcons;
 import com.ghordrin.bosshealthbar.render.BarPainter;
 import com.ghordrin.bosshealthbar.render.BarStateSelector;
@@ -278,17 +279,21 @@ public class BossHealthBarOverlay extends Overlay
 		final int capRise = capRise(barHeight, flat, ends);
 		final int capWidth = capWidth(barHeight, flat, ends);
 
+		final BarIconPlacement placement = config.iconPlacement();
 		final BufferedImage icon = barIcons.crestIcon(theme, opponentInfo.bossIcon(), selector.isShowingPreview());
-		final CrestRenderer.Crest crest = icon != null && !flat
+		final CrestRenderer.Crest crest = icon != null
 			? crestRenderer.getCrest(colors.getFrame(), colors.getFillHigh(), barHeight / 2f + capRise + 0.5f) : null;
-		final int leftExtent = crest != null ? Math.max(0, crest.left.anchorX - CREST_OVERLAP) : 0;
-		final int rightExtent = crest != null
+		// One crest leaves the other end as it would be without any, so only the side that has one takes room.
+		final boolean leftCrest = crest != null && placement.hasLeftCrest();
+		final boolean rightCrest = crest != null && placement.hasRightCrest();
+		final int leftExtent = leftCrest ? Math.max(0, crest.left.anchorX - CREST_OVERLAP) : 0;
+		final int rightExtent = rightCrest
 			? Math.max(0, Math.round(crest.right.image.getWidth() / RASTER_SCALE) - crest.right.anchorX - CREST_OVERLAP) : 0;
 		final int width = barWidth(leftExtent + rightExtent);
 		final int barCenterOffset = capRise + barHeight / 2;
 		final int aboveBar = headerHeight + inBarAbove;
-		final int topOffset = crest != null
-			? Math.max(0, Math.max(crest.left.anchorY, crest.right.anchorY) - (aboveBar + barCenterOffset)) : 0;
+		final int crestAnchorY = Math.max(leftCrest ? crest.left.anchorY : 0, rightCrest ? crest.right.anchorY : 0);
+		final int topOffset = crest != null ? Math.max(0, crestAnchorY - (aboveBar + barCenterOffset)) : 0;
 		final int barY = aboveBar + capRise;
 
 		final IntroAnimation intro = config.introAnimation();
@@ -313,7 +318,7 @@ public class BossHealthBarOverlay extends Overlay
 		setOpacity(graphics, originalComposite, opacity);
 
 		textPainter.applyTextHints(graphics);
-		final BufferedImage nameIcon = flat ? icon : barIcons.nameIcon(opponentInfo.bossIcon(), selector.isShowingPreview());
+		final BufferedImage nameIcon = barIcons.nameIcon(theme, opponentInfo.bossIcon(), selector.isShowingPreview());
 		textPainter.layoutText(state.name, state.shortName, state.combatLevel, state.delveLevel, nameIcon,
 			hitpointsText, defeated,
 			selector.isShowingPreview() ? BarStateSelector.PREVIEW_DAMAGE : 0, showFightTime, fightTimeText,
@@ -380,15 +385,16 @@ public class BossHealthBarOverlay extends Overlay
 		}
 		if (crest != null)
 		{
-			totalHeight = Math.max(totalHeight, drawCrest(graphics, crest, icon, leftExtent + shownInset + CREST_OVERLAP,
+			totalHeight = Math.max(totalHeight, drawCrest(graphics, crest, icon, leftCrest, rightCrest,
+				leftExtent + shownInset + CREST_OVERLAP,
 				leftExtent + shownInset + shownWidth - CREST_OVERLAP, centerY, slideOffset));
 		}
 
 		if (gold)
 		{
 			final float sparkleY = centerY + slideOffset;
-			final float leftX = crest != null ? leftExtent + shownInset + CREST_OVERLAP : leftExtent + shownInset + capWidth / 2f;
-			final float rightX = crest != null
+			final float leftX = leftCrest ? leftExtent + shownInset + CREST_OVERLAP : leftExtent + shownInset + capWidth / 2f;
+			final float rightX = rightCrest
 				? leftExtent + shownInset + shownWidth - CREST_OVERLAP : leftExtent + shownInset + shownWidth - capWidth / 2f;
 			final float radius = crest != null ? crest.iconSize * 0.75f : Math.max(6f, barHeight);
 			goldBar.drawSparkles(graphics, leftX, sparkleY, radius, false, nowMillis);
@@ -497,28 +503,35 @@ public class BossHealthBarOverlay extends Overlay
 
 
 	private int drawCrest(Graphics2D graphics, CrestRenderer.Crest crest, BufferedImage icon,
-		int leftX, int rightX, int centerY, int slideOffset)
+		boolean drawLeft, boolean drawRight, int leftX, int rightX, int centerY, int slideOffset)
 	{
-		final CrestRenderer.Piece left = crest.left;
-		final CrestRenderer.Piece right = crest.right;
-		final int leftWidth = Math.round(left.image.getWidth() / RASTER_SCALE);
-		final int leftHeight = Math.round(left.image.getHeight() / RASTER_SCALE);
-		final int rightWidth = Math.round(right.image.getWidth() / RASTER_SCALE);
-		final int rightHeight = Math.round(right.image.getHeight() / RASTER_SCALE);
-		final int leftY = centerY - left.anchorY;
-		final int rightY = centerY - right.anchorY;
-
 		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		drawRasterImage(graphics, left.image, leftX - left.anchorX, leftY + slideOffset, leftWidth, leftHeight);
-		drawRasterImage(graphics, right.image, rightX - right.anchorX, rightY + slideOffset, rightWidth, rightHeight);
+		int bottom = 0;
+		if (drawLeft)
+		{
+			bottom = Math.max(bottom, drawCrestPiece(graphics, crest, crest.left, icon, leftX, centerY, slideOffset));
+		}
+		if (drawRight)
+		{
+			bottom = Math.max(bottom, drawCrestPiece(graphics, crest, crest.right, icon, rightX, centerY, slideOffset));
+		}
+		return bottom;
+	}
+
+	private int drawCrestPiece(Graphics2D graphics, CrestRenderer.Crest crest, CrestRenderer.Piece piece,
+		BufferedImage icon, int x, int centerY, int slideOffset)
+	{
+		final int width = Math.round(piece.image.getWidth() / RASTER_SCALE);
+		final int height = Math.round(piece.image.getHeight() / RASTER_SCALE);
+		final int y = centerY - piece.anchorY;
+		drawRasterImage(graphics, piece.image, x - piece.anchorX, y + slideOffset, width, height);
 
 		// Drawn every frame rather than baked into the plate image, because ItemManager hands out a
 		// placeholder image that only fills in once the icon has loaded.
 		final int iconSize = crest.iconSize;
-		graphics.drawImage(icon, leftX - iconSize / 2, centerY + slideOffset - iconSize / 2, iconSize, iconSize, null);
-		graphics.drawImage(icon, rightX - iconSize / 2, centerY + slideOffset - iconSize / 2, iconSize, iconSize, null);
+		graphics.drawImage(icon, x - iconSize / 2, centerY + slideOffset - iconSize / 2, iconSize, iconSize, null);
 
-		return Math.max(leftY + leftHeight, rightY + rightHeight);
+		return y + height;
 	}
 
 
