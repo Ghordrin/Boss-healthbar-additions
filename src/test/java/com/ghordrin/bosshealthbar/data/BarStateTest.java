@@ -42,6 +42,26 @@ public class BarStateTest
 		assertEquals("1:23", withTime.fightTime);
 	}
 
+	// Same hand-copy as withFightTime, for a bar held on the game's own bar while its health keeps moving.
+	@Test
+	public void everyFieldSurvivesNewHealth()
+	{
+		final Health health = new Health(30, 60, true, 60, false);
+		final BarState withHealth = state().withFightTime("1:23").withHealth(health);
+
+		assertEquals("Doom of Mokhaiotl (Burrowed)", withHealth.name);
+		assertEquals("Doom (Burrowed)", withHealth.shortName);
+		assertEquals(1200, withHealth.combatLevel);
+		assertEquals(7, withHealth.delveLevel);
+		assertSame(health, withHealth.health);
+		assertSame(PHASE_MARKERS, withHealth.phaseMarkers);
+		assertSame(USER_MARKERS, withHealth.userMarkers);
+		assertEquals("doom of mokhaiotl", withHealth.killCountKey);
+		assertNull(withHealth.stats);
+		assertSame(SPECIAL_ATTACKS, withHealth.specialAttacks);
+		assertEquals("1:23", withHealth.fightTime);
+	}
+
 	@Test
 	public void aHealthOnlyBarHasNoExtras()
 	{

@@ -56,47 +56,72 @@ public class BarStateSelectorTest
 	@Test
 	public void aResumedOpponentWinsOverMovingAndStartingOver()
 	{
-		assertEquals(Switch.RESUME, BarStateSelector.switchTo(true, true, true, true, false, true));
-		assertEquals(Switch.RESUME, BarStateSelector.switchTo(true, true, false, false, false, false));
-		assertEquals(Switch.RESUME, BarStateSelector.switchTo(true, true, true, false, true, false));
+		assertEquals(Switch.RESUME, BarStateSelector.switchTo(true, true, true, true, false, true, false));
+		assertEquals(Switch.RESUME, BarStateSelector.switchTo(true, true, false, false, false, false, false));
+		assertEquals(Switch.RESUME, BarStateSelector.switchTo(true, true, true, false, true, false, false));
 		// Without an opponent there is nothing to resume.
-		assertEquals(Switch.RESET, BarStateSelector.switchTo(false, true, true, false, false, false));
+		assertEquals(Switch.RESET, BarStateSelector.switchTo(false, true, true, false, false, false, false));
+	}
+
+	// A boss that goes untargetable mid-fight leaves the scene, and the game's own bar is the only thing
+	// still saying the fight is on. Without that, the bar cleared seconds into the phase.
+	@Test
+	public void theGameSBarHoldsABossThatLeftLongerThanTheSwitchWindow()
+	{
+		assertTrue(BarStateSelector.holdsForNext(true, true, false, true));
+		assertTrue(BarStateSelector.holdsForNext(true, true, true, false));
+		assertFalse(BarStateSelector.holdsForNext(true, true, false, false));
+		// The game's bar moving to another boss, or another boss leaving, ends the hold.
+		assertFalse(BarStateSelector.holdsForNext(true, false, false, true));
+		assertFalse(BarStateSelector.holdsForNext(false, true, true, true));
+	}
+
+	// Something hit while the boss is away, such as a mechanic it hides behind, must not take the bar over
+	// and then play a defeat when it dies.
+	@Test
+	public void aHeldBossKeepsTheBarOverAnotherTarget()
+	{
+		assertEquals(Switch.KEEP, BarStateSelector.switchTo(true, false, true, true, false, true, true));
+		assertEquals(Switch.KEEP, BarStateSelector.switchTo(true, true, true, false, false, true, true));
+		// The boss itself coming back is not another target, so the bar goes to it.
+		assertEquals(Switch.RESUME, BarStateSelector.switchTo(true, true, true, false, false, true, false));
+		assertEquals(Switch.MOVE, BarStateSelector.switchTo(true, false, true, true, false, true, false));
 	}
 
 	@Test
 	public void noOpponentClearsTheBarUnlessTheDefeatIsPlaying()
 	{
-		assertEquals(Switch.RESET, BarStateSelector.switchTo(false, false, true, false, false, false));
-		assertEquals(Switch.KEEP, BarStateSelector.switchTo(false, false, true, false, true, false));
+		assertEquals(Switch.RESET, BarStateSelector.switchTo(false, false, true, false, false, false, false));
+		assertEquals(Switch.KEEP, BarStateSelector.switchTo(false, false, true, false, true, false, false));
 	}
 
 	@Test
 	public void anOpponentThatLeftAliveHoldsTheBarForTheNextOne()
 	{
-		assertEquals(Switch.KEEP, BarStateSelector.switchTo(false, false, true, false, false, true));
-		assertEquals(Switch.MOVE, BarStateSelector.switchTo(true, false, true, true, false, true));
-		assertEquals(Switch.MOVE, BarStateSelector.switchTo(true, false, true, false, false, true));
+		assertEquals(Switch.KEEP, BarStateSelector.switchTo(false, false, true, false, false, true, false));
+		assertEquals(Switch.MOVE, BarStateSelector.switchTo(true, false, true, true, false, true, false));
+		assertEquals(Switch.MOVE, BarStateSelector.switchTo(true, false, true, false, false, true, false));
 		// Once the hold runs out, the bar clears or starts over as before.
-		assertEquals(Switch.RESET, BarStateSelector.switchTo(false, false, true, false, false, false));
+		assertEquals(Switch.RESET, BarStateSelector.switchTo(false, false, true, false, false, false, false));
 	}
 
 	// The bar only moves when the fight timer carries on, so the two never disagree.
 	@Test
 	public void aNewOpponentMovesTheBarOnlyWhenItCarriesOnTheFight()
 	{
-		assertEquals(Switch.RESUME, BarStateSelector.switchTo(true, true, true, false, true, false));
-		assertEquals(Switch.MOVE, BarStateSelector.switchTo(true, false, true, true, false, false));
+		assertEquals(Switch.RESUME, BarStateSelector.switchTo(true, true, true, false, true, false, false));
+		assertEquals(Switch.MOVE, BarStateSelector.switchTo(true, false, true, true, false, false, false));
 		// Such as the next NPC clicked while the last one is still dying: a new fight, so a new bar.
-		assertEquals(Switch.RESET, BarStateSelector.switchTo(true, false, true, false, false, false));
-		assertEquals(Switch.RESET, BarStateSelector.switchTo(true, false, true, true, true, false));
-		assertEquals(Switch.RESET, BarStateSelector.switchTo(true, false, false, true, false, false));
+		assertEquals(Switch.RESET, BarStateSelector.switchTo(true, false, true, false, false, false, false));
+		assertEquals(Switch.RESET, BarStateSelector.switchTo(true, false, true, true, true, false, false));
+		assertEquals(Switch.RESET, BarStateSelector.switchTo(true, false, false, true, false, false, false));
 	}
 
 	// An opponent back up after being defeated reports no carried-on fight, which is what the bar asks about here.
 	@Test
 	public void anOpponentThatDoesNotCarryOnTheFightGetsANewBarEvenWhileADefeatPlays()
 	{
-		assertEquals(Switch.RESET, BarStateSelector.switchTo(true, false, true, false, true, false));
+		assertEquals(Switch.RESET, BarStateSelector.switchTo(true, false, true, false, true, false, false));
 	}
 
 	@Test

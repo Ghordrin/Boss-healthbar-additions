@@ -49,6 +49,12 @@ public final class BarState
 			null, Collections.emptyList(), null);
 	}
 
+	public BarState withHealth(Health newHealth)
+	{
+		return new BarState(name, shortName, combatLevel, delveLevel, newHealth, phaseMarkers, userMarkers,
+			killCountKey, stats, specialAttacks, fightTime);
+	}
+
 	public BarState withFightTime(String time)
 	{
 		return new BarState(name, shortName, combatLevel, delveLevel, health, phaseMarkers, userMarkers, killCountKey,
