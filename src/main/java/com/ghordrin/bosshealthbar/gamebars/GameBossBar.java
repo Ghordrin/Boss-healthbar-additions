@@ -132,6 +132,12 @@ public class GameBossBar
 		return isTracking(actor) ? phaseColors : null;
 	}
 
+	// A bar held for a boss that has left the scene has no NPC left to match, so it asks by the ID instead.
+	public PhaseColors phaseColorsFor(int npcId)
+	{
+		return npcId != -1 && trackedNpcId() == npcId ? phaseColors : null;
+	}
+
 	public int trackedNpcId()
 	{
 		if (client.getVarbitValue(VarbitID.HPBAR_HUD_BOSS_DISABLED) != 0)

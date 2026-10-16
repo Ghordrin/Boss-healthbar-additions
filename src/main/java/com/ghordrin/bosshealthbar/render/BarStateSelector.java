@@ -81,6 +81,8 @@ public class BarStateSelector
 	private Actor baseIdActor;
 	private int trackedBaseId = -1;
 	private boolean loggedGameBarHold;
+	// The boss the bar is held for while it has no opponent of its own to read, or -1.
+	private int heldBossId = -1;
 	private boolean showingPreview;
 	private long previewStartNanos;
 	private boolean rolledGold;
@@ -151,14 +153,23 @@ public class BarStateSelector
 		leftAlive = null;
 		baseIdActor = null;
 		trackedBaseId = -1;
+		heldBossId = -1;
 		switchHoldUntilNanos = 0;
 		retargetPending = false;
 		resuming = false;
 		resumedHealth = null;
 	}
 
+	// The boss the bar is held for while it has no opponent to read, so the overlay can take that boss's phase
+	// color from the game's bar. -1 while the bar follows an opponent of its own.
+	public int heldBossId()
+	{
+		return heldBossId;
+	}
+
 	public BarState select(Actor opponent, long now, BarAnimation animation, Runnable resetAll)
 	{
+		heldBossId = -1;
 		boolean holdingForNext = false;
 		// While the game's bar holds the boss, something else hit in the meantime doesn't take the bar over.
 		boolean keepHeldBar = false;
@@ -315,6 +326,7 @@ public class BarStateSelector
 			// carries it without the NPC. A defeat plays out on the health it died at.
 			if (holdingForNext && !animation.isDefeatPlaying() && onGameBar())
 			{
+				heldBossId = trackedBaseId;
 				final HealthReader.Reading held = healthReader.readGameBar();
 				if (held != null && (held.health.ratio != lastState.health.ratio
 					|| held.health.scale != lastState.health.scale))

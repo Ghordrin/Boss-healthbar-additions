@@ -208,17 +208,23 @@ public class BossHealthBarOverlay extends Overlay
 	{
 		final KnownBosses.Boss boss = config.matchBossColors() && !selector.isShowingPreview()
 			? KnownBosses.find(partner.name) : null;
-		return withPhase(barColors(updateThemeColors(), boss != null ? boss.getColors() : null, flat), member);
+		return withPhase(barColors(updateThemeColors(), boss != null ? boss.getColors() : null, flat), member, -1);
 	}
 
 	// A phase color says what the boss is doing now, so it wins over a color picked for the boss itself.
-	private ThemeColors withPhase(ThemeColors colors, Actor opponent)
+	// heldBossId names the boss a bar without an opponent of its own is held for, whose phase the game's bar
+	// still shows. The second bar has no such hold, so it passes -1.
+	private ThemeColors withPhase(ThemeColors colors, Actor opponent, int heldBossId)
 	{
 		if (!config.phaseColors())
 		{
 			return colors;
 		}
-		final PhaseColors phase = gameBossBar.phaseColors(opponent);
+		PhaseColors phase = gameBossBar.phaseColors(opponent);
+		if (phase == null)
+		{
+			phase = gameBossBar.phaseColorsFor(heldBossId);
+		}
 		return phase != null ? phase.applyTo(colors, config.phaseColor()) : colors;
 	}
 
@@ -296,7 +302,7 @@ public class BossHealthBarOverlay extends Overlay
 		final int inBarBelow = inBarOverflow - inBarAbove;
 		final BarTheme theme = BarTheme.of(config);
 		final boolean flat = theme.isFlat();
-		final ThemeColors baseColors = withPhase(baseColors(), opponent);
+		final ThemeColors baseColors = withPhase(baseColors(), opponent, selector.heldBossId());
 		final boolean gold = showsGold(selector.rolledGold() && !selector.isShowingPreview() && config.rareGoldBars(), flat);
 		final ThemeColors colors = gold ? goldBar.colors(baseColors) : baseColors;
 		final long nowMillis = now / 1_000_000L;
