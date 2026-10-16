@@ -21,7 +21,7 @@
 
 ### Fixed
 
-- The bar no longer disappears during a phase where the boss cannot be attacked and leaves the area. It stays for as long as the game's own boss bar keeps showing that boss, and keeps reading the health from it
+- The bar no longer disappears during a phase where the boss cannot be attacked and leaves the area. It stays for as long as the game's own boss bar keeps showing that boss, and keeps reading the health and the phase color from it
 - A mechanic you have to hit while the boss is away no longer takes the bar over, so the bar no longer plays its defeat animation as if the boss died when that mechanic is destroyed. It goes on the second bar instead
 - The Zaros theme shows the Zarosian icon instead of a prayer icon, and the Seren theme now has an icon of its own
 - The prompt that offers to switch the theme to Custom is offered again after the theme is changed, instead of staying away for the rest of the session once it was declined
