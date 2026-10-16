@@ -4,6 +4,7 @@ import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.data.BarState;
 import com.ghordrin.bosshealthbar.data.BossStats;
 import com.ghordrin.bosshealthbar.data.Health;
+import com.ghordrin.bosshealthbar.data.NpcUtil;
 import com.ghordrin.bosshealthbar.data.OpponentInfo;
 import com.ghordrin.bosshealthbar.debug.DebugLog;
 import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
@@ -75,6 +76,11 @@ public class BarStateSelector
 	// The fight lastState was built in, so a held bar doesn't pick up a later fight's time.
 	private int lastStateFight = FightTimer.NO_TICK;
 	private Actor leftAlive;
+	// Kept up to date while the opponent is in the scene: the client empties a despawned NPC, so by the time
+	// one counts as having left there is no composition on it to read an ID from.
+	private Actor baseIdActor;
+	private int trackedBaseId = -1;
+	private boolean loggedGameBarHold;
 	private boolean showingPreview;
 	private long previewStartNanos;
 	private boolean rolledGold;
@@ -143,6 +149,8 @@ public class BarStateSelector
 		lastState = null;
 		lastStateFight = FightTimer.NO_TICK;
 		leftAlive = null;
+		baseIdActor = null;
+		trackedBaseId = -1;
 		switchHoldUntilNanos = 0;
 		retargetPending = false;
 		resuming = false;
@@ -152,6 +160,8 @@ public class BarStateSelector
 	public BarState select(Actor opponent, long now, BarAnimation animation, Runnable resetAll)
 	{
 		boolean holdingForNext = false;
+		// While the game's bar holds the boss, something else hit in the meantime doesn't take the bar over.
+		boolean keepHeldBar = false;
 		final int life = opponentTracker.opponentLife();
 		// The same opponent back up after being defeated is the next one, so the bar starts over for it.
 		if (opponent != trackedOpponent || life != trackedLife)
@@ -174,15 +184,29 @@ public class BarStateSelector
 				&& leftAlive != trackedOpponent)
 			{
 				leftAlive = trackedOpponent;
+				loggedGameBarHold = false;
 				switchHoldUntilNanos = now + SWITCH_HOLD.toNanos();
 				debugLog.add("Bar: {} left alive, holding the bar for the next opponent",
 					DebugLog.describe(trackedOpponent));
 			}
-			holdingForNext = left && leftAlive == trackedOpponent && now < switchHoldUntilNanos;
+			// A boss that goes untargetable mid-fight leaves the scene while the game's own bar stays up on
+			// it, so the bar waits for as long as that bar does instead of only the few seconds.
+			final boolean onGameBar = onGameBar();
+			holdingForNext = holdsForNext(left, leftAlive == trackedOpponent, now < switchHoldUntilNanos, onGameBar);
+			if (holdingForNext && onGameBar && now >= switchHoldUntilNanos && !loggedGameBarHold)
+			{
+				loggedGameBarHold = true;
+				// The NPC is empty by now, so its ID is the only thing left to name it by.
+				debugLog.add("Bar: holding the bar while the game's bar still shows NPC id {}", trackedBaseId);
+			}
+
+			// A mechanic that has to be hit while the boss is away, such as something it hides behind, is a
+			// target but not the fight. The bar stays on the boss and that target goes to the second bar.
+			keepHeldBar = holdingForNext && onGameBar && opponent != null && !isHeldBoss(opponent);
 
 			final Switch next = switchTo(opponent != null, opponentTracker.resumedFromMemory(opponent),
 				trackedOpponent != null && lastState != null, opponentTracker.continuesFight(opponent),
-				animation.isDefeatPlaying(), holdingForNext);
+				animation.isDefeatPlaying(), holdingForNext, keepHeldBar);
 			if (next == Switch.RESUME)
 			{
 				// An opponent back from out of sight carries on from its remembered health, without the intro.
@@ -238,8 +262,10 @@ public class BarStateSelector
 		showingPreview = false;
 
 		// A target that doesn't get a bar falls through to the preview, same as no target.
+		rememberBaseId(trackedOpponent);
+
 		final HealthReader.Reading reading = opponent != null ? healthReader.read(opponent) : null;
-		final BarState state = opponent != null ? readState(opponent, reading) : null;
+		final BarState state = opponent != null && !keepHeldBar ? readState(opponent, reading) : null;
 		if (state != null)
 		{
 			if (resuming && resumedHealth != null
@@ -285,6 +311,17 @@ public class BarStateSelector
 			{
 				lastState = lastState.withFightTime(heldFightTime);
 			}
+			// A boss held because the game's bar still shows it keeps taking its health from that bar, which
+			// carries it without the NPC. A defeat plays out on the health it died at.
+			if (holdingForNext && !animation.isDefeatPlaying() && onGameBar())
+			{
+				final HealthReader.Reading held = healthReader.readGameBar();
+				if (held != null && (held.health.ratio != lastState.health.ratio
+					|| held.health.scale != lastState.health.scale))
+				{
+					lastState = lastState.withHealth(held.health);
+				}
+			}
 			return lastState;
 		}
 
@@ -325,9 +362,48 @@ public class BarStateSelector
 	// What the bar does when the opponent changes. RESET starts a new bar, or clears it when there's no opponent.
 	// sameFight is the fight timer's call that the new opponent carries on the fight, so the bar moves when the timer
 	// keeps counting. holdingForNext is set for a short while after the last opponent left alive.
-	static Switch switchTo(boolean hasOpponent, boolean resumed, boolean hasBar, boolean sameFight,
-		boolean defeatPlaying, boolean holdingForNext)
+	private boolean onGameBar()
 	{
+		return trackedBaseId != -1 && gameBossBar.trackedNpcId() == trackedBaseId;
+	}
+
+	private boolean isHeldBoss(Actor opponent)
+	{
+		return opponent instanceof NPC && NpcUtil.baseId((NPC) opponent) == trackedBaseId;
+	}
+
+	// Only when the opponent changes, since the ID can't change under one NPC and the overlay asks every frame.
+	private void rememberBaseId(Actor opponent)
+	{
+		if (opponent == baseIdActor)
+		{
+			return;
+		}
+		baseIdActor = opponent;
+		if (opponent instanceof NPC)
+		{
+			final int baseId = NpcUtil.baseId((NPC) opponent);
+			if (baseId != -1)
+			{
+				trackedBaseId = baseId;
+			}
+		}
+	}
+
+	// The bar is held for the boss that left while the switch window lasts, and for as long as the game's own
+	// bar still shows that boss, which is how an untargetable phase says the fight is still on.
+	static boolean holdsForNext(boolean left, boolean sameLeaver, boolean withinWindow, boolean onGameBar)
+	{
+		return left && sameLeaver && (withinWindow || onGameBar);
+	}
+
+	static Switch switchTo(boolean hasOpponent, boolean resumed, boolean hasBar, boolean sameFight,
+		boolean defeatPlaying, boolean holdingForNext, boolean keepHeldBar)
+	{
+		if (keepHeldBar)
+		{
+			return Switch.KEEP;
+		}
 		if (hasOpponent && resumed)
 		{
 			return Switch.RESUME;

@@ -64,11 +64,10 @@ public class HealthReader
 		}
 		if (gameBossBar.isTracking(actor))
 		{
-			final int max = gameBossBar.maxHealth();
-			if (max > 0 && gameBossBar.hasHealth())
+			final Reading reading = readGameBar();
+			if (reading != null)
 			{
-				return new Reading(Source.GAME_BAR,
-					new Health(gameBossBar.health(), max, true, max, gameBossBar.isPercentOnly()));
+				return reading;
 			}
 		}
 		if (tobBossBar.isTracking(actor))
@@ -87,6 +86,18 @@ public class HealthReader
 				npcMaxHealth(actor), false));
 		}
 		return null;
+	}
+
+	// The game's bar holds the health itself, so a boss that left the scene can still be read off it.
+	public Reading readGameBar()
+	{
+		final int max = gameBossBar.maxHealth();
+		if (max <= 0 || !gameBossBar.hasHealth())
+		{
+			return null;
+		}
+		return new Reading(Source.GAME_BAR,
+			new Health(gameBossBar.health(), max, true, max, gameBossBar.isPercentOnly()));
 	}
 
 	void reset()
