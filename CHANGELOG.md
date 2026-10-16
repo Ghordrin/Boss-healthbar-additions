@@ -1,15 +1,10 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 (2026-10-16)
 
 ### New
 
 - New Phase colors option (Look, on by default). Some bosses turn the game's own health bar another color while they shield themselves or change phase, and the bar now follows that color instead of losing it behind our own. A Phase color picker under it shows those phases in a color of your choice instead, left transparent to use the game's
-
-## 1.8.0 (2026-10-15)
-
-### New
-
 - Right-click the bar and pick Support Discord to open the plugin's Discord in your browser, for help, bug reports and sharing setups
 - Picking a theme now fills the Custom colors section with that theme's colors, so it can be used as a starting point. Changing one of those colors while a theme is picked asks whether to switch the theme to Custom, since that is the only theme that uses them
 - New delve level after the boss's name, the way the game's own boss bar shows it. On a narrow bar the name shortens to make room for it
@@ -17,6 +12,7 @@
 
 ### Changed
 
+- The bar is drawn over the game's interfaces instead of under them, so an interface opened where the bar sits no longer hides it
 - With Match boss colors on, the second boss bar now takes the colors of its own boss instead of the first one's, so two bosses at once no longer share one color
 - The pillar bars now use the same fill blend and shading as the main bar: the fill moves from the full health color to the low health color as the charge drops, and the outline takes the frame's gradient. They keep a single line for a frame and no end pieces, which at their height would leave no room for the bar
 - Show icons is now an Icon placement dropdown: Crests, Crest left, Crest right, Before the name, or No icon. A single crest leaves the other end with its Bar ends ornament, and the bar only gives up room on the side that has one. The icon before the name used to be the result of turning Show icons off while Use boss icon stayed on, which was hard to find. Your setting carries over, and Use boss icon now only picks which icon is used, so the theme's icon can go before the name too
