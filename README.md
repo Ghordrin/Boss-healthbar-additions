@@ -46,7 +46,7 @@ Everything is in the RuneLite config panel, or right-click the bar and pick Conf
 
 | Section | What's in it |
 |---|---|
-| Look | Theme, Oldschool theme, boss colours, rare gold bars, icons, bar ends, fill texture, phase markers, size |
+| Look | Theme, Oldschool theme, boss colours, phase colours, rare gold bars, icons, bar ends, fill texture, phase markers, size |
 | Text | Name, combat level, hitpoints text (percentage, value, both or none), damage number and whose hits it counts |
 | Fonts | Font and size of each text around the bar, Smooth text, and the text edge (shadow, outline or nothing) |
 | Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar |

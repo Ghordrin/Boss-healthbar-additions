@@ -4,6 +4,7 @@ import com.ghordrin.bosshealthbar.data.BarState;
 import com.ghordrin.bosshealthbar.data.NpcUtil;
 import com.ghordrin.bosshealthbar.debug.DebugLog;
 import com.ghordrin.bosshealthbar.render.BarAnimation;
+import com.ghordrin.bosshealthbar.theme.PhaseColors;
 import java.util.Arrays;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -47,6 +48,11 @@ public class GameBossBar
 	private int percentOnlyNpcId = -1;
 	private boolean percentOnly;
 
+	private int loggedFill = -1;
+	private int loggedTrail = -1;
+	private int loggedTrack = -1;
+	private PhaseColors phaseColors;
+
 	private final int[] phaseMarkerValues = new int[PHASE_MARKER_VARBITS.length];
 	private int phaseMarkerMaxHealth;
 	private float[] phaseMarkers = BarState.NO_PHASE_MARKERS;
@@ -79,6 +85,51 @@ public class GameBossBar
 			loggedZeroId = trackedId;
 			debugLog.add("Game boss bar reads 0 for NPC id {} before its health arrived, ignored", trackedId);
 		}
+		updatePhaseColors(trackedId);
+	}
+
+	// Read once a tick, since the overlay asks every frame. The colors are logged whenever they change, so a
+	// boss nobody has fought yet says in the log whether the game gives it a phase color at all.
+	private void updatePhaseColors(int trackedId)
+	{
+		PhaseColors colors = null;
+		if (trackedId != -1)
+		{
+			final Widget fill = client.getWidget(InterfaceID.HpbarHud.HEALTH_BAR_REMAINING);
+			final Widget trail = client.getWidget(InterfaceID.HpbarHud.HEALTH_BAR_SLIDING);
+			final Widget track = client.getWidget(InterfaceID.HpbarHud.HEALTH_BAR_BACK);
+			if (fill != null && trail != null && track != null)
+			{
+				colors = PhaseColors.of(fill.getTextColor(), trail.getTextColor(), track.getTextColor());
+				logColors(trackedId, fill.getTextColor(), trail.getTextColor(), track.getTextColor(), colors != null);
+			}
+		}
+		phaseColors = colors;
+	}
+
+	private void logColors(int trackedId, int fill, int trail, int track, boolean phase)
+	{
+		if (fill == loggedFill && trail == loggedTrail && track == loggedTrack)
+		{
+			return;
+		}
+		loggedFill = fill;
+		loggedTrail = trail;
+		loggedTrack = track;
+		debugLog.add("Game boss bar colors for NPC id {}: fill {} trail {} background {}, phase {}", trackedId,
+			hex(fill), hex(trail), hex(track), phase);
+	}
+
+	private static String hex(int color)
+	{
+		return String.format("%06X", color & 0xFFFFFF);
+	}
+
+	// The colors the game is painting a special phase in, or null when it paints its usual ones. Only for the
+	// NPC its bar tracks, so a second boss on screen doesn't take another one's phase.
+	public PhaseColors phaseColors(Actor actor)
+	{
+		return isTracking(actor) ? phaseColors : null;
 	}
 
 	public int trackedNpcId()
@@ -223,6 +274,10 @@ public class GameBossBar
 		loggedTrackedId = -1;
 		healthSeenId = -1;
 		loggedZeroId = -1;
+		loggedFill = -1;
+		loggedTrail = -1;
+		loggedTrack = -1;
+		phaseColors = null;
 	}
 
 	public boolean isHidden()

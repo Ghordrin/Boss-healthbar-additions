@@ -37,6 +37,7 @@ import com.ghordrin.bosshealthbar.render.HitpointsTextMode;
 import com.ghordrin.bosshealthbar.render.IntroAnimation;
 import com.ghordrin.bosshealthbar.theme.BarTheme;
 import com.ghordrin.bosshealthbar.theme.CustomColors;
+import com.ghordrin.bosshealthbar.theme.PhaseColors;
 import com.ghordrin.bosshealthbar.theme.ThemeColors;
 import com.ghordrin.bosshealthbar.tracking.DamageTracker;
 import com.ghordrin.bosshealthbar.tracking.FightGroup;
@@ -201,11 +202,22 @@ public class BossHealthBarOverlay extends Overlay
 	}
 
 	// The second bar follows its own boss, so two bosses at once don't both take the first one's color.
-	private ThemeColors partnerColors(BarState partner, boolean flat)
+	private ThemeColors partnerColors(BarState partner, Actor member, boolean flat)
 	{
 		final KnownBosses.Boss boss = config.matchBossColors() && !selector.isShowingPreview()
 			? KnownBosses.find(partner.name) : null;
-		return barColors(updateThemeColors(), boss != null ? boss.getColors() : null, flat);
+		return withPhase(barColors(updateThemeColors(), boss != null ? boss.getColors() : null, flat), member);
+	}
+
+	// A phase color says what the boss is doing now, so it wins over a color picked for the boss itself.
+	private ThemeColors withPhase(ThemeColors colors, Actor opponent)
+	{
+		if (!config.phaseColors())
+		{
+			return colors;
+		}
+		final PhaseColors phase = gameBossBar.phaseColors(opponent);
+		return phase != null ? phase.applyTo(colors, config.phaseColor()) : colors;
 	}
 
 	private ThemeColors updateThemeColors()
@@ -282,7 +294,7 @@ public class BossHealthBarOverlay extends Overlay
 		final int inBarBelow = inBarOverflow - inBarAbove;
 		final BarTheme theme = BarTheme.of(config);
 		final boolean flat = theme.isFlat();
-		final ThemeColors baseColors = baseColors();
+		final ThemeColors baseColors = withPhase(baseColors(), opponent);
 		final boolean gold = showsGold(selector.rolledGold() && !selector.isShowingPreview() && config.rareGoldBars(), flat);
 		final ThemeColors colors = gold ? goldBar.colors(baseColors) : baseColors;
 		final long nowMillis = now / 1_000_000L;
@@ -459,7 +471,7 @@ public class BossHealthBarOverlay extends Overlay
 		partnerAnimation.tick(dead ? 0f : clamp01(partner.health.ratio / (float) partner.health.scale),
 			config.animationSpeed(), config.showDamageTrail(), 0);
 
-		final ThemeColors colors = partnerColors(partner, flat);
+		final ThemeColors colors = partnerColors(partner, member != null ? member.npc() : null, flat);
 
 		setOpacity(graphics, originalComposite, textOpacity);
 		textPainter.drawPartnerRow(graphics, partner.name, partnerHitpointsText(partner), dead, colors, width, capWidth,

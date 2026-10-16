@@ -44,6 +44,8 @@ public interface BossHealthBarConfig extends Config
 	String CUSTOM_DEFEATED_TEXT_COLOR_KEY = "customDefeatedTextColor";
 	String OLDSCHOOL_THEME_KEY = "oldschoolTheme";
 	String MATCH_BOSS_COLORS_KEY = "matchBossColors";
+	String PHASE_COLORS_KEY = "phaseColors";
+	String PHASE_COLOR_KEY = "phaseColor";
 	String RARE_GOLD_BARS_KEY = "rareGoldBars";
 	String ICON_PLACEMENT_KEY = "iconPlacement";
 	String USE_BOSS_ICON_KEY = "useBossIcon";
@@ -206,10 +208,38 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = PHASE_COLORS_KEY,
+		name = "Phase colors",
+		description = "Some bosses turn the game's own health bar another color while they shield themselves or"
+			+ " change phase. Follow that color instead of losing it. It takes over from Match boss colors"
+			+ " while the phase lasts.",
+		position = 3,
+		section = lookSection
+	)
+	default boolean phaseColors()
+	{
+		return true;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = PHASE_COLOR_KEY,
+		name = "Phase color",
+		description = "The color to show a special phase in instead of the game's. Leave it transparent to use"
+			+ " the game's own color.",
+		position = 4,
+		section = lookSection
+	)
+	default Color phaseColor()
+	{
+		return TRANSPARENT;
+	}
+
+	@ConfigItem(
 		keyName = RARE_GOLD_BARS_KEY,
 		name = "Rare gold bars",
 		description = "About 1 in 250 bars turns gold, only for looks. Ticking this turns off Use Oldschool theme.",
-		position = 3,
+		position = 5,
 		section = lookSection
 	)
 	default boolean rareGoldBars()
@@ -223,7 +253,7 @@ public interface BossHealthBarConfig extends Config
 		description = "Where the icon goes. Crests puts one at each end of the bar, Crest left and Crest right only"
 			+ " on that end, and Before the name puts a small one there. With Use Oldschool theme on it always"
 			+ " goes before the name.",
-		position = 4,
+		position = 6,
 		section = lookSection
 	)
 	default BarIconPlacement iconPlacement()
@@ -235,7 +265,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = USE_BOSS_ICON_KEY,
 		name = "Use boss icon",
 		description = "Use the icon of the boss you're fighting instead of the theme's. Raid bosses show their pet.",
-		position = 5,
+		position = 7,
 		section = lookSection
 	)
 	default boolean useBossIcon()
@@ -247,7 +277,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "barEnds",
 		name = "Bar ends",
 		description = "The ornament at each end of the bar. A crest covers the end it sits on, so an end only shows this when Icon placement leaves it free. Not used with Use Oldschool theme on.",
-		position = 6,
+		position = 8,
 		section = lookSection
 	)
 	default BarEnds barEnds()
@@ -259,7 +289,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = CHOOSE_FILL_TEXTURE_KEY,
 		name = "Choose fill texture",
 		description = "Click to pick one of the game's textures to lay over the fill. Not used with Use Oldschool theme on.",
-		position = 7,
+		position = 9,
 		section = lookSection
 	)
 	default boolean chooseFillTexture()
@@ -271,7 +301,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "showPhaseMarkers",
 		name = "Show phase markers",
 		description = "Show the same phase markers as the game's own boss health bar, when it has them.",
-		position = 8,
+		position = 10,
 		section = lookSection
 	)
 	default boolean showPhaseMarkers()
@@ -285,7 +315,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "barWidth",
 		name = "Bar width",
 		description = "The width of the bar. Alt-dragging its edge overrides this until you reset the overlay.",
-		position = 9,
+		position = 11,
 		section = lookSection
 	)
 	default int barWidth()
@@ -299,7 +329,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "barHeight",
 		name = "Bar height",
 		description = "The height of the bar itself, without the text around it.",
-		position = 10,
+		position = 12,
 		section = lookSection
 	)
 	default int barHeight()
@@ -311,7 +341,7 @@ public interface BossHealthBarConfig extends Config
 		keyName = "fitToGameView",
 		name = "Fit to game view",
 		description = "Make the bar narrower when the game view is small. The height and text keep their size.",
-		position = 11,
+		position = 13,
 		section = lookSection
 	)
 	default boolean fitToGameView()

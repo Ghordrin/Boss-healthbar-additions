@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- New Phase colors option (Look, on by default). Some bosses turn the game's own health bar another color while they shield themselves or change phase, and the bar now follows that color instead of losing it behind our own. A Phase color picker under it shows those phases in a color of your choice instead, left transparent to use the game's
+
 ## 1.8.0 (2026-10-15)
 
 ### New

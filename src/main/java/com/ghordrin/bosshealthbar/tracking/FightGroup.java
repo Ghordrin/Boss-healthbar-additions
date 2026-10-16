@@ -45,6 +45,12 @@ public class FightGroup
 			return index == NO_INDEX;
 		}
 
+		// For what the bar has to ask the game about this boss, such as the color its own bar paints it in.
+		public NPC npc()
+		{
+			return npc;
+		}
+
 		// A confirmed kill, not just a 0 it can still come back from.
 		public boolean isDead()
 		{
