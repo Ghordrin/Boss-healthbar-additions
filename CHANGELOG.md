@@ -12,6 +12,7 @@
 
 ### Changed
 
+- The bar starts at the top centre of the screen, where the game puts its own boss bar, instead of above the chatbox. A bar you have already moved stays where you put it
 - The bar is drawn over the game's interfaces instead of under them, so an interface opened where the bar sits no longer hides it
 - With Match boss colors on, the second boss bar now takes the colors of its own boss instead of the first one's, so two bosses at once no longer share one color
 - The pillar bars now use the same fill blend and shading as the main bar: the fill moves from the full health color to the low health color as the charge drops, and the outline takes the frame's gradient. They keep a single line for a frame and no end pieces, which at their height would leave no room for the bar

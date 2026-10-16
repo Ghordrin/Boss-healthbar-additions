@@ -152,7 +152,8 @@ public class BossHealthBarOverlay extends Overlay
 		this.group = group;
 		this.debugLog = debugLog;
 
-		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
+		// Where the game puts its own boss bar, which this one stands in for.
+		setPosition(OverlayPosition.TOP_CENTER);
 		// Above the interfaces, or anything the game opens over the bar hides it.
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 		setResizable(true);
