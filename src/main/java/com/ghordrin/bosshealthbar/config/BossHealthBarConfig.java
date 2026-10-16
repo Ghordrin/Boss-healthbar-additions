@@ -520,7 +520,9 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = "hitpointsTextMode",
 		name = "Hitpoints text",
-		description = "Show the hitpoints as a percentage, a value, both, or not at all. Shows a percentage when the max hitpoints aren't known.",
+		description = "What to show: a percentage, the hitpoints out of the maximum, the hitpoints left on their"
+			+ " own, either of those with the percentage after it, or nothing. Shows a percentage when the max"
+			+ " hitpoints aren't known.",
 		position = 2,
 		section = textSection
 	)
