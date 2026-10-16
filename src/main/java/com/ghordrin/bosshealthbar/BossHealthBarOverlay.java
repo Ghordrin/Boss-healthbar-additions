@@ -153,7 +153,8 @@ public class BossHealthBarOverlay extends Overlay
 		this.debugLog = debugLog;
 
 		setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
-		setLayer(OverlayLayer.ABOVE_SCENE);
+		// Above the interfaces, or anything the game opens over the bar hides it.
+		setLayer(OverlayLayer.ABOVE_WIDGETS);
 		setResizable(true);
 		setMinimumSize(MIN_FITTED_BAR_WIDTH);
 		addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, BossHealthBarPlugin.NAME);
