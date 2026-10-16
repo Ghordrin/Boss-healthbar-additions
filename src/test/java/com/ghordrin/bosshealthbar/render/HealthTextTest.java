@@ -92,7 +92,9 @@ public class HealthTextTest
 		assertNull(text(HitpointsTextMode.NONE, estimated));
 		assertEquals("50%", text(HitpointsTextMode.PERCENTAGE, estimated));
 		assertEquals("200 / 400", text(HitpointsTextMode.HITPOINTS, estimated));
+		assertEquals("200", text(HitpointsTextMode.REMAINING, estimated));
 		assertEquals("200 / 400   50%", text(HitpointsTextMode.BOTH, estimated));
+		assertEquals("200   50%", text(HitpointsTextMode.REMAINING_PERCENTAGE, estimated));
 	}
 
 	@Test
@@ -101,7 +103,9 @@ public class HealthTextTest
 		final Health exact = health(400, 250, 400, true, false);
 		assertEquals("63%", text(HitpointsTextMode.PERCENTAGE, exact));
 		assertEquals("250 / 400", text(HitpointsTextMode.HITPOINTS, exact));
+		assertEquals("250", text(HitpointsTextMode.REMAINING, exact));
 		assertEquals("250 / 400   63%", text(HitpointsTextMode.BOTH, exact));
+		assertEquals("250   63%", text(HitpointsTextMode.REMAINING_PERCENTAGE, exact));
 	}
 
 	@Test
@@ -109,7 +113,9 @@ public class HealthTextTest
 	{
 		final Health percentOnly = health(400, 15, 30, false, true);
 		assertEquals("50%", text(HitpointsTextMode.HITPOINTS, percentOnly));
+		assertEquals("50%", text(HitpointsTextMode.REMAINING, percentOnly));
 		assertEquals("50%", text(HitpointsTextMode.BOTH, percentOnly));
+		assertEquals("50%", text(HitpointsTextMode.REMAINING_PERCENTAGE, percentOnly));
 		assertNull(text(HitpointsTextMode.NONE, percentOnly));
 
 		final Health unknownMax = health(null, 15, 30, false, false);

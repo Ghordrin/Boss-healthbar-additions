@@ -15,22 +15,29 @@ public final class HealthText
 			return null;
 		}
 
-		String percentText = hitpointsPercent(health.ratio, health.scale) + "%";
+		final String percentText = hitpointsPercent(health.ratio, health.scale) + "%";
+		final String hpText = hitpointsPart(mode, health);
 
-		if (mode == HitpointsTextMode.PERCENTAGE || health.maxHealth == null || health.percentOnly)
+		if (hpText == null)
 		{
 			return percentText;
 		}
+		return mode.showsPercentage() ? hpText + "   " + percentText : hpText;
+	}
 
-		int currentHealth = health.exactHealth ? health.ratio : estimateHealth(health.ratio, health.scale, health.maxHealth);
-		String hpText = currentHealth + " / " + health.maxHealth;
-
-		if (mode == HitpointsTextMode.HITPOINTS)
+	// Null when there is no hitpoints part to show, which a boss that only reports a percentage also means.
+	private static String hitpointsPart(HitpointsTextMode mode, Health health)
+	{
+		if (mode.hitpoints() == HitpointsTextMode.Hitpoints.OFF
+			|| health.maxHealth == null || health.percentOnly)
 		{
-			return hpText;
+			return null;
 		}
 
-		return hpText + "   " + percentText;
+		final int currentHealth = health.exactHealth
+			? health.ratio : estimateHealth(health.ratio, health.scale, health.maxHealth);
+		return mode.hitpoints() == HitpointsTextMode.Hitpoints.LEFT
+			? String.valueOf(currentHealth) : currentHealth + " / " + health.maxHealth;
 	}
 
 	// Like the game's own bar, 0% and 100% are only shown when the opponent is really dead or full.

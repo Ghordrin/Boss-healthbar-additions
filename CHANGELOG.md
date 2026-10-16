@@ -4,6 +4,7 @@
 
 ### New
 
+- Two new Hitpoints text options: Hitpoints left shows the hitpoints on their own, without the maximum, and Hitpoints left and % adds the percentage after it. Both is now named Hitpoints and %
 - New Phase colors option (Look, on by default). Some bosses turn the game's own health bar another color while they shield themselves or change phase, and the bar now follows that color instead of losing it behind our own. A Phase color picker under it shows those phases in a color of your choice instead, left transparent to use the game's
 - Right-click the bar and pick Support Discord to open the plugin's Discord in your browser, for help, bug reports and sharing setups
 - Picking a theme now fills the Custom colors section with that theme's colors, so it can be used as a starting point. Changing one of those colors while a theme is picked asks whether to switch the theme to Custom, since that is the only theme that uses them
