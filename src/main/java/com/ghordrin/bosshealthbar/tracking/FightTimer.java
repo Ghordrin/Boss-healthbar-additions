@@ -2,12 +2,15 @@ package com.ghordrin.bosshealthbar.tracking;
 
 import com.ghordrin.bosshealthbar.debug.DebugLog;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.Getter;
 import net.runelite.api.Actor;
 import net.runelite.api.Constants;
+import net.runelite.client.util.Text;
 
 // How long the fight with the current opponent has lasted, counted in game ticks from when the player goes for it and
 // is near it, or from the first hit on it if that comes first.
@@ -21,6 +24,14 @@ public class FightTimer
 	// It matches SWAP_TICKS today, so the clock stops on the last tick a return would still be the same fight, but the
 	// two measure different things and either can be tuned on its own.
 	static final int DEATH_TICKS = 10;
+	// How far the game's time may sit from ours before it is about something else than this fight.
+	static final int REPORT_GAP_TICKS = 100;
+
+	// The wordings the game puts in front of a time it kept for a fight, and the time itself. "Total
+	// completion time" is the exception: it is the time of everything before it, not of this fight.
+	private static final Pattern REPORTED_TIME = Pattern.compile(
+		"(?i)(?:(?:fight|challenge|corrupted challenge)? ?duration:|subdued in|(?<!total )completion time:)"
+			+ "\\s*(?:(\\d+):)?(\\d+):(\\d{2})(?:\\.(\\d{2}))?");
 
 	static final class Fight
 	{
@@ -55,6 +66,8 @@ public class FightTimer
 	private String text;
 	@Getter
 	private boolean preciseTiming;
+	private int pendingReport = NO_TICK;
+	private int pendingSince = NO_TICK;
 
 	@Inject
 	FightTimer(DebugLog debugLog)
@@ -235,6 +248,7 @@ public class FightTimer
 				}
 			}
 		}
+		useReportedTime(tracked && defeated, tick);
 		updateText(tick);
 	}
 
@@ -266,6 +280,7 @@ public class FightTimer
 		clearedTick = NO_TICK;
 		deadSince = NO_TICK;
 		shownTicks = NO_TICK;
+		pendingReport = NO_TICK;
 		text = null;
 	}
 
@@ -326,6 +341,73 @@ public class FightTimer
 	public static boolean mentionsDuration(String message)
 	{
 		return message != null && message.toLowerCase(Locale.ROOT).contains("duration");
+	}
+
+	// The time the game reports for a kill, in ticks, or NO_TICK when the message holds none. The wordings
+	// are the ones the game uses for a fight it times; a total, a personal best and a lap are left out, so
+	// only the first time after the wording counts.
+	public static int reportedTicks(String message)
+	{
+		if (message == null)
+		{
+			return NO_TICK;
+		}
+		final Matcher matcher = REPORTED_TIME.matcher(Text.removeTags(message));
+		if (!matcher.find())
+		{
+			return NO_TICK;
+		}
+		final long hours = matcher.group(1) != null ? Long.parseLong(matcher.group(1)) : 0;
+		final long minutes = Long.parseLong(matcher.group(2));
+		final long seconds = Long.parseLong(matcher.group(3));
+		final long hundredths = matcher.group(4) != null ? Long.parseLong(matcher.group(4)) : 0;
+		final long millis = ((hours * 60 + minutes) * 60 + seconds) * 1000 + hundredths * 10;
+		// Without precise timing the game prints whole seconds, which is its own time rounded down, so the
+		// tick count rounds up to land inside the second it printed instead of the one before it.
+		final long rounded = matcher.group(4) != null
+			? millis : millis + Constants.GAME_TICK_LENGTH - 1;
+		return (int) (rounded / Constants.GAME_TICK_LENGTH);
+	}
+
+	// The game can print its time on the tick the boss goes down, before the kill is confirmed a tick later,
+	// so a time that can't be used yet is kept and tried again on the next ticks.
+	public void reportedTime(int ticks, boolean defeated, int tick)
+	{
+		if (ticks != NO_TICK && !useReportedTicks(ticks, defeated, tick))
+		{
+			pendingReport = ticks;
+			pendingSince = tick;
+		}
+	}
+
+	private void useReportedTime(boolean defeated, int tick)
+	{
+		if (pendingReport != NO_TICK
+			&& (useReportedTicks(pendingReport, defeated, tick) || tick - pendingSince >= DEATH_TICKS))
+		{
+			pendingReport = NO_TICK;
+		}
+	}
+
+	// The game stopping its own clock is the end of the fight, and its time is the one the player compares
+	// against, so the clock stops here and takes it over. A time too far from ours belongs to something
+	// larger than this fight, such as a whole raid reported on its last boss, and is left alone.
+	boolean useReportedTicks(int ticks, boolean defeated, int tick)
+	{
+		if (ticks == NO_TICK || startTick == NO_TICK || !(defeated || endTick != NO_TICK))
+		{
+			return false;
+		}
+		final int ours = elapsedTicks(startTick, endTick, tick);
+		if (Math.abs(ticks - ours) > REPORT_GAP_TICKS)
+		{
+			debugLog.add("The game's {} ticks are too far from our {}, the fight time is left as it is", ticks, ours);
+			return false;
+		}
+		endTick = startTick + ticks;
+		debugLog.add("Fight time taken from the game: {} ticks, ours was {}", ticks, ours);
+		updateText(tick);
+		return true;
 	}
 
 	// With precise timing the hundredths come straight off the ticks, so they land on .00, .20, .40, .60 or

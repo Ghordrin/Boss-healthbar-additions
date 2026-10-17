@@ -13,6 +13,7 @@
 
 ### Changed
 
+- The fight timer now ends on the time the game reports for the kill. The timer used to keep counting until the boss was gone, which left it a few seconds over the time the game prints in the chat, up to six on a boss that never leaves, such as Duke Sucellus. When the game reports a time, the timer stops there and shows that time, so the bar and the chat agree. Bosses that report nothing are unchanged
 - The fight timer follows the game's precise timing setting. With it on, the time is shown to hundredths, the way the game shows its own durations, and with it off it stays at whole seconds
 - The bar starts at the top centre of the screen, where the game puts its own boss bar, instead of above the chatbox. A bar you have already moved stays where you put it
 - The bar is drawn over the game's interfaces instead of under them, so an interface opened where the bar sits no longer hides it
