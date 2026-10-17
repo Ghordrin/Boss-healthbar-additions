@@ -203,6 +203,12 @@ public class GameBossBar
 		return npc;
 	}
 
+	// The NPC the game's bar was last found on, without searching again. Null until one is in the scene.
+	public NPC trackedNpc()
+	{
+		return npc;
+	}
+
 	public void onNpcSpawned()
 	{
 		searchedId = -1;

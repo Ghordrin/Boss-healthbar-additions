@@ -21,6 +21,11 @@ public class TobBossBar
 	// TOB_CLIENT_PARTYSTATUS: 1 is a party outside, 2 is inside the raid and 3 is spectating it dead.
 	private static final int PARTY_INSIDE = 2;
 	private static final int SEARCH_DISTANCE = 32;
+	// The room's boss can be out of reach while its bar is up: too far to find, or in another place entirely,
+	// such as the maze a room can take the player into. The bar stays replaced for a moment, which covers
+	// walking into a room and the death animation, but not an absence long enough to leave no bar at all.
+	private static final int MISSING_GRACE_TICKS = 10;
+	private static final int NOT_MISSING = -1;
 
 	private final Client client;
 	private final DebugLog debugLog;
@@ -31,6 +36,8 @@ public class TobBossBar
 	private boolean searchNeeded = true;
 	private boolean loggedLeftOver;
 	private boolean roomBossShown = true;
+	private NPC shownBoss;
+	private int missingSince = NOT_MISSING;
 
 	@Inject
 	TobBossBar(Client client, DebugLog debugLog)
@@ -49,6 +56,8 @@ public class TobBossBar
 			boss = null;
 			searchNeeded = true;
 			roomBossShown = true;
+			shownBoss = null;
+			missingSince = NOT_MISSING;
 			if (loggedBoss != null)
 			{
 				loggedBoss = null;
@@ -174,16 +183,24 @@ public class TobBossBar
 			return;
 		}
 
-		if (findBoss() != null)
+		final NPC found = findBoss();
+		if (found != null)
 		{
-			// Kept for the moments the room's boss can't be found, so a boss on the Never show for list keeps
-			// the game's bar for the whole room instead of only while it is in the scene.
-			roomBossShown = bossGetsBar;
+			missingSince = NOT_MISSING;
+			// The answer belongs to the strongest NPC the room's bar has been matched to. While the boss is
+			// away the search falls back on an NPC it spawned, and that one doesn't get to answer for it.
+			if (shownBoss == null || found == shownBoss || found.getCombatLevel() > shownBoss.getCombatLevel())
+			{
+				shownBoss = found;
+				roomBossShown = bossGetsBar;
+			}
+		}
+		else if (missingSince == NOT_MISSING)
+		{
+			missingSince = client.getTickCount();
 		}
 
-		// A player who died in the raid spectates the rest of it and never has an opponent, so our own bar
-		// can't replace anything for them and the game's bar is left alone.
-		if (replaceEnabled && barIsLive() && partyStatus() == PARTY_INSIDE && roomBossShown)
+		if (replaceEnabled && barIsLive() && roomBossShown && !missingTooLong())
 		{
 			raidBar.hide(bar, "Raid boss bar hidden");
 		}
@@ -191,6 +208,12 @@ public class TobBossBar
 		{
 			restore();
 		}
+	}
+
+	// Whether the room's boss has been out of reach long enough that the game's bar is the only one left.
+	private boolean missingTooLong()
+	{
+		return missingSince != NOT_MISSING && client.getTickCount() - missingSince >= MISSING_GRACE_TICKS;
 	}
 
 	public void restore()
@@ -209,6 +232,8 @@ public class TobBossBar
 		raidBar.forget();
 		loggedLeftOver = false;
 		roomBossShown = true;
+		shownBoss = null;
+		missingSince = NOT_MISSING;
 		boss = null;
 		loggedBoss = null;
 		searchNeeded = true;

@@ -122,6 +122,9 @@ public class OpponentTracker
 	private final NpcFilter.LastMatch gameBarListMatch = new NpcFilter.LastMatch();
 	private int gameBarNpcId = -1;
 	private boolean gameBarNpcShown;
+	private NPC raidBossActor;
+	private int raidBossForm = -1;
+	private boolean raidBossShown;
 
 	@Inject
 	OpponentTracker(Client client, BossHealthBarConfig config, GameBossBar gameBossBar, TobBossBar tobBossBar,
@@ -508,6 +511,7 @@ public class OpponentTracker
 		opponentListMatch.clear();
 		gameBarListMatch.clear();
 		gameBarNpcId = -1;
+		raidBossActor = null;
 		fightTimer.reset();
 		group.clear();
 		memory.clear();
@@ -651,6 +655,7 @@ public class OpponentTracker
 		opponentListMatch.clear();
 		gameBarListMatch.clear();
 		gameBarNpcId = -1;
+		raidBossActor = null;
 	}
 
 	private void setOpponent(Actor target)
@@ -738,10 +743,9 @@ public class OpponentTracker
 		return knownBoss;
 	}
 
-	// Kept apart from the opponent's cached answer, so checking both each frame doesn't redo the match.
 	// A game bar can be up for a boss whose NPC isn't in the scene yet, right after a kill for instance, so
-	// this answers by the tracked ID alone. The bar counts anything a game bar tracks as a boss, which leaves
-	// Never show for as the only setting that can keep it off.
+	// this answers by the tracked ID when there is none. The bar counts anything a game bar tracks as a boss,
+	// which leaves Never show for as the only setting that can keep it off.
 	public boolean gameBarNpcGetsBar(int npcId)
 	{
 		if (npcId == -1)
@@ -752,18 +756,47 @@ public class OpponentTracker
 		{
 			return true;
 		}
+		final NPC npc = gameBossBar.trackedNpc();
+		if (npc != null && NpcUtil.baseId(npc) == npcId)
+		{
+			// The NPC in the scene carries the name the lists are matched against everywhere else.
+			return !isNeverShown(npc);
+		}
 		// Asked every frame, so the answer is kept for the last ID.
 		if (npcId != gameBarNpcId)
 		{
 			gameBarNpcId = npcId;
 			final NPCComposition composition = client.getNpcDefinition(npcId);
 			final String name = composition != null ? composition.getName() : null;
-			gameBarNpcShown = name == null
-				|| NpcFilter.check(neverShowFor, NpcFilter.EMPTY, name, npcId) != NpcFilter.Match.NEVER;
+			// A boss with several forms has no name on the ID its bar tracks, only on the forms, so with no
+			// NPC in the scene only an entry by ID can answer for it.
+			gameBarNpcShown = NpcFilter.check(neverShowFor, NpcFilter.EMPTY, hasName(name) ? name : "", npcId)
+				!= NpcFilter.Match.NEVER;
 		}
 		return gameBarNpcShown;
 	}
 
+	// The client spells a name it doesn't have as "null".
+	private static boolean hasName(String name)
+	{
+		return name != null && !name.isEmpty() && !"null".equals(name);
+	}
+
+	// The raid bar's boss usually isn't the opponent, and the question comes every frame, so the whole answer
+	// is kept until that boss or its form changes.
+	public boolean raidBarBossGetsBar(NPC boss)
+	{
+		final int form = boss != null ? NpcUtil.currentId(boss) : -1;
+		if (boss != raidBossActor || form != raidBossForm)
+		{
+			raidBossActor = boss;
+			raidBossForm = form;
+			raidBossShown = shouldShowBarFor(boss);
+		}
+		return raidBossShown;
+	}
+
+	// Kept apart from the opponent's cached answer, so checking both each frame doesn't redo the match.
 	private boolean isNeverShown(NPC npc)
 	{
 		return npc.getName() != null && listMatch(gameBarListMatch, npc) == NpcFilter.Match.NEVER;
