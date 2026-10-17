@@ -426,11 +426,19 @@ public class BossHealthBarPlugin extends Plugin
 	public void onChatMessage(ChatMessage event)
 	{
 		superiorTracker.onChatMessage(event);
-		if (event.getType() == ChatMessageType.GAMEMESSAGE && FightTimer.mentionsDuration(event.getMessage()))
+		if (event.getType() != ChatMessageType.GAMEMESSAGE)
+		{
+			return;
+		}
+		final int reported = FightTimer.reportedTicks(event.getMessage());
+		// A message with a time the reading missed is logged too, so a wording we don't know shows up.
+		if (reported != FightTimer.NO_TICK || FightTimer.mentionsDuration(event.getMessage()))
 		{
 			final int ticks = fightTimer.getElapsedTicks(client.getTickCount());
-			debugLog.add("Game says: \"{}\" (our timer: {})", Text.removeTags(event.getMessage()),
+			debugLog.add("Game says: \"{}\" (the game's {} ticks, our timer: {})", Text.removeTags(event.getMessage()),
+				reported == FightTimer.NO_TICK ? "unread" : String.valueOf(reported),
 				ticks == FightTimer.NO_TICK ? "not started" : ticks + " ticks, " + fightTimer.getText());
+			fightTimer.reportedTime(reported, opponentTracker.isOpponentDefeated(), client.getTickCount());
 		}
 	}
 

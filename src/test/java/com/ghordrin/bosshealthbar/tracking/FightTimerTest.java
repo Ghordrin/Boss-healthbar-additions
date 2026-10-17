@@ -87,6 +87,97 @@ public class FightTimerTest
 	}
 
 	@Test
+	public void readsTheTimeOutOfEveryWordingTheGameUses()
+	{
+		assertEquals(154, FightTimer.reportedTicks("Fight duration: 1:32.40. Personal best: 0:31.80"));
+		assertEquals(106, FightTimer.reportedTicks("Fight duration: 1:03.60 (new personal best)"));
+		assertEquals(105, FightTimer.reportedTicks(
+			"Wave 'The Maiden of Sugadinti' (Entry Mode) complete!Duration: 1:03.00 Total: 1:03.00"));
+		assertEquals(3129, FightTimer.reportedTicks("Challenge duration: <col=ff0000>31:17</col>"));
+		assertEquals(250, FightTimer.reportedTicks("Subdued in 2:30"));
+		assertEquals(123, FightTimer.reportedTicks("Corrupted challenge duration: 1:14.00"));
+		assertEquals(100, FightTimer.reportedTicks("Challenge completion time: 1:00.00"));
+		assertEquals(6515, FightTimer.reportedTicks("Fight duration: 1:05:09"));
+	}
+
+	@Test
+	public void leavesAloneTheTimesThatAreNotThisFight()
+	{
+		assertEquals(NO_TICK, FightTimer.reportedTicks("Tombs of Amascut total completion time: 31:17"));
+		assertEquals(NO_TICK, FightTimer.reportedTicks("Your personal best is 1:09.00"));
+		assertEquals(NO_TICK, FightTimer.reportedTicks("You have completed a lap"));
+		assertEquals(NO_TICK, FightTimer.reportedTicks(null));
+	}
+
+	@Test
+	public void theGameSTimeIsTakenOverOnceTheOpponentIsDown()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.onEngaged(10);
+		timer.onGameTick(true, false, NO_TICK, 110);
+		assertEquals("1:00", timer.getText());
+
+		// Still fighting, so a time from elsewhere doesn't touch the clock.
+		assertFalse(timer.useReportedTicks(90, false, 110));
+		assertEquals("1:00", timer.getText());
+
+		assertTrue(timer.useReportedTicks(90, true, 110));
+		assertEquals("0:54", timer.getText());
+		assertEquals(90, timer.getElapsedTicks(200));
+	}
+
+	@Test
+	public void aWholeSecondShowsAsTheGamePrintedIt()
+	{
+		// The game rounds down to the second it prints, so the ticks have to land inside that second.
+		assertEquals("31:17", FightTimer.format(FightTimer.reportedTicks("Challenge duration: 31:17"), false));
+		assertEquals("0:31", FightTimer.format(FightTimer.reportedTicks("Subdued in 0:31"), false));
+		assertEquals("1:03.00", FightTimer.format(FightTimer.reportedTicks("Fight duration: 1:03.00"), true));
+	}
+
+	@Test
+	public void aTimeReportedBeforeTheKillIsConfirmedIsUsedOnTheNextTick()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.onEngaged(10);
+		timer.onGameTick(true, false, NO_TICK, 110);
+
+		// The message comes in on the tick the boss goes down, before the kill is confirmed.
+		timer.reportedTime(90, false, 110);
+		assertEquals("1:00", timer.getText());
+
+		timer.onGameTick(true, true, 110, 111);
+		assertEquals("0:54", timer.getText());
+	}
+
+	@Test
+	public void aTimeThatIsNeverConfirmedIsDropped()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.onEngaged(10);
+		timer.reportedTime(90, false, 110);
+
+		for (int tick = 111; tick <= 110 + DEATH_TICKS; tick++)
+		{
+			timer.onGameTick(true, false, NO_TICK, tick);
+		}
+		timer.onGameTick(true, true, 200, 200);
+		assertEquals(190, timer.getElapsedTicks(200));
+	}
+
+	@Test
+	public void aTimeFarFromOursIsAboutSomethingElse()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.onEngaged(10);
+		timer.onGameTick(true, false, NO_TICK, 110);
+
+		assertFalse(timer.useReportedTicks(100 + FightTimer.REPORT_GAP_TICKS + 1, true, 110));
+		assertEquals("1:00", timer.getText());
+		assertTrue(timer.useReportedTicks(100 + FightTimer.REPORT_GAP_TICKS, true, 110));
+	}
+
+	@Test
 	public void switchingPreciseTimingRedrawsTheSameTimeWithHundredths()
 	{
 		timer.opponentChanged(false, false, NO_TICK, 10);
