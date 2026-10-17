@@ -462,7 +462,7 @@ public class BossHealthBarPlugin extends Plugin
 		final boolean trackedGetsBar = opponentTracker.gameBarNpcGetsBar(gameBossBar.trackedNpcId());
 		final boolean replacing = gameBossBar.update(opponent, replace, opponentGetsBar, trackedGetsBar);
 		pillarBars.update(replacing);
-		tobBossBar.update(opponent, replace, opponentGetsBar);
+		tobBossBar.update(replace, opponentTracker.shouldShowBarFor(tobBossBar.findBoss()));
 	}
 
 	@Subscribe
