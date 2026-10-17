@@ -31,6 +31,8 @@ public class PillarBarsOverlay extends Overlay
 	private static final boolean[] PREVIEW_FULL = {true, false, false, false};
 
 	private static final int MIN_BAR_WIDTH = 64;
+	// Small enough that dragging an edge only ever runs into the width this class clamps to itself.
+	private static final int MIN_GRID_SIZE = 48;
 	private static final int LABEL_PADDING = 4;
 	private static final int MIN_BAR_HEIGHT = 5;
 	private static final int MAX_BAR_HEIGHT = 9;
@@ -57,6 +59,8 @@ public class PillarBarsOverlay extends Overlay
 
 	private final int[] labelWidths = new int[PillarBars.CORNERS];
 	private FontMetrics labelMetrics;
+	// The width the labels ask for, which a dragged width takes over from.
+	private int naturalBarWidth;
 	private int barWidth;
 	private int labelHeight;
 
@@ -78,6 +82,8 @@ public class PillarBarsOverlay extends Overlay
 
 		setPosition(OverlayPosition.TOP_LEFT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
+		setResizable(true);
+		setMinimumSize(MIN_GRID_SIZE);
 		addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, BossHealthBarPlugin.NAME);
 	}
 
@@ -97,6 +103,7 @@ public class PillarBarsOverlay extends Overlay
 			measureLabels(metrics);
 		}
 
+		barWidth = barWidth(naturalBarWidth, getPreferredSize());
 		final int barHeight = barHeight(config.barHeight());
 		final int cellHeight = cellHeight(labelHeight, barHeight);
 
@@ -156,7 +163,7 @@ public class PillarBarsOverlay extends Overlay
 			labelWidths[corner] = metrics.stringWidth(LABELS[corner]);
 			widest = Math.max(widest, labelWidths[corner]);
 		}
-		barWidth = barWidth(widest);
+		naturalBarWidth = barWidth(widest);
 		// One more for the text shadow.
 		labelHeight = metrics.getAscent() + 1;
 		labelMetrics = metrics;
@@ -190,6 +197,15 @@ public class PillarBarsOverlay extends Overlay
 	static int barWidth(int widestLabel)
 	{
 		return Math.max(MIN_BAR_WIDTH, widestLabel + LABEL_PADDING);
+	}
+
+	// Alt-dragging the overlay's edge sets a preferred size, which takes over from the width the labels ask
+	// for until the overlay is reset. Only its width is used; the bars' height follows "Bar height".
+	static int barWidth(int naturalWidth, Dimension preferred)
+	{
+		return preferred != null
+			? Math.max(MIN_BAR_WIDTH, (preferred.width - COLUMN_GAP) / 2)
+			: naturalWidth;
 	}
 
 	static int barHeight(int configured)

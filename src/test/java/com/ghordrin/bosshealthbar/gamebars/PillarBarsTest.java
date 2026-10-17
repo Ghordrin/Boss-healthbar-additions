@@ -223,6 +223,14 @@ public class PillarBarsTest
 	}
 
 	@Test
+	public void draggedWidth()
+	{
+		assertEquals(74, PillarBarsOverlay.barWidth(74, null));
+		assertEquals(200, PillarBarsOverlay.barWidth(74, new Dimension(406, 60)));
+		assertEquals(64, PillarBarsOverlay.barWidth(74, new Dimension(40, 60)));
+	}
+
+	@Test
 	public void filledWidth()
 	{
 		assertEquals(62, PillarBarsOverlay.filledWidth(62, 0.2f, true));
