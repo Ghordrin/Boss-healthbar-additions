@@ -459,7 +459,8 @@ public class BossHealthBarPlugin extends Plugin
 		final Actor opponent = opponentTracker.getOpponent();
 		final boolean replace = config.nativeBossBarMode().hidesGameBar();
 		final boolean opponentGetsBar = opponentTracker.shouldShowBarFor(opponent);
-		final boolean replacing = gameBossBar.update(opponent, replace, opponentGetsBar);
+		final boolean trackedGetsBar = opponentTracker.gameBarNpcGetsBar(gameBossBar.trackedNpcId());
+		final boolean replacing = gameBossBar.update(opponent, replace, opponentGetsBar, trackedGetsBar);
 		pillarBars.update(replacing);
 		tobBossBar.update(opponent, replace, opponentGetsBar);
 	}

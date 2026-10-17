@@ -88,6 +88,12 @@ public final class NpcFilter
 		return false;
 	}
 
+	// For an NPC known only by the ID a game bar tracks, with no NPC in the scene to read a form from.
+	public static Match check(NpcFilter never, NpcFilter also, String name, int id)
+	{
+		return check(never, also, Text.standardize(name), id, id);
+	}
+
 	static Match check(NpcFilter never, NpcFilter also, String name, int id, int currentId)
 	{
 		if (never.matches(name, id, currentId))

@@ -40,7 +40,6 @@ public class GameBossBar
 
 	private NPC npc;
 	private int searchedId = -1;
-	private int replacedId = -1;
 	private int loggedTrackedId = -1;
 	private int healthSeenId = -1;
 	private int loggedZeroId = -1;
@@ -217,7 +216,10 @@ public class GameBossBar
 		}
 	}
 
-	public boolean update(Actor opponent, boolean replaceEnabled, boolean opponentGetsBar)
+	// The game's bar is replaced for as long as it is up for an NPC the bar covers, and not only while that
+	// NPC is the opponent: it stays on the boss through its death and goes back to the boss's idle form after
+	// the kill, which our own bar picks up again only once that NPC is in the scene.
+	public boolean update(Actor opponent, boolean replaceEnabled, boolean opponentGetsBar, boolean trackedGetsBar)
 	{
 		final Widget bar = gameBar.widget();
 		if (bar == null)
@@ -226,31 +228,14 @@ public class GameBossBar
 			return false;
 		}
 
-		boolean replace = false;
-		if (replaceEnabled)
-		{
-			// An opponent without our bar, such as one on the Never show for list, keeps the game's bar.
-			if (isTracking(opponent))
-			{
-				replace = opponentGetsBar;
-				replacedId = trackedNpcId();
-			}
-			else
-			{
-				// After the boss despawns, the game's bar can stay up on it while the defeat animation
-				// plays, so keep it hidden until it tracks a different NPC.
-				replace = replacedId != -1 && trackedNpcId() == replacedId;
-			}
-		}
-
+		// An opponent without our bar, such as one on the Never show for list, keeps the game's bar.
+		final boolean replace = replaceEnabled && (isTracking(opponent) ? opponentGetsBar : trackedGetsBar);
 		if (replace)
 		{
-			// replace is only set while the game's bar tracks replacedId.
-			gameBar.hide(bar, "Game boss bar hidden (tracked id {})", replacedId);
+			gameBar.hide(bar, "Game boss bar hidden (tracked id {})", trackedNpcId());
 		}
 		else
 		{
-			replacedId = -1;
 			restore();
 		}
 		return replace;
@@ -276,7 +261,6 @@ public class GameBossBar
 		release();
 		npc = null;
 		searchedId = -1;
-		replacedId = -1;
 		loggedTrackedId = -1;
 		healthSeenId = -1;
 		loggedZeroId = -1;
