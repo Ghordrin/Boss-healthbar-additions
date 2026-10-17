@@ -22,7 +22,7 @@
 
 ### Fixed
 
-- The Theatre of Blood's own health bar no longer shows up next to this one. It used to appear when you walk into a room, until you reach the boss, and again for a moment after the boss dies. It now stays replaced for the whole room, and is left alone once you are spectating the raid dead, since the bar has no boss to follow then
+- The Theatre of Blood's own health bar no longer shows up next to this one. It used to appear when you walk into a room, until you reach the boss, and again for a moment after the boss dies. It now stays replaced for the whole room, and comes back on its own if the room's boss is out of reach for more than a few seconds, such as in Sotetseg's maze, where this bar has nothing to follow
 - The Theatre of Blood's health bar is no longer read outside the Theatre. The game keeps its last values after you leave, so they could be handed to any NPC near you, which gave a random opponent a bar with a raid's health on it and put a wrong first reading on every boss in the Tombs of Amascut
 - The game's own boss health bar no longer flashes back up between kills in an instance, where it returns to the boss's idle form a few seconds before the boss itself does. It now stays replaced for as long as the game keeps it up for that boss, and our bar takes over again as soon as the boss is back
 - The bar no longer disappears during a phase where the boss cannot be attacked and leaves the area. It stays for as long as the game's own boss bar keeps showing that boss, and keeps reading the health and the phase color from it
