@@ -18,21 +18,32 @@ public class FightTimerTest
 	@Test
 	public void formatsMinutesAndSeconds()
 	{
-		assertEquals("0:00", FightTimer.format(0));
-		assertEquals("0:00", FightTimer.format(1));
-		assertEquals("0:01", FightTimer.format(2));
-		assertEquals("0:59", FightTimer.format(99));
-		assertEquals("1:00", FightTimer.format(100));
-		assertEquals("1:23", FightTimer.format(139));
-		assertEquals("59:59", FightTimer.format(5999));
+		assertEquals("0:00", FightTimer.format(0, false));
+		assertEquals("0:00", FightTimer.format(1, false));
+		assertEquals("0:01", FightTimer.format(2, false));
+		assertEquals("0:59", FightTimer.format(99, false));
+		assertEquals("1:00", FightTimer.format(100, false));
+		assertEquals("1:23", FightTimer.format(139, false));
+		assertEquals("59:59", FightTimer.format(5999, false));
 	}
 
 	@Test
 	public void formatsHoursFromAnHour()
 	{
-		assertEquals("1:00:00", FightTimer.format(6000));
-		assertEquals("1:05:09", FightTimer.format(6515));
-		assertEquals("12:34:56", FightTimer.format(75494));
+		assertEquals("1:00:00", FightTimer.format(6000, false));
+		assertEquals("1:05:09", FightTimer.format(6515, false));
+		assertEquals("12:34:56", FightTimer.format(75494, false));
+	}
+
+	@Test
+	public void preciseTimingAddsTheHundredthsTheGameShows()
+	{
+		assertEquals("0:00.00", FightTimer.format(0, true));
+		assertEquals("0:00.60", FightTimer.format(1, true));
+		assertEquals("0:01.20", FightTimer.format(2, true));
+		assertEquals("0:59.40", FightTimer.format(99, true));
+		assertEquals("1:00.00", FightTimer.format(100, true));
+		assertEquals("1:00:00.00", FightTimer.format(6000, true));
 	}
 
 	@Test
@@ -73,6 +84,19 @@ public class FightTimerTest
 		timer.opponentChanged(false, false, NO_TICK, 10);
 		timer.onGameTick(true, false, NO_TICK, 11);
 		assertNull(timer.getText());
+	}
+
+	@Test
+	public void switchingPreciseTimingRedrawsTheSameTimeWithHundredths()
+	{
+		timer.opponentChanged(false, false, NO_TICK, 10);
+		timer.onEngaged(10);
+		timer.onGameTick(true, false, NO_TICK, 110);
+		assertEquals("1:00", timer.getText());
+
+		timer.setPreciseTiming(true);
+		timer.onGameTick(true, false, NO_TICK, 110);
+		assertEquals("1:00.00", timer.getText());
 	}
 
 	@Test

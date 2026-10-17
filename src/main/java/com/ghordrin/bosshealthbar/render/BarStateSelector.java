@@ -46,7 +46,8 @@ public class BarStateSelector
 	private static final float[] PREVIEW_PHASE_MARKERS = {0.5f};
 	public static final String PREVIEW_KILL_COUNT = KillCounts.text(128);
 	public static final int PREVIEW_DAMAGE = 37;
-	private static final String PREVIEW_FIGHT_TIME = "1:23";
+	// A sample fight time, shown the way the game's precise timing setting has the real one shown.
+	private static final int PREVIEW_FIGHT_TICKS = 139;
 	public static final PartyDefence.Reading PREVIEW_DEFENCE = new PartyDefence.Reading("42", Color.WHITE);
 	public static final PartyDefence.Reading PREVIEW_MAGIC_DEFENCE = new PartyDefence.Reading("60", Color.WHITE);
 	private static final Duration SWITCH_HOLD = Duration.ofSeconds(3);
@@ -538,7 +539,8 @@ public class BarStateSelector
 			new Health(PREVIEW_HEALTH[step], PREVIEW_MAX_HEALTH, true, PREVIEW_MAX_HEALTH, false),
 			config.showPhaseMarkers() ? PREVIEW_PHASE_MARKERS : BarState.NO_PHASE_MARKERS,
 			HealthIndicatorMarkers.NONE, null, PREVIEW_STATS,
-			specialAttackCounts.isAvailable() ? previewSpecialAttacks() : Collections.emptyList(), PREVIEW_FIGHT_TIME);
+			specialAttackCounts.isAvailable() ? previewSpecialAttacks() : Collections.emptyList(),
+			FightTimer.format(PREVIEW_FIGHT_TICKS, fightTimer.isPreciseTiming()));
 	}
 
 	private List<SpecialAttackCounts.Reading> previewSpecialAttacks()

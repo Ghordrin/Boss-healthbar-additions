@@ -13,6 +13,7 @@
 
 ### Changed
 
+- The fight timer follows the game's precise timing setting. With it on, the time is shown to hundredths, the way the game shows its own durations, and with it off it stays at whole seconds
 - The bar starts at the top centre of the screen, where the game puts its own boss bar, instead of above the chatbox. A bar you have already moved stays where you put it
 - The bar is drawn over the game's interfaces instead of under them, so an interface opened where the bar sits no longer hides it
 - With Match boss colors on, the second boss bar now takes the colors of its own boss instead of the first one's, so two bosses at once no longer share one color

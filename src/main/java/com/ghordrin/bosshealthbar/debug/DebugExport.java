@@ -175,7 +175,8 @@ public class DebugExport
 		lines.add("  Pillar bars: present " + pillarBars.isSeen() + ", hidden " + pillarBars.isHidingGameBars()
 			+ ", shown " + pillarBars.isShown());
 		final String fightTime = fightTimer.getText();
-		lines.add("  Fight timer: " + (fightTime != null ? fightTime : "none"));
+		lines.add("  Fight timer: " + (fightTime != null ? fightTime : "none") + ", precise timing "
+			+ fightTimer.isPreciseTiming());
 
 		lines.add("");
 		lines.add("Settings");
