@@ -53,6 +53,8 @@ public class FightTimer
 	private int shownTicks = NO_TICK;
 	@Getter
 	private String text;
+	@Getter
+	private boolean preciseTiming;
 
 	@Inject
 	FightTimer(DebugLog debugLog)
@@ -236,6 +238,18 @@ public class FightTimer
 		updateText(tick);
 	}
 
+	// The game shows its own durations with hundredths while the player has precise timing on, so the fight
+	// time follows that setting instead of a setting of ours.
+	public void setPreciseTiming(boolean precise)
+	{
+		if (precise != preciseTiming)
+		{
+			preciseTiming = precise;
+			// The tick count hasn't changed, so the text has to be asked for again.
+			shownTicks = NO_TICK;
+		}
+	}
+
 	void reset()
 	{
 		clearFight();
@@ -276,7 +290,7 @@ public class FightTimer
 		if (ticks != shownTicks)
 		{
 			shownTicks = ticks;
-			text = ticks == NO_TICK ? null : format(ticks);
+			text = ticks == NO_TICK ? null : format(ticks, preciseTiming);
 		}
 	}
 
@@ -314,13 +328,16 @@ public class FightTimer
 		return message != null && message.toLowerCase(Locale.ROOT).contains("duration");
 	}
 
-	static String format(int ticks)
+	// With precise timing the hundredths come straight off the ticks, so they land on .00, .20, .40, .60 or
+	// .80, the same values the game prints.
+	public static String format(int ticks, boolean precise)
 	{
-		final long seconds = (long) ticks * Constants.GAME_TICK_LENGTH / 1000;
+		final long millis = (long) ticks * Constants.GAME_TICK_LENGTH;
+		final long seconds = millis / 1000;
 		final long hours = seconds / 3600;
 		final long minutes = seconds / 60 % 60;
 		final long secs = seconds % 60;
-		final StringBuilder builder = new StringBuilder(8);
+		final StringBuilder builder = new StringBuilder(11);
 		if (hours > 0)
 		{
 			builder.append(hours).append(':');
@@ -334,6 +351,17 @@ public class FightTimer
 		{
 			builder.append('0');
 		}
-		return builder.append(secs).toString();
+		builder.append(secs);
+		if (precise)
+		{
+			final long hundredths = millis % 1000 / 10;
+			builder.append('.');
+			if (hundredths < 10)
+			{
+				builder.append('0');
+			}
+			builder.append(hundredths);
+		}
+		return builder.toString();
 	}
 }

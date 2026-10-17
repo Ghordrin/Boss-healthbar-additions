@@ -44,6 +44,7 @@ import net.runelite.api.events.NpcChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -444,6 +445,7 @@ public class BossHealthBarPlugin extends Plugin
 		final Actor opponent = opponentTracker.getOpponent();
 		fightGroup.onGameTick(opponent, client.getTickCount());
 		opponentTracker.updateOpponentDown();
+		fightTimer.setPreciseTiming(client.getVarbitValue(VarbitID.OPTION_PRECISE_TIMING) != 0);
 		fightTimer.onGameTick(opponent, opponentTracker.isOpponentDefeated(), opponentTracker.zeroSince(),
 			client.getTickCount());
 		partyDefence.update(opponent);
