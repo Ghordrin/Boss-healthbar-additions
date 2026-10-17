@@ -4,6 +4,7 @@ import static com.ghordrin.bosshealthbar.render.BarAnimation.clamp01;
 import static com.ghordrin.bosshealthbar.render.BarAnimation.easeOut;
 import static com.ghordrin.bosshealthbar.render.BarAnimation.progress;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import java.time.Duration;
 import org.junit.Test;
@@ -131,6 +132,84 @@ public class BarAnimationTest
 		assertEquals(1f, progress(Duration.ofMillis(500).toNanos(), delay, duration), 0.0001f);
 		assertEquals(1f, progress(Duration.ofSeconds(10).toNanos(), delay, duration), 0.0001f);
 		assertEquals(1f, progress(Long.MAX_VALUE, delay, duration), 0.0001f);
+	}
+
+	// A phase starting is what the run answers to. The bar sitting in the same phase is not a new start.
+	@Test
+	public void goingIntoAPhaseStartsTheRunAndStayingInItDoesNot()
+	{
+		final BarAnimation animation = new BarAnimation();
+		final long start = 1_000_000_000L;
+		animation.fortify(start, 0);
+
+		assertEquals(-1, animation.fortifyMillis(start));
+
+		animation.fortify(start, 0x7040C8);
+
+		assertEquals(0, animation.fortifyMillis(start));
+
+		final long later = start + Duration.ofMillis(300).toNanos();
+		animation.fortify(later, 0x7040C8);
+
+		assertEquals(300, animation.fortifyMillis(later));
+	}
+
+	@Test
+	public void theRunIsOverOnceItHasPlayedOut()
+	{
+		final BarAnimation animation = new BarAnimation();
+		final long start = 1_000_000_000L;
+		animation.fortify(start, 0x7040C8);
+
+		assertTrue(animation.fortifyMillis(start + Duration.ofMillis(880).toNanos()) >= 0);
+		assertEquals(-1, animation.fortifyMillis(start + Duration.ofMillis(1200).toNanos()));
+	}
+
+	// Leaving a phase only drops the colors, so nothing plays on the way out.
+	@Test
+	public void leavingAPhasePlaysNothing()
+	{
+		final BarAnimation animation = new BarAnimation();
+		final long start = 1_000_000_000L;
+		animation.fortify(start, 0x7040C8);
+		animation.fortify(start, 0);
+
+		assertEquals(-1, animation.fortifyMillis(start));
+	}
+
+	// The colors wait for the flash on the way in, but between two phases there is nothing to wait with:
+	// dropping to the theme's colors for a moment would read as a flicker.
+	@Test
+	public void theColorsAreHeldBackOnlyOnTheWayInFromNoPhase()
+	{
+		final BarAnimation animation = new BarAnimation();
+		final long start = 1_000_000_000L;
+		animation.fortify(start, 0x7040C8);
+
+		assertTrue(animation.fortifyHoldsPhase(start));
+		assertFalse(animation.fortifyHoldsPhase(start + Duration.ofMillis(200).toNanos()));
+
+		final long second = start + Duration.ofMillis(2000).toNanos();
+		animation.fortify(second, 0xC87040);
+
+		assertFalse("a phase following a phase has colors to keep", animation.fortifyHoldsPhase(second));
+		assertEquals(0, animation.fortifyMillis(second));
+	}
+
+	@Test
+	public void aResetLeavesNoPhaseBehind()
+	{
+		final BarAnimation animation = new BarAnimation();
+		final long start = 1_000_000_000L;
+		animation.fortify(start, 0x7040C8);
+		animation.reset();
+
+		assertEquals(-1, animation.fortifyMillis(start));
+
+		// The same phase counts as a start again, since the bar it was playing on is gone.
+		animation.fortify(start, 0x7040C8);
+
+		assertEquals(0, animation.fortifyMillis(start));
 	}
 
 	@Test

@@ -2,8 +2,10 @@ package com.ghordrin.bosshealthbar;
 
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.config.ConfigMigrations;
+import com.ghordrin.bosshealthbar.config.ConfigWrites;
 import com.ghordrin.bosshealthbar.config.OldschoolToggle;
 import com.ghordrin.bosshealthbar.config.Pickers;
+import com.ghordrin.bosshealthbar.config.SettingsTransfer;
 import com.ghordrin.bosshealthbar.data.Health;
 import com.ghordrin.bosshealthbar.debug.DebugExport;
 import com.ghordrin.bosshealthbar.debug.DebugLog;
@@ -18,6 +20,7 @@ import com.ghordrin.bosshealthbar.integrations.OpponentInfoOverride;
 import com.ghordrin.bosshealthbar.integrations.PartyDamage;
 import com.ghordrin.bosshealthbar.integrations.PartyDefence;
 import com.ghordrin.bosshealthbar.integrations.SpecialAttackCounts;
+import com.ghordrin.bosshealthbar.panel.BossHealthBarPanel;
 import com.ghordrin.bosshealthbar.theme.CustomColors;
 import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
 import com.ghordrin.bosshealthbar.tracking.DamageTracker;
@@ -28,12 +31,14 @@ import com.ghordrin.bosshealthbar.tracking.SuperiorTracker;
 import com.google.inject.Provides;
 import java.io.IOException;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.HitsplatID;
+import net.runelite.api.NPC;
 import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
@@ -53,8 +58,11 @@ import net.runelite.client.events.PluginChanged;
 import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Filepath;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 @PluginDescriptor(
@@ -130,6 +138,9 @@ public class BossHealthBarPlugin extends Plugin
 	private Pickers pickers;
 
 	@Inject
+	private SettingsTransfer settingsTransfer;
+
+	@Inject
 	private HealthIndicatorMarkers healthIndicatorMarkers;
 
 	@Inject
@@ -150,6 +161,19 @@ public class BossHealthBarPlugin extends Plugin
 	@Inject
 	private DebugExport debugExport;
 
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	// Asked for rather than injected: the client loads plugins before it sets its look and feel, so a panel
+	// built while the plugin is injected is built out of plain Swing widgets and stays that way. The panel is
+	// made in startUp instead, by which time the client's own look is in place.
+	@Inject
+	private Provider<BossHealthBarPanel> panelProvider;
+
+	private BossHealthBarPanel panel;
+
+	private NavigationButton navButton;
+
 	@Provides
 	BossHealthBarConfig provideConfig(ConfigManager configManager)
 	{
@@ -160,10 +184,6 @@ public class BossHealthBarPlugin extends Plugin
 	protected void startUp()
 	{
 		debugLog.add("Plugin started (version {})", VERSION);
-		if (config.saveDebugLog())
-		{
-			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.SAVE_DEBUG_LOG_KEY, false);
-		}
 		configMigrations.migrate();
 		opponentTracker.loadLists();
 		overlay.reset();
@@ -175,12 +195,55 @@ public class BossHealthBarPlugin extends Plugin
 		overlayManager.add(overlay);
 		overlayManager.add(pillarBarsOverlay);
 		opponentInfoOverride.apply();
+		panel = panelProvider.get();
+		showSidebarIcon(config.showSidebarIcon());
+	}
+
+	// The icon is added and removed as the setting is ticked, so turning it off gives the sidebar space back.
+	private void showSidebarIcon(boolean show)
+	{
+		if (show == (navButton != null) || (show && panel == null))
+		{
+			return;
+		}
+
+		if (!show)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+			return;
+		}
+
+		navButton = NavigationButton.builder()
+			.tooltip(NAME)
+			.icon(ImageUtil.loadImageResource(BossHealthBarPlugin.class, "panel_icon.png"))
+			.priority(7)
+			.panel(panel)
+			.build();
+		clientToolbar.addNavigation(navButton);
+	}
+
+	// Asked for from the bar's right-click menu. The panel can't be opened without its icon, so asking for it
+	// puts the icon back.
+	public void openPanel()
+	{
+		if (navButton == null)
+		{
+			ConfigWrites.write(configManager, BossHealthBarConfig.SHOW_SIDEBAR_ICON_KEY, true);
+		}
+
+		if (navButton != null)
+		{
+			clientToolbar.openPanel(navButton);
+		}
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		debugLog.add("Plugin stopped");
+		showSidebarIcon(false);
+		panel = null;
 		overlayManager.remove(overlay);
 		overlayManager.remove(pillarBarsOverlay);
 		partyDamage.shutDown();
@@ -278,56 +341,47 @@ public class BossHealthBarPlugin extends Plugin
 		}
 
 		overlay.invalidateColors();
-
-		if (BossHealthBarConfig.SAVE_DEBUG_LOG_KEY.equals(event.getKey()))
+		// The panel shows the same settings, so it follows a change made anywhere else.
+		if (panel != null)
 		{
-			// Same as the picker checkboxes: ticking saves the log and the tick is undone straight away.
-			if ("true".equals(event.getNewValue()))
-			{
-				configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.SAVE_DEBUG_LOG_KEY, false);
-				debugExport.save();
-			}
+			panel.settingsChanged();
+		}
+
+		if (BossHealthBarConfig.SHOW_SIDEBAR_ICON_KEY.equals(event.getKey()))
+		{
+			showSidebarIcon(config.showSidebarIcon());
 			return;
 		}
 
 		debugLog.add("Setting {}: {} -> {}", event.getKey(), DebugLog.cut(event.getOldValue(), MAX_LOGGED_VALUE_LENGTH),
 			DebugLog.cut(event.getNewValue(), MAX_LOGGED_VALUE_LENGTH));
 
-		// The Custom colors are a template of the theme in the dropdown, so they follow it until Custom is
-		// picked, which leaves them alone to be tweaked from there.
-		if (BossHealthBarConfig.THEME_KEY.equals(event.getKey()))
+		// These three settings follow each other around, which an import must not set off: it writes a whole
+		// set that was chosen together, and they would answer by writing over what was just loaded.
+		if (!settingsTransfer.isImporting())
 		{
-			pickers.themeChanged();
-			if (!HealthBarTheme.CUSTOM.name().equals(event.getNewValue()))
+			// The Custom colors are a template of the theme in the dropdown, so they follow it until Custom is
+			// picked, which leaves them alone to be tweaked from there.
+			if (BossHealthBarConfig.THEME_KEY.equals(event.getKey()))
 			{
-				customColors.copyFrom(event.getNewValue());
+				pickers.themeChanged();
+				if (!HealthBarTheme.CUSTOM.name().equals(event.getNewValue()))
+				{
+					customColors.copyFrom(event.getNewValue());
+				}
 			}
-		}
 
-		if (CustomColors.isColorKey(event.getKey()) && !customColors.isCopying())
-		{
-			pickers.confirmCustomTheme();
-		}
+			if (CustomColors.isColorKey(event.getKey()) && !customColors.isCopying())
+			{
+				pickers.confirmCustomTheme();
+			}
 
-		if (OldschoolToggle.handles(event.getKey()))
-		{
-			final boolean defaultValue = BossHealthBarConfig.RARE_GOLD_BARS_KEY.equals(event.getKey());
-			OldschoolToggle.apply(configManager, config, event.getKey(), parseBoolean(event.getOldValue(), defaultValue),
-				parseBoolean(event.getNewValue(), defaultValue));
-		}
-
-		// The config screen has no buttons, so these two checkboxes act as one: ticking opens the
-		// picker and the tick is undone straight away.
-		if (BossHealthBarConfig.CHOOSE_FILL_TEXTURE_KEY.equals(event.getKey()) && "true".equals(event.getNewValue()))
-		{
-			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.CHOOSE_FILL_TEXTURE_KEY, false);
-			pickers.openFillTexturePicker();
-		}
-
-		if (BossHealthBarConfig.CHOOSE_CUSTOM_ICON_KEY.equals(event.getKey()) && "true".equals(event.getNewValue()))
-		{
-			configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.CHOOSE_CUSTOM_ICON_KEY, false);
-			pickers.openIconPickerIfLoggedIn();
+			if (OldschoolToggle.handles(event.getKey()))
+			{
+				final boolean defaultValue = BossHealthBarConfig.RARE_GOLD_BARS_KEY.equals(event.getKey());
+				OldschoolToggle.apply(configManager, config, event.getKey(),
+					parseBoolean(event.getOldValue(), defaultValue), parseBoolean(event.getNewValue(), defaultValue));
+			}
 		}
 
 		if (BossHealthBarConfig.ALSO_SHOW_FOR_KEY.equals(event.getKey())
@@ -438,7 +492,7 @@ public class BossHealthBarPlugin extends Plugin
 			debugLog.add("Game says: \"{}\" (the game's {} ticks, our timer: {})", Text.removeTags(event.getMessage()),
 				reported == FightTimer.NO_TICK ? "unread" : String.valueOf(reported),
 				ticks == FightTimer.NO_TICK ? "not started" : ticks + " ticks, " + fightTimer.getText());
-			fightTimer.reportedTime(reported, opponentTracker.isOpponentDefeated(), client.getTickCount());
+			fightTimer.onReportedTime(reported, opponentTracker.isOpponentDefeated(), client.getTickCount());
 		}
 	}
 
@@ -472,7 +526,8 @@ public class BossHealthBarPlugin extends Plugin
 		final boolean trackedGetsBar = opponentTracker.gameBarNpcGetsBar(gameBossBar.trackedNpcId());
 		final boolean replacing = gameBossBar.update(opponent, replace, opponentGetsBar, trackedGetsBar);
 		pillarBars.update(replacing);
-		tobBossBar.update(replace, opponentTracker.raidBarBossGetsBar(tobBossBar.findBoss()));
+		final NPC raidBoss = tobBossBar.findBoss();
+		tobBossBar.update(replace, raidBoss, opponentTracker.raidBarBossGetsBar(raidBoss));
 	}
 
 	@Subscribe

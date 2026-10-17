@@ -27,10 +27,11 @@ public class FightTimer
 	// How far the game's time may sit from ours before it is about something else than this fight.
 	static final int REPORT_GAP_TICKS = 100;
 
-	// The wordings the game puts in front of a time it kept for a fight, and the time itself. "Total
-	// completion time" is the exception: it is the time of everything before it, not of this fight.
+	// The wordings the game puts in front of a time it kept for a fight, and the time itself. Fight,
+	// Challenge and Corrupted challenge duration all end in the same word, which stands for them all.
+	// "Total completion time" is the exception: it is the time of everything before it, not of this fight.
 	private static final Pattern REPORTED_TIME = Pattern.compile(
-		"(?i)(?:(?:fight|challenge|corrupted challenge)? ?duration:|subdued in|(?<!total )completion time:)"
+		"(?i)(?:duration:|subdued in|(?<!total )completion time:)"
 			+ "\\s*(?:(\\d+):)?(\\d+):(\\d{2})(?:\\.(\\d{2}))?");
 
 	static final class Fight
@@ -248,7 +249,7 @@ public class FightTimer
 				}
 			}
 		}
-		useReportedTime(tracked && defeated, tick);
+		usePendingReport(tracked && defeated, tick);
 		updateText(tick);
 	}
 
@@ -281,6 +282,7 @@ public class FightTimer
 		deadSince = NO_TICK;
 		shownTicks = NO_TICK;
 		pendingReport = NO_TICK;
+		pendingSince = NO_TICK;
 		text = null;
 	}
 
@@ -371,19 +373,19 @@ public class FightTimer
 
 	// The game can print its time on the tick the boss goes down, before the kill is confirmed a tick later,
 	// so a time that can't be used yet is kept and tried again on the next ticks.
-	public void reportedTime(int ticks, boolean defeated, int tick)
+	public void onReportedTime(int ticks, boolean defeated, int tick)
 	{
-		if (ticks != NO_TICK && !useReportedTicks(ticks, defeated, tick))
+		if (ticks != NO_TICK && !takeOverTicks(ticks, defeated, tick))
 		{
 			pendingReport = ticks;
 			pendingSince = tick;
 		}
 	}
 
-	private void useReportedTime(boolean defeated, int tick)
+	private void usePendingReport(boolean defeated, int tick)
 	{
 		if (pendingReport != NO_TICK
-			&& (useReportedTicks(pendingReport, defeated, tick) || tick - pendingSince >= DEATH_TICKS))
+			&& (takeOverTicks(pendingReport, defeated, tick) || tick - pendingSince >= DEATH_TICKS))
 		{
 			pendingReport = NO_TICK;
 		}
@@ -392,7 +394,7 @@ public class FightTimer
 	// The game stopping its own clock is the end of the fight, and its time is the one the player compares
 	// against, so the clock stops here and takes it over. A time too far from ours belongs to something
 	// larger than this fight, such as a whole raid reported on its last boss, and is left alone.
-	boolean useReportedTicks(int ticks, boolean defeated, int tick)
+	boolean takeOverTicks(int ticks, boolean defeated, int tick)
 	{
 		if (ticks == NO_TICK || startTick == NO_TICK || !(defeated || endTick != NO_TICK))
 		{

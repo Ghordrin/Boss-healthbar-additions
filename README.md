@@ -20,6 +20,7 @@ See the [changelog](CHANGELOG.md) for what's new in each version.
 - Remembers a boss you walk out of sight of: come back to it in the same area and the bar carries on with its health and fight time, without "Defeated" or the intro
 - Optional info around the bar: kill count, fight timer, elemental weakness, defence drain limit, party and magic defence, special attack counts
 - Themes: god themes, a custom theme with your own colours and icon, the boss's own icon and colours, a plain Oldschool look, and the game's textures over the fill
+- Its own panel in the sidebar for the look of the bar, with the game's items and sprites for the icon, and Import and Export to keep a setup or pass it on
 
 It only shows what the game already tells you, plus a timer for how long the fight has lasted. No attack timers or prediction.
 
@@ -42,25 +43,35 @@ The bar stays on the boss while you hit its minions, follows the game's boss bar
 
 ## Settings
 
-Everything is in the RuneLite config panel, or right-click the bar and pick Configure. Preview, at the top, shows a sample opponent so you can try settings without a fight. Hold Alt to move the bar or drag its edge to resize it.
+The settings live in two places. The plugin's own panel, opened from its sidebar icon or by right-clicking the bar and picking Open panel, holds the look of the bar, the custom colours and the backup buttons. The rest is in the RuneLite config panel, which the settings button at the top of the panel opens, or right-click the bar and pick Configure. Preview, at the top of the panel, shows a sample opponent so you can try settings without a fight. Hold Alt to move the bar or drag its edge to resize it; the pillar bars box resizes the same way.
+
+In the panel:
 
 | Section | What's in it |
 |---|---|
 | Look | Theme, Oldschool theme, boss colours, phase colours, rare gold bars, icons, bar ends, fill texture, phase markers, size |
+| Custom colors | The colours of the Custom theme and its icon |
+| Backup | Paste settings, and Save debug log |
+
+Import and Export sit at the top of the panel, so a setup can be saved to a file and your clipboard, or loaded back, whatever is open below.
+
+On the settings screen:
+
+| Section | What's in it |
+|---|---|
 | Text | Name, combat level, hitpoints text (percentage, value, both or none), damage number and whose hits it counts |
 | Fonts | Font and size of each text around the bar, Smooth text, and the text edge (shadow, outline or nothing) |
 | Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar |
 | Animations | Damage trail, heal speed, low health effect, flash on big hits, intro, defeat animation, burn away |
 | Layout | Where each item goes: left, centre or right, above the bar, inside it, or on one of the two rows below it |
-| Custom colors | The icon and colours of the Custom theme |
 | When to show | Which opponents get a bar, Also show for / Never show for, Hide after, what happens to the game's boss bar (replace it, show both, or hide this one), and the other plugins above |
-| Bug reports | Save debug log: saves the plugin's recent activity to a text file for bug reports |
+| Sidebar icon | Turn it off to give the sidebar its space back; the panel still opens from the bar's right-click menu |
 
 The tooltip on each setting explains it in more detail.
 
 ## Reporting a bug
 
-Right after the bar does something wrong, tick Save debug log (Bug reports section) or right-click the bar and pick Save debug log. The file goes to `.runelite/plugin-data/boss-health-bar-additions/` and the chat says where. Attach it to a GitHub issue or post it in the [Discord](https://discord.gg/YPugUP8rg2). It holds the plugin and RuneLite versions, your settings for this plugin, which related plugins are on, and the plugin's last 1000 events (NPC names and IDs, times, game ticks). No player names, chat or account details; it's kept in memory only and nothing is sent anywhere.
+Right after the bar does something wrong, press Save debug log (Backup section of the panel) or right-click the bar and pick Save debug log. The file goes to `.runelite/plugin-data/boss-health-bar-additions/` and the chat says where. Attach it to a GitHub issue or post it in the [Discord](https://discord.gg/YPugUP8rg2). It holds the plugin and RuneLite versions, your settings for this plugin, which related plugins are on, and the plugin's last 1000 events (NPC names and IDs, times, game ticks). No player names, chat or account details; it's kept in memory only and nothing is sent anywhere.
 
 ## Data
 

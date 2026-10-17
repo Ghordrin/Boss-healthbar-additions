@@ -26,6 +26,7 @@ public interface BossHealthBarConfig extends Config
 	String GROUP = "bosshealthbar";
 	String HIDE_VANILLA_OVERLAY_KEY = "hideVanillaOverlay";
 	String CUSTOM_ICON_ITEM_ID_KEY = "customIconItemId";
+	String CUSTOM_ICON_SPRITE_ID_KEY = "customIconSpriteId";
 	String FILL_TEXTURE_ID_KEY = "fillTextureId";
 	String CHOOSE_FILL_TEXTURE_KEY = "chooseFillTexture";
 	String CHOOSE_CUSTOM_ICON_KEY = "chooseCustomIcon";
@@ -49,6 +50,12 @@ public interface BossHealthBarConfig extends Config
 	String RARE_GOLD_BARS_KEY = "rareGoldBars";
 	String ICON_PLACEMENT_KEY = "iconPlacement";
 	String USE_BOSS_ICON_KEY = "useBossIcon";
+	String BAR_ENDS_KEY = "barEnds";
+	String SHOW_PHASE_MARKERS_KEY = "showPhaseMarkers";
+	String BAR_WIDTH_KEY = "barWidth";
+	String BAR_HEIGHT_KEY = "barHeight";
+	String FIT_TO_GAME_VIEW_KEY = "fitToGameView";
+	String SHOW_SIDEBAR_ICON_KEY = "showSidebarIcon";
 	String FONT_KEY = "font";
 	FontType DEFAULT_FONT = FontType.REGULAR;
 	String NATIVE_BOSS_BAR_MODE_KEY = "nativeBossBarMode";
@@ -64,13 +71,9 @@ public interface BossHealthBarConfig extends Config
 	String DRAIN_CAP_FONT_KEY = "drainCapFont";
 	String FIGHT_TIMER_FONT_KEY = "fightTimerFont";
 	String SAVE_DEBUG_LOG_KEY = "saveDebugLog";
-
-	@ConfigSection(
-		name = "Look",
-		description = "Theme, icons and size of the bar.",
-		position = 0
-	)
-	String lookSection = "look";
+	String SHOW_PREVIEW_KEY = "showPreview";
+	String EXPORT_SETTINGS_KEY = "exportSettings";
+	String IMPORT_SETTINGS_KEY = "importSettings";
 
 	@ConfigSection(
 		name = "Text",
@@ -113,14 +116,6 @@ public interface BossHealthBarConfig extends Config
 	String layoutSection = "layout";
 
 	@ConfigSection(
-		name = "Custom colors",
-		description = "The icon and colors of the Custom theme.",
-		position = 6,
-		closedByDefault = true
-	)
-	String customColorsSection = "customColors";
-
-	@ConfigSection(
 		name = "When to show",
 		description = "Which opponents get a bar, and how it works with other health bars.",
 		position = 7,
@@ -128,20 +123,25 @@ public interface BossHealthBarConfig extends Config
 	)
 	String whenToShowSection = "whenToShow";
 
-	@ConfigSection(
-		name = "Bug reports",
-		description = "Save what the plugin did recently, to attach to a bug report.",
-		position = 8,
-		closedByDefault = true
+	@ConfigItem(
+		keyName = SHOW_SIDEBAR_ICON_KEY,
+		name = "Sidebar icon",
+		description = "Show this plugin's icon in the sidebar, which opens the panel holding its look and its"
+			+ " colors. Turning it off leaves those where they are, only without a way in.",
+		// Sections share the top-level order, so this sits with Preview above them.
+		position = -2
 	)
-	String bugReportsSection = "bugReports";
+	default boolean showSidebarIcon()
+	{
+		return true;
+	}
 
 	@ConfigItem(
-		keyName = "showPreview",
+		keyName = SHOW_PREVIEW_KEY,
 		name = "Preview",
 		description = "Show the bar with a sample opponent while you aren't fighting anything, to try your settings.",
-		// Sections share the top-level order, so this keeps Preview above them.
-		position = -1
+		position = -1,
+		hidden = true
 	)
 	default boolean showPreview()
 	{
@@ -156,6 +156,18 @@ public interface BossHealthBarConfig extends Config
 		hidden = true
 	)
 	default int customIconItemId()
+	{
+		return -1;
+	}
+
+	@ConfigItem(
+		keyName = CUSTOM_ICON_SPRITE_ID_KEY,
+		name = "Custom icon sprite",
+		description = "The game sprite the Custom theme shows, wherever Icon placement puts it. A sprite wins"
+			+ " over an item, and \"Choose custom icon\" only ever sets one of the two.",
+		hidden = true
+	)
+	default int customIconSpriteId()
 	{
 		return -1;
 	}
@@ -176,7 +188,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Theme",
 		description = "The colors of the bar. Custom starts from the theme you had and uses the Custom colors section. Not used with Use Oldschool theme on.",
 		position = 0,
-		section = lookSection
+		hidden = true
 	)
 	default HealthBarTheme theme()
 	{
@@ -188,7 +200,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Use Oldschool theme",
 		description = "A plain green bar over red, like the game's own. Turns off Rare gold bars until you untick it. The Custom colors aren't used either. With Match boss colors on, the bar takes the boss's color instead of green.",
 		position = 1,
-		section = lookSection
+		hidden = true
 	)
 	default boolean oldschoolTheme()
 	{
@@ -200,7 +212,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Match boss colors",
 		description = "Color the bar to suit the boss you're fighting, on any theme.",
 		position = 2,
-		section = lookSection
+		hidden = true
 	)
 	default boolean matchBossColors()
 	{
@@ -214,7 +226,7 @@ public interface BossHealthBarConfig extends Config
 			+ " change phase. Follow that color instead of losing it. It takes over from Match boss colors"
 			+ " while the phase lasts.",
 		position = 3,
-		section = lookSection
+		hidden = true
 	)
 	default boolean phaseColors()
 	{
@@ -228,7 +240,7 @@ public interface BossHealthBarConfig extends Config
 		description = "The color to show a special phase in instead of the game's. Leave it transparent to use"
 			+ " the game's own color.",
 		position = 4,
-		section = lookSection
+		hidden = true
 	)
 	default Color phaseColor()
 	{
@@ -240,7 +252,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Rare gold bars",
 		description = "About 1 in 250 bars turns gold, only for looks. Ticking this turns off Use Oldschool theme.",
 		position = 5,
-		section = lookSection
+		hidden = true
 	)
 	default boolean rareGoldBars()
 	{
@@ -254,7 +266,7 @@ public interface BossHealthBarConfig extends Config
 			+ " on that end, and Before the name puts a small one there. With Use Oldschool theme on it always"
 			+ " goes before the name.",
 		position = 6,
-		section = lookSection
+		hidden = true
 	)
 	default BarIconPlacement iconPlacement()
 	{
@@ -266,7 +278,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Use boss icon",
 		description = "Use the icon of the boss you're fighting instead of the theme's. Raid bosses show their pet.",
 		position = 7,
-		section = lookSection
+		hidden = true
 	)
 	default boolean useBossIcon()
 	{
@@ -274,11 +286,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "barEnds",
+		keyName = BAR_ENDS_KEY,
 		name = "Bar ends",
 		description = "The ornament at each end of the bar. A crest covers the end it sits on, so an end only shows this when Icon placement leaves it free. Not used with Use Oldschool theme on.",
 		position = 8,
-		section = lookSection
+		hidden = true
 	)
 	default BarEnds barEnds()
 	{
@@ -286,23 +298,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = CHOOSE_FILL_TEXTURE_KEY,
-		name = "Choose fill texture",
-		description = "Click to pick one of the game's textures to lay over the fill. Not used with Use Oldschool theme on.",
-		position = 9,
-		section = lookSection
-	)
-	default boolean chooseFillTexture()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = "showPhaseMarkers",
+		keyName = SHOW_PHASE_MARKERS_KEY,
 		name = "Show phase markers",
 		description = "Show the same phase markers as the game's own boss health bar, when it has them.",
 		position = 10,
-		section = lookSection
+		hidden = true
 	)
 	default boolean showPhaseMarkers()
 	{
@@ -312,11 +312,11 @@ public interface BossHealthBarConfig extends Config
 	@Range(min = 200, max = 1400)
 	@Units(Units.PIXELS)
 	@ConfigItem(
-		keyName = "barWidth",
+		keyName = BAR_WIDTH_KEY,
 		name = "Bar width",
 		description = "The width of the bar. Alt-dragging its edge overrides this until you reset the overlay.",
 		position = 11,
-		section = lookSection
+		hidden = true
 	)
 	default int barWidth()
 	{
@@ -326,11 +326,11 @@ public interface BossHealthBarConfig extends Config
 	@Range(min = 4, max = 24)
 	@Units(Units.PIXELS)
 	@ConfigItem(
-		keyName = "barHeight",
+		keyName = BAR_HEIGHT_KEY,
 		name = "Bar height",
 		description = "The height of the bar itself, without the text around it.",
 		position = 12,
-		section = lookSection
+		hidden = true
 	)
 	default int barHeight()
 	{
@@ -338,11 +338,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "fitToGameView",
+		keyName = FIT_TO_GAME_VIEW_KEY,
 		name = "Fit to game view",
 		description = "Make the bar narrower when the game view is small. The height and text keep their size.",
 		position = 13,
-		section = lookSection
+		hidden = true
 	)
 	default boolean fitToGameView()
 	{
@@ -751,6 +751,20 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "fortifyPhase",
+		name = "Fortify",
+		description = "Mark the moment a boss goes into a phase: a flash and a sweep across the bar, a shield at"
+			+ " the ends and the frame in the phase's color. Needs Phase colors, and does nothing with the"
+			+ " Oldschool theme.",
+		position = 8,
+		section = animationsSection
+	)
+	default boolean fortifyPhase()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "namePosition",
 		name = "Name",
 		description = "Where the name goes, with its icon and combat level. It's shortened when it doesn't fit.",
@@ -858,18 +872,6 @@ public interface BossHealthBarConfig extends Config
 		return BarPosition.TOP_CENTER;
 	}
 
-	@ConfigItem(
-		keyName = CHOOSE_CUSTOM_ICON_KEY,
-		name = "Choose custom icon",
-		description = "Click to search for an item in your chatbox. Its icon is shown on the Custom theme. You need to be logged in.",
-		position = 0,
-		section = customColorsSection
-	)
-	default boolean chooseCustomIcon()
-	{
-		return false;
-	}
-
 	@Alpha
 	@ConfigItem(
 		keyName = CUSTOM_FILL_HIGH_COLOR_KEY,
@@ -877,7 +879,7 @@ public interface BossHealthBarConfig extends Config
 		description = "The fill color at full health. It blends towards the low health color as health drops,"
 			+ " and tints the crests and the other bars the game shows next to the boss bar.",
 		position = 1,
-		section = customColorsSection
+		hidden = true
 	)
 	default Color customFillHighColor()
 	{
@@ -890,7 +892,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Fill (low health)",
 		description = "The fill color near zero health. Use the full health color for a single color.",
 		position = 2,
-		section = customColorsSection
+		hidden = true
 	)
 	default Color customFillLowColor()
 	{
@@ -904,7 +906,7 @@ public interface BossHealthBarConfig extends Config
 		description = "The color behind the fill, where the health is missing."
 			+ " Fully transparent keeps the dark background the themes use.",
 		position = 3,
-		section = customColorsSection
+		hidden = true
 	)
 	default Color customTrackColor()
 	{
@@ -917,7 +919,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Damage trail color",
 		description = "The color of the damage trail.",
 		position = 4,
-		section = customColorsSection
+		hidden = true
 	)
 	default Color customTrailColor()
 	{
@@ -931,7 +933,7 @@ public interface BossHealthBarConfig extends Config
 		description = "The color of the frame, the bar ends, the crests, the underline, the phase markers"
 			+ " and the outline of the other bars the game shows.",
 		position = 5,
-		section = customColorsSection
+		hidden = true
 	)
 	default Color customFrameColor()
 	{
@@ -945,7 +947,7 @@ public interface BossHealthBarConfig extends Config
 		description = "The color of the name, the delve level and the damage number, on both bars, and of the party"
 			+ " and magic defence and special attack counts when they have no color of their own.",
 		position = 6,
-		section = customColorsSection
+		hidden = true
 	)
 	default Color customTextColor()
 	{
@@ -959,7 +961,7 @@ public interface BossHealthBarConfig extends Config
 		description = "The color of the combat level, fight timer, kill count, elemental weakness and defence"
 			+ " drain limit, which share one color and are drawn a little dimmer than the name.",
 		position = 7,
-		section = customColorsSection
+		hidden = true
 	)
 	default Color customLevelTextColor()
 	{
@@ -972,7 +974,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Hitpoints text",
 		description = "The color of the hitpoints text on both bars, and of the labels on the other bars the game shows.",
 		position = 8,
-		section = customColorsSection
+		hidden = true
 	)
 	default Color customHitpointsTextColor()
 	{
@@ -985,7 +987,7 @@ public interface BossHealthBarConfig extends Config
 		name = "Defeated text",
 		description = "The color of the \"Defeated\" label on both bars.",
 		position = 9,
-		section = customColorsSection
+		hidden = true
 	)
 	default Color customDefeatedTextColor()
 	{
@@ -1113,17 +1115,5 @@ public interface BossHealthBarConfig extends Config
 	default boolean showHealthIndicatorMarkers()
 	{
 		return true;
-	}
-
-	@ConfigItem(
-		keyName = SAVE_DEBUG_LOG_KEY,
-		name = "Save debug log",
-		description = "Saves the plugin's recent activity and your settings for it to a text file you can attach to a bug report. It contains no player names, chat or account details.",
-		position = 0,
-		section = bugReportsSection
-	)
-	default boolean saveDebugLog()
-	{
-		return false;
 	}
 }

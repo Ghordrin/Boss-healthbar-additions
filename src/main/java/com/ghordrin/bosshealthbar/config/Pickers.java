@@ -6,12 +6,12 @@ import javax.inject.Singleton;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import net.runelite.api.Client;
-import net.runelite.api.GameState;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.game.chatbox.ChatboxItemSearch;
+import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.SpriteManager;
 
-// Opens the custom icon search and the fill texture window.
+// Opens the custom icon window and the fill texture window.
 @Singleton
 public class Pickers
 {
@@ -19,44 +19,39 @@ public class Pickers
 	private final ClientThread clientThread;
 	private final ConfigManager configManager;
 	private final BossHealthBarConfig config;
-	private final ChatboxItemSearch itemSearch;
+	private final ItemManager itemManager;
+	private final SpriteManager spriteManager;
 
 	// Only touched on the EDT.
 	private FillTexturePickerDialog texturePickerDialog;
+	private CustomIconPickerDialog iconPickerDialog;
 
 	// The theme the switch was declined for, so the prompt asks once per theme. Only touched on the EDT.
 	private String declinedFor;
 
 	@Inject
 	Pickers(Client client, ClientThread clientThread, ConfigManager configManager, BossHealthBarConfig config,
-		ChatboxItemSearch itemSearch)
+		ItemManager itemManager, SpriteManager spriteManager)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
 		this.configManager = configManager;
 		this.config = config;
-		this.itemSearch = itemSearch;
+		this.itemManager = itemManager;
+		this.spriteManager = spriteManager;
 	}
 
-	// Must be called on the client thread.
 	public void openIconPicker()
 	{
-		itemSearch
-			.tooltipText("Custom icon")
-			.onItemSelected(itemId -> configManager.setConfiguration(
-				BossHealthBarConfig.GROUP, BossHealthBarConfig.CUSTOM_ICON_ITEM_ID_KEY, itemId))
-			.build();
-	}
-
-	// The item search lives in the chatbox, so it only opens while logged in.
-	public void openIconPickerIfLoggedIn()
-	{
-		clientThread.invoke(() ->
+		SwingUtilities.invokeLater(() ->
 		{
-			if (client.getGameState() == GameState.LOGGED_IN)
+			if (iconPickerDialog == null || !iconPickerDialog.isDisplayable())
 			{
-				openIconPicker();
+				iconPickerDialog = new CustomIconPickerDialog(client, clientThread, configManager, config,
+					itemManager, spriteManager);
 			}
+			iconPickerDialog.setVisible(true);
+			iconPickerDialog.toFront();
 		});
 	}
 
@@ -116,6 +111,11 @@ public class Pickers
 			{
 				texturePickerDialog.dispose();
 				texturePickerDialog = null;
+			}
+			if (iconPickerDialog != null)
+			{
+				iconPickerDialog.dispose();
+				iconPickerDialog = null;
 			}
 		});
 	}

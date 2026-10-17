@@ -1,6 +1,7 @@
 package com.ghordrin.bosshealthbar.theme;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import java.awt.Color;
@@ -47,7 +48,7 @@ public class PhaseColorsTest
 	public void thePhaseTakesTheFillTheTrailAndTheTrack()
 	{
 		final ThemeColors colors = PhaseColors.of(SHIELD_FILL, SHIELD_TRAIL, SHIELD_TRACK)
-			.applyTo(THEME, BossHealthBarConfig.TRANSPARENT);
+			.applyTo(THEME, BossHealthBarConfig.TRANSPARENT, false);
 
 		assertEquals(new Color(SHIELD_FILL), colors.getFillHigh());
 		assertEquals(new Color(SHIELD_FILL), colors.getFillLow());
@@ -63,10 +64,51 @@ public class PhaseColorsTest
 	public void anOverrideIsUsedInsteadOfTheGameSColor()
 	{
 		final Color override = new Color(0xB48200);
-		final ThemeColors colors = PhaseColors.of(SHIELD_FILL, SHIELD_TRAIL, SHIELD_TRACK).applyTo(THEME, override);
+		final ThemeColors colors = PhaseColors.of(SHIELD_FILL, SHIELD_TRAIL, SHIELD_TRACK)
+			.applyTo(THEME, override, false);
 
 		assertEquals(override, colors.getFillHigh());
 		assertEquals(override, colors.getFillLow());
 		assertEquals(THEME.getFrame(), colors.getFrame());
+	}
+
+	// Fortify puts the phase on the frame too, lifted off the fill so it still reads as an outline.
+	@Test
+	public void fortifyGivesTheFrameThePhaseSColor()
+	{
+		final ThemeColors colors = PhaseColors.of(SHIELD_FILL, SHIELD_TRAIL, SHIELD_TRACK)
+			.applyTo(THEME, BossHealthBarConfig.TRANSPARENT, true);
+
+		assertNotEquals(THEME.getFrame(), colors.getFrame());
+		assertNotEquals(colors.getFillHigh(), colors.getFrame());
+		assertEquals(new Color(SHIELD_FILL), colors.getFillHigh());
+	}
+
+	// A phase the player picked a color for puts that color on the frame, not the game's.
+	@Test
+	public void fortifyFollowsTheOverrideOnTheFrame()
+	{
+		final Color override = new Color(0xB48200);
+		final ThemeColors game = PhaseColors.of(SHIELD_FILL, SHIELD_TRAIL, SHIELD_TRACK)
+			.applyTo(THEME, BossHealthBarConfig.TRANSPARENT, true);
+		final ThemeColors picked = PhaseColors.of(SHIELD_FILL, SHIELD_TRAIL, SHIELD_TRACK)
+			.applyTo(THEME, override, true);
+
+		assertNotEquals(game.getFrame(), picked.getFrame());
+	}
+
+	// One phase to the next is a change, so the run plays again instead of the bar sitting still.
+	@Test
+	public void eachPhaseHasItsOwnKey()
+	{
+		assertNotEquals(PhaseColors.of(SHIELD_FILL, SHIELD_TRAIL, SHIELD_TRACK).key(),
+			PhaseColors.of(0xC87040, SHIELD_TRAIL, SHIELD_TRACK).key());
+	}
+
+	// Zero is how the bar says there is no phase at all, so no phase color may land on it.
+	@Test
+	public void noPhaseSKeyIsNeverAPhaseSKey()
+	{
+		assertNotEquals(0, PhaseColors.of(SHIELD_FILL, SHIELD_TRAIL, SHIELD_TRACK).key());
 	}
 }

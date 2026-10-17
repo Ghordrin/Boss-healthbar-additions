@@ -1,14 +1,25 @@
 # Changelog
 
-## 2.0.0 (2026-10-16)
+## 2.0.0 (2026-10-17)
 
 ### New
 
+- New side panel, opened from its icon in the sidebar or by right-clicking the bar and picking Open panel. It holds the Look settings, the Custom colors and the Backup buttons, and follows a setting changed anywhere else straight away. The settings screen used to keep showing the old value when the plugin wrote one itself, such as a theme filling in the Custom colors or the Oldschool tick turning off the gold bars, until it was closed and opened again. A Settings button at the top of the panel opens the rest of the settings
+- Export settings, Import from file, Paste settings, Choose custom icon, Choose fill texture and Save debug log are buttons in the panel, instead of checkboxes that untick themselves. Paste settings is new: it reads a setup straight off your clipboard, without saving it to a file first
+- Import and Export buttons sit at the top of the panel, so a setup can be loaded or saved whatever is open below
+- Importing now says how many settings it is about to load before it loads them, and takes only the settings this plugin has, ignoring anything else in the file and any value a setting can't hold
+- The Sprites tab fills in as the sprites are read instead of waiting until it has read all of them, and reads them several times faster
+- The panel has a Discord button beside the settings button at the top
+- New Sidebar icon option (on by default). Turn it off to give the sidebar its space back; the panel can still be opened from the bar's right-click menu
+- The Look settings and the Custom colors have moved to the panel and are no longer on the settings screen, which keeps what the panel doesn't hold: the text, the fonts, the boss info, the animations, the layout and when to show a bar
 - Two new Hitpoints text options: Hitpoints left shows the hitpoints on their own, without the maximum, and Hitpoints left and % adds the percentage after it. Both is now named Hitpoints and %
 - New Phase colors option (Look, on by default). Some bosses turn the game's own health bar another color while they shield themselves or change phase, and the bar now follows that color instead of losing it behind our own. A Phase color picker under it shows those phases in a color of your choice instead, left transparent to use the game's
 - Right-click the bar and pick Support Discord to open the plugin's Discord in your browser, for help, bug reports and sharing setups
 - Picking a theme now fills the Custom colors section with that theme's colors, so it can be used as a starting point. Changing one of those colors while a theme is picked asks whether to switch the theme to Custom, since that is the only theme that uses them
 - New delve level after the boss's name, the way the game's own boss bar shows it. On a narrow bar the name shortens to make room for it
+- New Backup section with Export settings and Import settings. Export writes every setting to a file in the plugin's folder and copies the same text to your clipboard, so a setup can be kept or passed on. Import picks one of those files and uses it, putting anything the file doesn't name back to its default
+- Choose custom icon now opens a window instead of the chatbox search. Items are still searched by name, and a Sprites tab adds the game's own sprites, such as clan ranks, skill and prayer icons, so the Custom theme is no longer limited to items. Whichever you pick replaces the other, and None clears it
+- New Fortify option (Animations, off by default). When a boss goes into a phase the game paints its bar another color for, the bar now marks the moment instead of only changing hue: a flash, a sweep of light across it, the frame in the phase's color and a shield at each bar end that has no crest. It needs Phase colors on, and the Oldschool theme is left as it is
 - New Background color in Custom colors: the color behind the fill, where the health is missing. Left transparent it keeps the dark background the themes use, so a green fill on a red background is now possible without the Oldschool theme
 
 ### Changed
@@ -19,6 +30,7 @@
 - The bar is drawn over the game's interfaces instead of under them, so an interface opened where the bar sits no longer hides it
 - With Match boss colors on, the second boss bar now takes the colors of its own boss instead of the first one's, so two bosses at once no longer share one color
 - The pillar bars now use the same fill blend and shading as the main bar: the fill moves from the full health color to the low health color as the charge drops, and the outline takes the frame's gradient. They keep a single line for a frame and no end pieces, which at their height would leave no room for the bar
+- The pillar bars box can be resized: alt-drag its edge to make the bars as wide as you like, the way the main bar is resized. Their height follows Bar height, and resetting the overlay puts the width back
 - Show icons is now an Icon placement dropdown: Crests, Crest left, Crest right, Before the name, or No icon. A single crest leaves the other end with its Bar ends ornament, and the bar only gives up room on the side that has one. The icon before the name used to be the result of turning Show icons off while Use boss icon stayed on, which was hard to find. Your setting carries over, and Use boss icon now only picks which icon is used, so the theme's icon can go before the name too
 
 ### Fixed

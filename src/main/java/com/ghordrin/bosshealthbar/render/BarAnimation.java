@@ -19,6 +19,14 @@ public final class BarAnimation
 	static final Duration DEFEAT_HOLD = Duration.ofMillis(1600);
 	static final Duration DEFEAT_FADE = Duration.ofMillis(700);
 	private static final Duration LOW_HEALTH_PULSE_PERIOD = Duration.ofMillis(1100);
+	// The bar waits before it reacts, so the change reads as an answer to the phase and not as part of the
+	// hit that brought it on. The colors are held back over that wait and arrive under the flash.
+	static final Duration FORTIFY_DELAY = Duration.ofMillis(180);
+	static final Duration FORTIFY_FLASH = Duration.ofMillis(90);
+	static final Duration FORTIFY_SWEEP = Duration.ofMillis(520);
+	static final Duration FORTIFY_BADGE_DELAY = Duration.ofMillis(600);
+	static final Duration FORTIFY_BADGE = Duration.ofMillis(300);
+	private static final Duration FORTIFY_DURATION = Duration.ofMillis(900);
 
 	private float displayedFraction = -1f;
 	private float trailFraction = -1f;
@@ -29,6 +37,9 @@ public final class BarAnimation
 	private long defeatFirstStartNanos;
 	private boolean snapToTarget;
 	public boolean skipIntro;
+	private int phaseKey;
+	private long fortifyStartNanos;
+	private boolean fortifyFromNoPhase;
 
 	public void reset()
 	{
@@ -40,6 +51,41 @@ public final class BarAnimation
 		defeatFirstStartNanos = 0;
 		snapToTarget = false;
 		skipIntro = false;
+		phaseKey = 0;
+		fortifyStartNanos = 0;
+		fortifyFromNoPhase = false;
+	}
+
+	// The game put the boss into another phase, or took it out of one. Entering plays the run; leaving only
+	// drops the colors, since the end of a phase shouldn't be as loud as its start.
+	public void fortify(long now, int key)
+	{
+		if (key == phaseKey)
+		{
+			return;
+		}
+		fortifyFromNoPhase = phaseKey == 0;
+		phaseKey = key;
+		fortifyStartNanos = key == 0 ? 0 : now;
+	}
+
+	// How far the run has got, or -1 once it is over and the phase is just being shown.
+	public long fortifyMillis(long now)
+	{
+		if (fortifyStartNanos == 0)
+		{
+			return -1;
+		}
+		final long elapsed = (now - fortifyStartNanos) / 1_000_000L;
+		return elapsed > FORTIFY_DURATION.toMillis() ? -1 : Math.max(0, elapsed);
+	}
+
+	// Whether the phase's colors are still being held back. Only on the way in from no phase at all: between
+	// two phases there are colors to hold, and dropping to the theme's for a moment would read as a flicker.
+	public boolean fortifyHoldsPhase(long now)
+	{
+		final long elapsed = fortifyMillis(now);
+		return fortifyFromNoPhase && elapsed >= 0 && elapsed < FORTIFY_DELAY.toMillis();
 	}
 
 	// The next bar shows up fully drawn, as if its intro had already played.

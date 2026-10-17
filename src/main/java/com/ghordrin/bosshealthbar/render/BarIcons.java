@@ -60,6 +60,13 @@ public class BarIcons
 
 		if (theme == HealthBarTheme.CUSTOM)
 		{
+			// The picker only ever sets one of the two, but a sprite answers first so a config edited by
+			// hand still shows something rather than nothing.
+			final int customSpriteId = config.customIconSpriteId();
+			if (customSpriteId >= 0)
+			{
+				return image(false, customSpriteId);
+			}
 			final int itemId = config.customIconItemId();
 			return itemId > 0 ? itemManager.getImage(itemId) : null;
 		}

@@ -9,12 +9,10 @@ import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
-import com.ghordrin.bosshealthbar.config.Pickers;
 import com.ghordrin.bosshealthbar.data.BarState;
 import com.ghordrin.bosshealthbar.data.BossStats;
 import com.ghordrin.bosshealthbar.data.KnownBosses;
 import com.ghordrin.bosshealthbar.data.OpponentInfo;
-import com.ghordrin.bosshealthbar.debug.DebugExport;
 import com.ghordrin.bosshealthbar.debug.DebugLog;
 import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
 import com.ghordrin.bosshealthbar.gamebars.TobBossBar;
@@ -127,9 +125,7 @@ public class BossHealthBarOverlay extends Overlay
 		PartyDefence partyDefence,
 		SpecialAttackCounts specialAttackCounts,
 		FightGroup group,
-		Pickers pickers,
-		DebugLog debugLog,
-		DebugExport debugExport)
+		DebugLog debugLog)
 	{
 		super(plugin);
 		this.client = client;
@@ -159,9 +155,7 @@ public class BossHealthBarOverlay extends Overlay
 		setResizable(true);
 		setMinimumSize(MIN_FITTED_BAR_WIDTH);
 		addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, BossHealthBarPlugin.NAME);
-		addMenuEntry(RUNELITE_OVERLAY, "Save debug log", BossHealthBarPlugin.NAME, menuEntry -> debugExport.save());
-		addMenuEntry(RUNELITE_OVERLAY, "Choose custom icon", BossHealthBarPlugin.NAME, menuEntry -> pickers.openIconPicker());
-		addMenuEntry(RUNELITE_OVERLAY, "Choose fill texture", BossHealthBarPlugin.NAME, menuEntry -> pickers.openFillTexturePicker());
+		addMenuEntry(RUNELITE_OVERLAY, "Open panel", BossHealthBarPlugin.NAME, menuEntry -> plugin.openPanel());
 		addMenuEntry(RUNELITE_OVERLAY, "Support Discord", BossHealthBarPlugin.NAME,
 			menuEntry -> LinkBrowser.browse(BossHealthBarPlugin.DISCORD_URL));
 	}
@@ -208,24 +202,28 @@ public class BossHealthBarOverlay extends Overlay
 	{
 		final KnownBosses.Boss boss = config.matchBossColors() && !selector.isShowingPreview()
 			? KnownBosses.find(partner.name) : null;
-		return withPhase(barColors(updateThemeColors(), boss != null ? boss.getColors() : null, flat), member, -1);
+		return withPhase(barColors(updateThemeColors(), boss != null ? boss.getColors() : null, flat),
+			phaseFor(member, -1), flat);
 	}
 
-	// A phase color says what the boss is doing now, so it wins over a color picked for the boss itself.
-	// heldBossId names the boss a bar without an opponent of its own is held for, whose phase the game's bar
-	// still shows. The second bar has no such hold, so it passes -1.
-	private ThemeColors withPhase(ThemeColors colors, Actor opponent, int heldBossId)
+	// The phase the game is painting the bar in, or null when it paints its usual colors. heldBossId names
+	// the boss a bar without an opponent of its own is held for, whose phase the game's bar still shows.
+	// The second bar has no such hold, so it passes -1.
+	private PhaseColors phaseFor(Actor opponent, int heldBossId)
 	{
 		if (!config.phaseColors())
 		{
-			return colors;
+			return null;
 		}
-		PhaseColors phase = gameBossBar.phaseColors(opponent);
-		if (phase == null)
-		{
-			phase = gameBossBar.phaseColorsFor(heldBossId);
-		}
-		return phase != null ? phase.applyTo(colors, config.phaseColor()) : colors;
+		final PhaseColors phase = gameBossBar.phaseColors(opponent);
+		return phase != null ? phase : gameBossBar.phaseColorsFor(heldBossId);
+	}
+
+	// A phase color says what the boss is doing now, so it wins over a color picked for the boss itself.
+	// Only the ornate bar lets the phase reach its frame: the flat bar's frame is the game's own outline.
+	private ThemeColors withPhase(ThemeColors colors, PhaseColors phase, boolean flat)
+	{
+		return phase != null ? phase.applyTo(colors, config.phaseColor(), config.fortifyPhase() && !flat) : colors;
 	}
 
 	private ThemeColors updateThemeColors()
@@ -302,7 +300,13 @@ public class BossHealthBarOverlay extends Overlay
 		final int inBarBelow = inBarOverflow - inBarAbove;
 		final BarTheme theme = BarTheme.of(config);
 		final boolean flat = theme.isFlat();
-		final ThemeColors baseColors = withPhase(baseColors(), opponent, selector.heldBossId());
+		final PhaseColors phase = phaseFor(opponent, selector.heldBossId());
+		animation.fortify(now, phase != null ? phase.key() : 0);
+		// The flat bar is the game's own look, so the run never plays on it and its colors are never held.
+		final boolean fortify = config.fortifyPhase() && !flat;
+		final long fortifyMillis = fortify ? animation.fortifyMillis(now) : -1;
+		final ThemeColors baseColors = withPhase(baseColors(),
+			fortify && animation.fortifyHoldsPhase(now) ? null : phase, flat);
 		final boolean gold = showsGold(selector.rolledGold() && !selector.isShowingPreview() && config.rareGoldBars(), flat);
 		final ThemeColors colors = gold ? goldBar.colors(baseColors) : baseColors;
 		final long nowMillis = now / 1_000_000L;
@@ -376,7 +380,21 @@ public class BossHealthBarOverlay extends Overlay
 			graphics.clip(burnClip(burn, totalWidth, leftExtent + shownInset));
 		}
 		barPainter.drawBar(graphics, colors, state, animation, defeated, barY, shownWidth, barHeight, fillProgress,
-			shownWidth == width, flat, ends, true, true);
+			shownWidth == width, flat, ends, true, true, fortifyMillis);
+		// The shield sits where a bar end's ornament does, so it is only drawn on an end that has no crest.
+		if (fortify && phase != null && !animation.fortifyHoldsPhase(now) && !defeated)
+		{
+			final int badgeY = barY + barHeight / 2;
+			if (!leftCrest)
+			{
+				barPainter.drawFortifyBadge(graphics, capWidth, badgeY, barHeight, colors.getFrame(), fortifyMillis);
+			}
+			if (!rightCrest)
+			{
+				barPainter.drawFortifyBadge(graphics, shownWidth - capWidth, badgeY, barHeight, colors.getFrame(),
+					fortifyMillis);
+			}
+		}
 		if (gold)
 		{
 			goldBar.drawShine(graphics, capWidth - 1, barY - 1, shownWidth - capWidth * 2 + 2, barHeight + 2,
@@ -488,7 +506,7 @@ public class BossHealthBarOverlay extends Overlay
 		setOpacity(graphics, originalComposite, barOpacity);
 		graphics.translate(shownInset, 0);
 		barPainter.drawBar(graphics, colors, partner, partnerAnimation, dead, barY, shownWidth, barHeight, fillProgress,
-			false, flat, ends, false, false);
+			false, flat, ends, false, false, -1);
 		graphics.translate(-shownInset, 0);
 	}
 

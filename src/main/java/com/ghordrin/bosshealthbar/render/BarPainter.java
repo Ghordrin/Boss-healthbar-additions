@@ -19,6 +19,7 @@ import java.awt.Graphics2D;
 import java.awt.LinearGradientPaint;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.TexturePaint;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
@@ -69,6 +70,18 @@ public class BarPainter
 	private static final Color MARKER_SHADOW = new Color(0, 0, 0, 170);
 	private static final Color FLASH_COLOR = new Color(1f, 0.95f, 0.85f);
 	private static final BasicStroke THIN_STROKE = new BasicStroke(1f);
+	private static final Color FORTIFY_FLASH_COLOR = new Color(233, 244, 252);
+	private static final int FORTIFY_FLASH_ALPHA = 220;
+	private static final float[] FORTIFY_SWEEP_STOPS = {0f, 0.5f, 1f};
+	private static final int FORTIFY_SWEEP_ALPHA = 215;
+	private static final int FORTIFY_SWEEP_MIN_BAND = 12;
+	private static final Color FORTIFY_BADGE_OUTLINE = new Color(6, 5, 5);
+	// The shield, as a share of its own box: a flat top, straight sides and a point at the bottom.
+	private static final float[] BADGE_X = {0f, 0.5f, 1f, 1f, 0.5f, 0f};
+	private static final float[] BADGE_Y = {0.13f, 0f, 0.13f, 0.52f, 1f, 0.52f};
+	private static final float BADGE_HEIGHT_SCALE = 0.86f;
+	private static final float BADGE_ASPECT = 0.84f;
+	private static final float BADGE_START_SCALE = 2f;
 
 	private final Client client;
 	private final DamageTracker damageTracker;
@@ -120,7 +133,7 @@ public class BarPainter
 
 	public void drawBar(Graphics2D graphics, ThemeColors colors, BarState state, BarAnimation animation, boolean defeated,
 		int y, int width, int height, float fillProgress, boolean useImageCache, boolean flat, BarEnds ends, boolean flash,
-		boolean pulse)
+		boolean pulse, long fortifyMillis)
 	{
 		updateDerivedColors(colors);
 		final float displayedFraction = animation.getDisplayedFraction();
@@ -266,6 +279,12 @@ public class BarPainter
 			}
 		}
 
+		// The flat bar is the game's own look, so none of this is drawn on it.
+		if (!flat && fortifyMillis >= 0)
+		{
+			drawFortify(graphics, fortifyMillis, colors.getFillHigh(), innerX, innerY, innerWidth, innerHeight);
+		}
+
 		if (flash && config.flashOnBigHits() && state.health.maxHealth != null)
 		{
 			final long lastHit = damageTracker.getLastHitMillis();
@@ -289,6 +308,92 @@ public class BarPainter
 				}
 			}
 		}
+	}
+
+	// The flash and the sweep that run when the boss goes into a phase. Both stay inside the bar, so the
+	// frame and the ends keep their shape while they pass over the fill.
+	private void drawFortify(Graphics2D graphics, long millis, Color phase, int x, int y, int width, int height)
+	{
+		if (width <= 0 || height <= 0)
+		{
+			return;
+		}
+
+		final Shape clip = graphics.getClip();
+		graphics.clipRect(x, y, width, height);
+
+		final long nanos = millis * 1_000_000L;
+		final float sweep = BarAnimation.progress(nanos, BarAnimation.FORTIFY_DELAY, BarAnimation.FORTIFY_SWEEP);
+		if (sweep > 0f && sweep < 1f)
+		{
+			final int band = Math.max(FORTIFY_SWEEP_MIN_BAND, width / 4);
+			final int center = x + Math.round(-band + sweep * (width + band * 2));
+			final Color bright = withAlpha(brighten(phase, 0.75f), FORTIFY_SWEEP_ALPHA);
+			final Color clear = withAlpha(bright, 0);
+			graphics.setPaint(new LinearGradientPaint(center - band, y, center + band, y,
+				FORTIFY_SWEEP_STOPS, new Color[]{clear, bright, clear}));
+			graphics.fillRect(center - band, y, band * 2, height);
+		}
+
+		final float flash = 1f - BarAnimation.progress(nanos, BarAnimation.FORTIFY_DELAY, BarAnimation.FORTIFY_FLASH);
+		if (flash > 0f && millis >= BarAnimation.FORTIFY_DELAY.toMillis())
+		{
+			graphics.setColor(withAlpha(FORTIFY_FLASH_COLOR, Math.round(flash * FORTIFY_FLASH_ALPHA)));
+			graphics.fillRect(x, y, width, height);
+		}
+
+		graphics.setClip(clip);
+	}
+
+	// The shield at a bar end, which stays for as long as the phase does. It drops in oversized and settles
+	// while the run plays; a negative millis is a phase that has been on for a while, so it is drawn settled.
+	public void drawFortifyBadge(Graphics2D graphics, int centerX, int centerY, int barHeight, Color color, long millis)
+	{
+		float opacity = 1f;
+		float scale = 1f;
+		if (millis >= 0)
+		{
+			final float settled = BarAnimation.easeOut(BarAnimation.progress(millis * 1_000_000L,
+				BarAnimation.FORTIFY_BADGE_DELAY, BarAnimation.FORTIFY_BADGE));
+			if (settled <= 0f)
+			{
+				return;
+			}
+			opacity = settled;
+			scale = 1f + (1f - settled) * (BADGE_START_SCALE - 1f);
+		}
+
+		final float boxHeight = barHeight * BADGE_HEIGHT_SCALE * scale;
+		final float boxWidth = boxHeight * BADGE_ASPECT;
+		final Path2D shield = new Path2D.Float();
+		for (int i = 0; i < BADGE_X.length; i++)
+		{
+			final float pointX = centerX - boxWidth / 2f + BADGE_X[i] * boxWidth;
+			final float pointY = centerY - boxHeight / 2f + BADGE_Y[i] * boxHeight;
+			if (i == 0)
+			{
+				shield.moveTo(pointX, pointY);
+			}
+			else
+			{
+				shield.lineTo(pointX, pointY);
+			}
+		}
+		shield.closePath();
+
+		final Composite original = graphics.getComposite();
+		if (opacity < 1f)
+		{
+			graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, clamp01(opacity)));
+		}
+		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		graphics.setPaint(new GradientPaint(0, centerY - boxHeight / 2f, brighten(color, 0.3f),
+			0, centerY + boxHeight / 2f, darken(color, 0.3f)));
+		graphics.fill(shield);
+		graphics.setStroke(THIN_STROKE);
+		graphics.setColor(FORTIFY_BADGE_OUTLINE);
+		graphics.draw(shield);
+		graphics.setComposite(original);
 	}
 
 	// The glowing edge the bar burns away behind, and the sparks it throws off. x runs from left to right

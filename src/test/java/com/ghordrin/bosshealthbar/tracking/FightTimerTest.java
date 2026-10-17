@@ -118,10 +118,10 @@ public class FightTimerTest
 		assertEquals("1:00", timer.getText());
 
 		// Still fighting, so a time from elsewhere doesn't touch the clock.
-		assertFalse(timer.useReportedTicks(90, false, 110));
+		assertFalse(timer.takeOverTicks(90, false, 110));
 		assertEquals("1:00", timer.getText());
 
-		assertTrue(timer.useReportedTicks(90, true, 110));
+		assertTrue(timer.takeOverTicks(90, true, 110));
 		assertEquals("0:54", timer.getText());
 		assertEquals(90, timer.getElapsedTicks(200));
 	}
@@ -143,7 +143,7 @@ public class FightTimerTest
 		timer.onGameTick(true, false, NO_TICK, 110);
 
 		// The message comes in on the tick the boss goes down, before the kill is confirmed.
-		timer.reportedTime(90, false, 110);
+		timer.onReportedTime(90, false, 110);
 		assertEquals("1:00", timer.getText());
 
 		timer.onGameTick(true, true, 110, 111);
@@ -155,7 +155,7 @@ public class FightTimerTest
 	{
 		timer.opponentChanged(false, false, NO_TICK, 10);
 		timer.onEngaged(10);
-		timer.reportedTime(90, false, 110);
+		timer.onReportedTime(90, false, 110);
 
 		for (int tick = 111; tick <= 110 + DEATH_TICKS; tick++)
 		{
@@ -172,9 +172,9 @@ public class FightTimerTest
 		timer.onEngaged(10);
 		timer.onGameTick(true, false, NO_TICK, 110);
 
-		assertFalse(timer.useReportedTicks(100 + FightTimer.REPORT_GAP_TICKS + 1, true, 110));
+		assertFalse(timer.takeOverTicks(100 + FightTimer.REPORT_GAP_TICKS + 1, true, 110));
 		assertEquals("1:00", timer.getText());
-		assertTrue(timer.useReportedTicks(100 + FightTimer.REPORT_GAP_TICKS, true, 110));
+		assertTrue(timer.takeOverTicks(100 + FightTimer.REPORT_GAP_TICKS, true, 110));
 	}
 
 	@Test

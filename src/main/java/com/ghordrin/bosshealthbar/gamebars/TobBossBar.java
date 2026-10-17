@@ -173,8 +173,9 @@ public class TobBossBar
 
 	// The Theatre's bar is replaced for as long as it is up for the room's boss, and not only while that boss
 	// is the opponent: it is up from the moment the room starts, before the boss is near enough to be found,
-	// and stays up for a moment after the boss dies, when there is no NPC left to match it to.
-	public void update(boolean replaceEnabled, boolean bossGetsBar)
+	// and stays up for a moment after the boss dies, when there is no NPC left to match it to. found is the
+	// boss findBoss() gave this frame, and bossGetsBar the answer the settings give for it.
+	public void update(boolean replaceEnabled, NPC found, boolean bossGetsBar)
 	{
 		final Widget bar = raidBar.widget();
 		if (bar == null)
@@ -183,7 +184,6 @@ public class TobBossBar
 			return;
 		}
 
-		final NPC found = findBoss();
 		if (found != null)
 		{
 			missingSince = NOT_MISSING;
