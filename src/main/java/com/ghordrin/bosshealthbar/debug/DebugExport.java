@@ -170,7 +170,8 @@ public class DebugExport
 		lines.add("  Game boss bar: " + (trackedId == -1 ? "none"
 			: "NPC id " + trackedId + ", health " + gameBossBar.health() + "/" + gameBossBar.maxHealth())
 			+ ", hidden " + gameBossBar.isHidden());
-		lines.add("  Raid boss bar: " + DebugLog.describe(tobBossBar.cachedBoss()) + ", hidden " + tobBossBar.isHidden());
+		lines.add("  Raid boss bar: " + DebugLog.describe(tobBossBar.cachedBoss()) + ", hidden " + tobBossBar.isHidden()
+			+ ", party status " + tobBossBar.partyStatus());
 		lines.add("  Pillar bars: present " + pillarBars.isSeen() + ", hidden " + pillarBars.isHidingGameBars()
 			+ ", shown " + pillarBars.isShown());
 		final String fightTime = fightTimer.getText();

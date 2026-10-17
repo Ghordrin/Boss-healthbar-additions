@@ -18,6 +18,8 @@ public class TobBossBar
 	// Values of TOB_CLIENT_WAVEPROGRESS_TYPE. Other values show room progress instead of health.
 	private static final int PROGRESS_NONE = 0;
 	private static final int PROGRESS_BOSS_HEALTH = 1;
+	// TOB_CLIENT_PARTYSTATUS: 1 is a party outside, 2 is inside the raid and 3 is spectating it dead.
+	private static final int PARTY_INSIDE = 2;
 	private static final int SEARCH_DISTANCE = 32;
 
 	private final Client client;
@@ -27,6 +29,8 @@ public class TobBossBar
 	private NPC boss;
 	private NPC loggedBoss;
 	private boolean searchNeeded = true;
+	private boolean loggedLeftOver;
+	private boolean roomBossShown = true;
 
 	@Inject
 	TobBossBar(Client client, DebugLog debugLog)
@@ -40,11 +44,11 @@ public class TobBossBar
 	// attackable NPC nearby. Cached until a stronger NPC spawns or the boss changes or despawns.
 	public NPC findBoss()
 	{
-		if (client.getVarbitValue(VarbitID.TOB_CLIENT_WAVEPROGRESS_TYPE) != PROGRESS_BOSS_HEALTH
-			|| client.getWidget(InterfaceID.TobHud.PROGRESS_CONTAINER) == null)
+		if (!barIsLive())
 		{
 			boss = null;
 			searchNeeded = true;
+			roomBossShown = true;
 			if (loggedBoss != null)
 			{
 				loggedBoss = null;
@@ -87,6 +91,25 @@ public class TobBossBar
 			debugLog.add("Raid boss bar belongs to {}", DebugLog.describe(boss));
 		}
 		return boss;
+	}
+
+	// Leaving the Theatre doesn't clear the progress varbits or unload its HUD, so on their own they keep
+	// reading the health the last raid ended on, hours later and anywhere, and hand it to the strongest NPC
+	// nearby. The party status is the game's own answer to whether you are in there, so it decides.
+	private boolean barIsLive()
+	{
+		final int status = partyStatus();
+		final boolean bossHealth = client.getVarbitValue(VarbitID.TOB_CLIENT_WAVEPROGRESS_TYPE) == PROGRESS_BOSS_HEALTH;
+		final boolean leftOver = bossHealth && status < PARTY_INSIDE;
+		if (leftOver != loggedLeftOver)
+		{
+			loggedLeftOver = leftOver;
+			if (leftOver)
+			{
+				debugLog.add("Raid boss bar values left over from a raid, ignored (party status {})", status);
+			}
+		}
+		return bossHealth && status >= PARTY_INSIDE && raidBar.widget() != null;
 	}
 
 	// The last boss found, without searching again.
@@ -139,7 +162,10 @@ public class TobBossBar
 		return boss == null || npc.getCombatLevel() >= boss.getCombatLevel();
 	}
 
-	public void update(Actor opponent, boolean replaceEnabled, boolean opponentGetsBar)
+	// The Theatre's bar is replaced for as long as it is up for the room's boss, and not only while that boss
+	// is the opponent: it is up from the moment the room starts, before the boss is near enough to be found,
+	// and stays up for a moment after the boss dies, when there is no NPC left to match it to.
+	public void update(boolean replaceEnabled, boolean bossGetsBar)
 	{
 		final Widget bar = raidBar.widget();
 		if (bar == null)
@@ -148,7 +174,16 @@ public class TobBossBar
 			return;
 		}
 
-		if (replaceEnabled && isTracking(opponent) && opponentGetsBar)
+		if (findBoss() != null)
+		{
+			// Kept for the moments the room's boss can't be found, so a boss on the Never show for list keeps
+			// the game's bar for the whole room instead of only while it is in the scene.
+			roomBossShown = bossGetsBar;
+		}
+
+		// A player who died in the raid spectates the rest of it and never has an opponent, so our own bar
+		// can't replace anything for them and the game's bar is left alone.
+		if (replaceEnabled && barIsLive() && partyStatus() == PARTY_INSIDE && roomBossShown)
 		{
 			raidBar.hide(bar, "Raid boss bar hidden");
 		}
@@ -172,9 +207,17 @@ public class TobBossBar
 	public void reset()
 	{
 		raidBar.forget();
+		loggedLeftOver = false;
+		roomBossShown = true;
 		boss = null;
 		loggedBoss = null;
 		searchNeeded = true;
+	}
+
+	// Says whether the player is in the Theatre, which decides whether the progress varbits mean anything.
+	public int partyStatus()
+	{
+		return client.getVarbitValue(VarbitID.TOB_CLIENT_PARTYSTATUS);
 	}
 
 	public boolean isHidden()
