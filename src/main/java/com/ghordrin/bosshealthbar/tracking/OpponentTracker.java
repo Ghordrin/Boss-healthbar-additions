@@ -16,6 +16,7 @@ import net.runelite.api.Client;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.HitsplatID;
 import net.runelite.api.NPC;
+import net.runelite.api.NPCComposition;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.WorldView;
@@ -119,6 +120,8 @@ public class OpponentTracker
 	private NpcFilter neverShowFor = NpcFilter.EMPTY;
 	private final NpcFilter.LastMatch opponentListMatch = new NpcFilter.LastMatch();
 	private final NpcFilter.LastMatch gameBarListMatch = new NpcFilter.LastMatch();
+	private int gameBarNpcId = -1;
+	private boolean gameBarNpcShown;
 
 	@Inject
 	OpponentTracker(Client client, BossHealthBarConfig config, GameBossBar gameBossBar, TobBossBar tobBossBar,
@@ -504,6 +507,7 @@ public class OpponentTracker
 		knownBossName = null;
 		opponentListMatch.clear();
 		gameBarListMatch.clear();
+		gameBarNpcId = -1;
 		fightTimer.reset();
 		group.clear();
 		memory.clear();
@@ -646,6 +650,7 @@ public class OpponentTracker
 		neverShowFor = NpcFilter.parse(config.neverShowFor());
 		opponentListMatch.clear();
 		gameBarListMatch.clear();
+		gameBarNpcId = -1;
 	}
 
 	private void setOpponent(Actor target)
@@ -734,6 +739,31 @@ public class OpponentTracker
 	}
 
 	// Kept apart from the opponent's cached answer, so checking both each frame doesn't redo the match.
+	// A game bar can be up for a boss whose NPC isn't in the scene yet, right after a kill for instance, so
+	// this answers by the tracked ID alone. The bar counts anything a game bar tracks as a boss, which leaves
+	// Never show for as the only setting that can keep it off.
+	public boolean gameBarNpcGetsBar(int npcId)
+	{
+		if (npcId == -1)
+		{
+			return false;
+		}
+		if (neverShowFor.isEmpty())
+		{
+			return true;
+		}
+		// Asked every frame, so the answer is kept for the last ID.
+		if (npcId != gameBarNpcId)
+		{
+			gameBarNpcId = npcId;
+			final NPCComposition composition = client.getNpcDefinition(npcId);
+			final String name = composition != null ? composition.getName() : null;
+			gameBarNpcShown = name == null
+				|| NpcFilter.check(neverShowFor, NpcFilter.EMPTY, name, npcId) != NpcFilter.Match.NEVER;
+		}
+		return gameBarNpcShown;
+	}
+
 	private boolean isNeverShown(NPC npc)
 	{
 		return npc.getName() != null && listMatch(gameBarListMatch, npc) == NpcFilter.Match.NEVER;

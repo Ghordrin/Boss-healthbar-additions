@@ -92,4 +92,13 @@ public class NpcFilterTest
 		assertEquals(NpcFilter.Match.NEVER,
 			NpcFilter.check(NpcFilter.parse("500"), NpcFilter.parse("Goblin"), "goblin", 1, 500));
 	}
+
+	@Test
+	public void anIdOnItsOwnTakesTheNameAsTheGameSpellsIt()
+	{
+		final NpcFilter never = NpcFilter.parse("Duke Sucellus, 500");
+		assertEquals(NpcFilter.Match.NEVER, NpcFilter.check(never, NpcFilter.EMPTY, "Duke Sucellus", 12167));
+		assertEquals(NpcFilter.Match.NEVER, NpcFilter.check(never, NpcFilter.EMPTY, "Hill Giant", 500));
+		assertEquals(NpcFilter.Match.NONE, NpcFilter.check(never, NpcFilter.EMPTY, "Hill Giant", 1));
+	}
 }
