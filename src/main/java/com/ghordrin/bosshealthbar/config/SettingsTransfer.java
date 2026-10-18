@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -314,6 +315,21 @@ public class SettingsTransfer
 		return declared;
 	}
 
+	// The saved keys to clear outright: the ones the file doesn't name and this version no longer declares,
+	// such as a setting a later version dropped. Everything still declared is covered by the defaults.
+	static List<String> keysToUnset(Collection<String> saved, Set<String> declared, Set<String> named)
+	{
+		final List<String> unset = new ArrayList<>();
+		for (String key : saved)
+		{
+			if (!named.contains(key) && !declared.contains(key))
+			{
+				unset.add(key);
+			}
+		}
+		return unset;
+	}
+
 	// The same readings the client makes of a saved value, asked beforehand rather than when the bar is drawn.
 	private boolean holds(Class<?> type, String value)
 	{
@@ -387,13 +403,14 @@ public class SettingsTransfer
 			try
 			{
 				// A setting the file doesn't name goes back to its default, so what is loaded is what was
-				// saved, and not what was saved on top of whatever was here before.
-				for (String key : keys())
+				// saved, and not what was saved on top of whatever was here before. The defaults are
+				// written rather than the keys unset: a setting with nothing saved for it reads as null,
+				// and the client's own editor for a font type doesn't expect that, so the font settings
+				// couldn't be opened at all after an import that left them out.
+				configManager.setDefaultConfiguration(config, true);
+				for (String key : keysToUnset(keys(), declared().keySet(), settings.keySet()))
 				{
-					if (!settings.containsKey(key))
-					{
-						configManager.unsetConfiguration(BossHealthBarConfig.GROUP, key);
-					}
+					configManager.unsetConfiguration(BossHealthBarConfig.GROUP, key);
 				}
 				for (Map.Entry<String, String> setting : settings.entrySet())
 				{

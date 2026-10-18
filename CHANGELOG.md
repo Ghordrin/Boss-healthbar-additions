@@ -42,6 +42,7 @@
 - The prompt offering to switch the theme to Custom is offered again after the theme changes, instead of staying away for the rest of the session
 - The Custom theme's Background color reaches under Subtle bar ends, which showed black at both ends of the bar
 - The Zaros theme shows the Zarosian icon instead of a prayer icon, and the Seren theme has an icon of its own
+- Importing a file that leaves a setting out now puts that setting back to its default instead of clearing it. Clearing it left nothing saved for it, which the settings screen can't always show: after importing a file with no fonts in it, the font settings wouldn't open until the plugin was restarted
 - The name on the second bar uses the Name font instead of the Hitpoints font
 
 ## 1.7.0 (2026-10-11)
