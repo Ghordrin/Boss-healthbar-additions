@@ -4,46 +4,45 @@
 
 ### New
 
-- New side panel, opened from its icon in the sidebar or by right-clicking the bar and picking Open panel. It holds the look of the bar, the text, the boss info, the animations, the layout, the Custom colors and the Backup buttons, and follows a setting changed anywhere else straight away. The settings screen used to keep showing the old value when the plugin wrote one itself, such as a theme filling in the Custom colors or the Oldschool tick turning off the gold bars, until it was closed and opened again. A Settings button at the top of the panel opens the rest of the settings
-- Export settings, Import from file, Paste settings, Choose custom icon, Choose fill texture and Save debug log are buttons in the panel, instead of checkboxes that untick themselves. Paste settings is new: it reads a setup straight off your clipboard, without saving it to a file first
-- Import and Export buttons sit at the top of the panel, so a setup can be loaded or saved whatever is open below
-- Importing now says how many settings it is about to load before it loads them, and takes only the settings this plugin has, ignoring anything else in the file and any value a setting can't hold
-- The Sprites tab fills in as the sprites are read instead of waiting until it has read all of them, and reads them several times faster
-- The panel has a Discord button beside the settings button at the top
-- New Sidebar icon option (on by default). Turn it off to give the sidebar its space back; the panel can still be opened from the bar's right-click menu
-- The look of the bar, the text, the boss info, the animations, the layout and the Custom colors have moved to the panel and are no longer on the settings screen, which keeps what the panel doesn't hold: the fonts and when to show a bar. Your saved settings carry over, and only Look is open when the panel is first shown; the other sections start folded
-- Two new Hitpoints text options: Hitpoints left shows the hitpoints on their own, without the maximum, and Hitpoints left and % adds the percentage after it. Both is now named Hitpoints and %
-- New Phase colors option (Look, on by default). Some bosses turn the game's own health bar another color while they shield themselves or change phase, and the bar now follows that color instead of losing it behind our own. A Phase color picker under it shows those phases in a color of your choice instead, left transparent to use the game's
-- Right-click the bar and pick Support Discord to open the plugin's Discord in your browser, for help, bug reports and sharing setups
-- Picking a theme now fills the Custom colors section with that theme's colors, so it can be used as a starting point. Changing one of those colors while a theme is picked asks whether to switch the theme to Custom, since that is the only theme that uses them
-- New delve level after the boss's name, the way the game's own boss bar shows it. On a narrow bar the name shortens to make room for it
-- New Backup section with Export settings and Import settings. Export writes every setting to a file in the plugin's folder and copies the same text to your clipboard, so a setup can be kept or passed on. Import picks one of those files and uses it, putting anything the file doesn't name back to its default
-- Choose custom icon now opens a window instead of the chatbox search. Items are still searched by name, and a Sprites tab adds the game's own sprites, such as clan ranks, skill and prayer icons, so the Custom theme is no longer limited to items. Whichever you pick replaces the other, and None clears it
-- New Fortify option (Animations, off by default). When a boss goes into a phase the game paints its bar another color for, the bar now marks the moment instead of only changing hue: a flash, a sweep of light across it, the frame in the phase's color and a shield at each bar end that has no crest. It needs Phase colors on, and the Oldschool theme is left as it is
-- New Background color in Custom colors: the color behind the fill, where the health is missing. Left transparent it keeps the dark background the themes use, so a green fill on a red background is now possible without the Oldschool theme
+- A side panel in the sidebar holds nearly every setting, and follows a setting changed anywhere else straight away
+- Import and Export at the top of the panel: Export writes every setting to a file and your clipboard, Import loads one back
+- Paste settings reads a setup straight off your clipboard, without a file
+- Choose custom icon opens a window with the game's items and its own sprites, instead of the chatbox search
+- Phase colors (on): the bar follows the color the game gives its own bar while a boss shields itself or changes phase. A Phase color picker uses a color of your choice instead
+- Fortify (off): a flash, a sweep of light, a colored frame and a shield at each bar end when a boss enters such a phase. Needs Phase colors on
+- The delve level after the boss's name, the way the game's own bar shows it. A narrow bar shortens the name to make room
+- Background color in Custom colors: the color behind the fill, where the health is missing
+- Two Hitpoints text options that leave the maximum out: Hitpoints left, and Hitpoints left and %
+- Sidebar icon (on): turn it off to give the sidebar its space back, and open the panel from the bar's right-click menu
+- Support Discord on the bar's right-click menu, for help, bug reports and sharing setups
+- Picking a theme fills the Custom colors with that theme's colors, to start from
 
 ### Changed
 
-- The fight timer now ends on the time the game reports for the kill. The timer used to keep counting until the boss was gone, which left it a few seconds over the time the game prints in the chat, up to six on a boss that never leaves, such as Duke Sucellus. When the game reports a time, the timer stops there and shows that time, so the bar and the chat agree. Bosses that report nothing are unchanged
-- The fight timer follows the game's precise timing setting. With it on, the time is shown to hundredths, the way the game shows its own durations, and with it off it stays at whole seconds
-- The bar starts at the top centre of the screen, where the game puts its own boss bar, instead of above the chatbox. A bar you have already moved stays where you put it
-- The bar is drawn over the game's interfaces instead of under them, so an interface opened where the bar sits no longer hides it
-- With Match boss colors on, the second boss bar now takes the colors of its own boss instead of the first one's, so two bosses at once no longer share one color
-- The pillar bars now use the same fill blend and shading as the main bar: the fill moves from the full health color to the low health color as the charge drops, and the outline takes the frame's gradient. They keep a single line for a frame and no end pieces, which at their height would leave no room for the bar
-- The pillar bars box can be resized: alt-drag its edge to make the bars as wide as you like, the way the main bar is resized. Their height follows Bar height, and resetting the overlay puts the width back
-- Show icons is now an Icon placement dropdown: Crests, Crest left, Crest right, Before the name, or No icon. A single crest leaves the other end with its Bar ends ornament, and the bar only gives up room on the side that has one. The icon before the name used to be the result of turning Show icons off while Use boss icon stayed on, which was hard to find. Your setting carries over, and Use boss icon now only picks which icon is used, so the theme's icon can go before the name too
+- The look, the text, the boss info, the animations, the layout and the custom colors are in the panel and no longer on the settings screen, which keeps the fonts and when to show a bar. Your saved settings carry over
+- The bar starts at the top centre of the screen, where the game puts its own boss bar. A bar you have already moved stays where you put it
+- The bar is drawn over the game's interfaces instead of under them, so an interface no longer hides it
+- The fight timer ends on the time the game reports for the kill, instead of running on until the boss is gone
+- The fight timer follows the game's precise timing setting, to hundredths with it on and whole seconds with it off
+- Show icons is now an Icon placement dropdown: Crests, Crest left, Crest right, Before the name, or No icon. Your setting carries over, and Use boss icon only picks which icon is used
+- With Match boss colors on, the second bar takes its own boss's colors instead of the first one's
+- The pillar bars use the main bar's fill blend and shading, and their box resizes by alt-dragging its edge
+- Export, Import, Paste settings, the two pickers and Save debug log are buttons in the panel, instead of checkboxes that untick themselves
+- Import says how many settings it is about to load, takes only the settings this plugin has, and ignores any value a setting can't hold
+- The Sprites tab fills in as the sprites are read, several times faster than before
 
 ### Fixed
 
-- The Theatre of Blood's own health bar no longer shows up next to this one. It used to appear when you walk into a room, until you reach the boss, and again for a moment after the boss dies. It now stays replaced for the whole room, and comes back on its own if the room's boss is out of reach for more than a few seconds, such as in Sotetseg's maze, where this bar has nothing to follow
-- The Theatre of Blood's health bar is no longer read outside the Theatre. The game keeps its last values after you leave, so they could be handed to any NPC near you, which gave a random opponent a bar with a raid's health on it and put a wrong first reading on every boss in the Tombs of Amascut
-- The game's own boss health bar no longer flashes back up between kills in an instance, where it returns to the boss's idle form a few seconds before the boss itself does. It now stays replaced for as long as the game keeps it up for that boss, and our bar takes over again as soon as the boss is back
-- The bar no longer disappears during a phase where the boss cannot be attacked and leaves the area. It stays for as long as the game's own boss bar keeps showing that boss, and keeps reading the health and the phase color from it
-- A mechanic you have to hit while the boss is away no longer takes the bar over, so the bar no longer plays its defeat animation as if the boss died when that mechanic is destroyed. It goes on the second bar instead
-- The Zaros theme shows the Zarosian icon instead of a prayer icon, and the Seren theme now has an icon of its own
-- The prompt that offers to switch the theme to Custom is offered again after the theme is changed, instead of staying away for the rest of the session once it was declined
-- The Custom theme's Background color now reaches under Subtle bar ends, which kept their own dark fill and showed black at both ends of the bar
-- The name on the second boss bar uses the Name font instead of the Hitpoints font, so both bars read the same
+- The Theatre of Blood's own health bar no longer shows next to this one: not on the walk in, and not for the moment after the boss dies
+- The Theatre's health bar is no longer read outside the Theatre, where its leftover values could land on a random opponent or give a Tombs of Amascut boss a wrong first reading
+- The game's own boss health bar no longer flashes back up between kills in an instance
+- The bar no longer disappears during a phase where the boss can't be attacked and leaves the area
+- A mechanic you have to hit while the boss is away no longer takes the bar over, or plays the defeat animation when it is destroyed. It goes on the second bar
+- The settings screen no longer shows the old value when the plugin writes a setting itself, such as a theme filling in the Custom colors
+- The prompt offering to switch the theme to Custom is offered again after the theme changes, instead of staying away for the rest of the session
+- The Custom theme's Background color reaches under Subtle bar ends, which showed black at both ends of the bar
+- The Zaros theme shows the Zarosian icon instead of a prayer icon, and the Seren theme has an icon of its own
+- The name on the second bar uses the Name font instead of the Hitpoints font
 
 ## 1.7.0 (2026-10-11)
 

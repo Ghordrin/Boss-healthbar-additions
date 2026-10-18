@@ -43,7 +43,9 @@ The bar stays on the boss while you hit its minions, follows the game's boss bar
 
 ## Settings
 
-The settings live in two places. The plugin's own panel, opened from its sidebar icon or by right-clicking the bar and picking Open panel, holds the look of the bar, the text, the boss info, the animations, the layout, the custom colours and the backup buttons. The fonts and when to show a bar are in the RuneLite config panel, which the settings button at the top of the panel opens, or right-click the bar and pick Configure. Preview, at the top of the panel, shows a sample opponent so you can try settings without a fight. Hold Alt to move the bar or drag its edge to resize it; the pillar bars box resizes the same way.
+The settings live in two places. The plugin's own panel holds the look of the bar, the text, the boss info, the animations, the layout and the custom colours. Open it from its sidebar icon, or right-click the bar and pick Open panel. The fonts and when to show a bar are on the RuneLite settings screen, which the settings button at the top of the panel opens; right-clicking the bar and picking Configure gets there too.
+
+Turn on Preview, at the top of the panel, to try settings on a sample opponent without a fight. Hold Alt to move the bar or drag its edge to resize it. The pillar bars box resizes the same way.
 
 In the panel:
 
@@ -55,9 +57,7 @@ In the panel:
 | Animations | Damage trail, heal speed, low health effect, flash on big hits, intro, defeat animation, burn away, fortify |
 | Layout | Where each item goes: left, centre or right, above the bar, inside it, or on one of the two rows below it. Text inside the bar suits a taller bar |
 | Custom colors | The colours of the Custom theme and its icon |
-| Backup | Paste settings, and Save debug log |
-
-Import and Export sit at the top of the panel, so a setup can be saved to a file and your clipboard, or loaded back, whatever is open below.
+| Backup | Paste settings and Save debug log |
 
 On the settings screen:
 
@@ -68,6 +68,18 @@ On the settings screen:
 | Sidebar icon | Turn it off to give the sidebar its space back; the panel still opens from the bar's right-click menu |
 
 The tooltip on each setting explains it in more detail.
+
+## Import and Export
+
+Import and Export sit at the top of the panel, where they can be reached whatever is open below.
+
+**Export** writes a plain JSON file to `.runelite/plugin-data/boss-health-bar-additions/` and copies the same text to your clipboard, so a setup can be kept or passed to someone else. It holds every setting of this plugin you have changed, under the name that setting is saved as. A setting still at its default isn't in the file, because there is nothing saved for it.
+
+Three things never travel, in either direction: the buttons that do something the moment you press them (the two pickers, Save debug log, and Import and Export themselves), Preview, and the plugin's own notes on which one-off changes it has already made to your settings. A button would fire on import, and someone else's notes would make your copy skip or redo a change.
+
+**Import** reads a file; **Paste settings** reads the same text off your clipboard. Either way it first says how many settings it is about to load, and loads nothing until you say yes. It takes only the settings this plugin has, and only values a setting can actually hold, so anything else in the file — another plugin's settings, a setting this version no longer has, a colour that isn't one — is counted as ignored and left out.
+
+Loading is all or nothing: every setting this plugin has that the file doesn't name goes back to its default. What you get is the setup that was saved, not that setup on top of yours, so export your own first if you want it back.
 
 ## Reporting a bug
 
