@@ -13,6 +13,7 @@
 - The delve level after the boss's name, the way the game's own bar shows it. A narrow bar shortens the name to make room
 - Background color in Custom colors: the color behind the fill, where the health is missing
 - Two Hitpoints text options that leave the maximum out: Hitpoints left, and Hitpoints left and %
+- An Open panel button on the settings screen, where the settings that moved to the panel used to be
 - Sidebar icon (on): turn it off to give the sidebar its space back, and open the panel from the bar's right-click menu
 - Support Discord on the bar's right-click menu, for help, bug reports and sharing setups
 - Picking a theme fills the Custom colors with that theme's colors, to start from

@@ -4,6 +4,7 @@ import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.config.ConfigMigrations;
 import com.ghordrin.bosshealthbar.config.ConfigWrites;
 import com.ghordrin.bosshealthbar.config.OldschoolToggle;
+import com.ghordrin.bosshealthbar.config.PanelMoveNotice;
 import com.ghordrin.bosshealthbar.config.Pickers;
 import com.ghordrin.bosshealthbar.config.SettingsTransfer;
 import com.ghordrin.bosshealthbar.data.Health;
@@ -139,6 +140,9 @@ public class BossHealthBarPlugin extends Plugin
 
 	@Inject
 	private SettingsTransfer settingsTransfer;
+
+	@Inject
+	private PanelMoveNotice panelMoveNotice;
 
 	@Inject
 	private HealthIndicatorMarkers healthIndicatorMarkers;
@@ -290,6 +294,7 @@ public class BossHealthBarPlugin extends Plugin
 		if (state == GameState.LOGGED_IN)
 		{
 			checkLeftArea(true);
+			panelMoveNotice.onLoggedIn();
 		}
 		if (state == GameState.LOGIN_SCREEN || state == GameState.HOPPING)
 		{
@@ -350,6 +355,18 @@ public class BossHealthBarPlugin extends Plugin
 		if (BossHealthBarConfig.SHOW_SIDEBAR_ICON_KEY.equals(event.getKey()))
 		{
 			showSidebarIcon(config.showSidebarIcon());
+			return;
+		}
+
+		// A button rather than a setting: ticking it opens the panel and the tick is undone straight away.
+		// Only a change to true counts, so an import writing its default doesn't open anything.
+		if (BossHealthBarConfig.OPEN_PANEL_KEY.equals(event.getKey()))
+		{
+			if ("true".equals(event.getNewValue()))
+			{
+				ConfigWrites.write(configManager, BossHealthBarConfig.OPEN_PANEL_KEY, false);
+				openPanel();
+			}
 			return;
 		}
 

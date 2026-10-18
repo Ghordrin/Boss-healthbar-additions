@@ -63,6 +63,7 @@ On the settings screen:
 
 | Section | What's in it |
 |---|---|
+| The rest of the settings | An Open panel button: the look, the text, the boss info, the animations, the layout and the custom colours are in the panel |
 | Fonts | Font and size of each text around the bar, Smooth text, and the text edge (shadow, outline or nothing) |
 | When to show | Which opponents get a bar, Also show for / Never show for, Hide after, what happens to the game's boss bar (replace it, show both, or hide this one), and the other plugins above |
 | Sidebar icon | Turn it off to give the sidebar its space back; the panel still opens from the bar's right-click menu |
@@ -75,7 +76,7 @@ Import and Export sit at the top of the panel, where they can be reached whateve
 
 **Export** writes a plain JSON file to `.runelite/plugin-data/boss-health-bar-additions/` and copies the same text to your clipboard, so a setup can be kept or passed to someone else. It holds every setting of this plugin you have changed, under the name that setting is saved as. A setting still at its default isn't in the file, because there is nothing saved for it.
 
-Three things never travel, in either direction: the buttons that do something the moment you press them (the two pickers, Save debug log, and Import and Export themselves), Preview, and the plugin's own notes on which one-off changes it has already made to your settings. A button would fire on import, and someone else's notes would make your copy skip or redo a change.
+Three things never travel, in either direction: the buttons that do something the moment you press them (the two pickers, Save debug log, Open panel, and Import and Export themselves), Preview, and the plugin's own notes on which one-off changes it has already made to your settings. A button would fire on import, and someone else's notes would make your copy skip or redo a change.
 
 **Import** reads a file; **Paste settings** reads the same text off your clipboard. Either way it first says how many settings it is about to load, and loads nothing until you say yes. It takes only the settings this plugin has, and only values a setting can actually hold, so anything else in the file — another plugin's settings, a setting this version no longer has, a colour that isn't one — is counted as ignored and left out.
 

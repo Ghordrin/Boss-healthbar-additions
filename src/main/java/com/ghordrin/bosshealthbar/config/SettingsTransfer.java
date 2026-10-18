@@ -61,6 +61,8 @@ public class SettingsTransfer
 		BossHealthBarConfig.EXPORT_SETTINGS_KEY,
 		BossHealthBarConfig.IMPORT_SETTINGS_KEY,
 		BossHealthBarConfig.SHOW_PREVIEW_KEY,
+		BossHealthBarConfig.OPEN_PANEL_KEY,
+		PanelMoveNotice.TOLD_KEY,
 		ConfigMigrations.FONT_DEFAULT_MIGRATED_KEY,
 		ConfigMigrations.PIXEL_FONT_SIZE_MIGRATED_KEY,
 		ConfigMigrations.ITEM_FONTS_MIGRATED_KEY,

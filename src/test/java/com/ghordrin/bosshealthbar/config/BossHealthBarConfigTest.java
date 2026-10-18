@@ -53,6 +53,14 @@ public class BossHealthBarConfigTest
 		assertEquals("fightTimerPosition", BossHealthBarConfig.FIGHT_TIMER_POSITION_KEY);
 	}
 
+	// The signpost on the settings screen is a button, so it must start, and stay, unticked.
+	@Test
+	public void openPanelIsAnUntickedButton()
+	{
+		assertEquals("openPanel", BossHealthBarConfig.OPEN_PANEL_KEY);
+		assertFalse(defaults.openPanel());
+	}
+
 	@Test
 	public void textDefaultsAreUnchanged()
 	{

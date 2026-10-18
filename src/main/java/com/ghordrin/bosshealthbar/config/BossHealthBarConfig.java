@@ -56,6 +56,7 @@ public interface BossHealthBarConfig extends Config
 	String BAR_HEIGHT_KEY = "barHeight";
 	String FIT_TO_GAME_VIEW_KEY = "fitToGameView";
 	String SHOW_SIDEBAR_ICON_KEY = "showSidebarIcon";
+	String OPEN_PANEL_KEY = "openPanel";
 	String FONT_KEY = "font";
 	FontType DEFAULT_FONT = FontType.REGULAR;
 	String NATIVE_BOSS_BAR_MODE_KEY = "nativeBossBarMode";
@@ -107,6 +108,13 @@ public interface BossHealthBarConfig extends Config
 	String FIGHT_TIMER_POSITION_KEY = "fightTimerPosition";
 
 	@ConfigSection(
+		name = "The rest of the settings",
+		description = "The look, the text, the boss info, the animations and the layout are in the plugin's own panel.",
+		position = 1
+	)
+	String panelSection = "panel";
+
+	@ConfigSection(
 		name = "Fonts",
 		description = "The font and size of each text around the bar.",
 		position = 2,
@@ -121,6 +129,19 @@ public interface BossHealthBarConfig extends Config
 		closedByDefault = true
 	)
 	String whenToShowSection = "whenToShow";
+
+	@ConfigItem(
+		keyName = OPEN_PANEL_KEY,
+		name = "Open panel",
+		description = "Open the plugin's panel, which holds the look, the text, the boss info, the animations,"
+			+ " the layout and the custom colors. It unticks itself again.",
+		section = panelSection,
+		position = 0
+	)
+	default boolean openPanel()
+	{
+		return false;
+	}
 
 	@ConfigItem(
 		keyName = SHOW_SIDEBAR_ICON_KEY,
