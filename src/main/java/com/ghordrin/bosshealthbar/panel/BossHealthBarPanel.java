@@ -259,31 +259,43 @@ public class BossHealthBarPanel extends PluginPanel
 
 	private void lookRows(JPanel body)
 	{
-		combo(body, "Theme", "The colors of the bar. Custom uses the colors below.",
+		combo(body, "Theme", "The colors of the bar. Custom starts from the theme you had and uses the Custom"
+			+ " colors section. Not used with Use Oldschool theme on.",
 			BossHealthBarConfig.THEME_KEY, HealthBarTheme.class, config::theme);
-		checkbox(body, "Oldschool theme", "A plain green bar over red, like the game's own.",
+		checkbox(body, "Oldschool theme", "A plain green bar over red, like the game's own. Turns off Rare gold"
+			+ " bars until you untick it. The Custom colors aren't used either. With Match boss colors on, the"
+			+ " bar takes the boss's color instead of green.",
 			BossHealthBarConfig.OLDSCHOOL_THEME_KEY, config::oldschoolTheme);
-		checkbox(body, "Match boss colors", "Color the bar to suit the boss you're fighting.",
+		checkbox(body, "Match boss colors", "Color the bar to suit the boss you're fighting, on any theme.",
 			BossHealthBarConfig.MATCH_BOSS_COLORS_KEY, config::matchBossColors);
-		checkbox(body, "Phase colors", "Follow the color the game gives a boss phase.",
+		checkbox(body, "Phase colors", "Some bosses turn the game's own health bar another color while they shield"
+			+ " themselves or change phase. Follow that color instead of losing it. It takes over from Match boss"
+			+ " colors while the phase lasts.",
 			BossHealthBarConfig.PHASE_COLORS_KEY, config::phaseColors);
 		color(body, "Phase color", "Show a phase in this color instead of the game's. Transparent uses the game's.",
 			BossHealthBarConfig.PHASE_COLOR_KEY, config::phaseColor);
-		checkbox(body, "Rare gold bars", "About 1 in 250 bars turns gold, only for looks.",
+		checkbox(body, "Rare gold bars", "About 1 in 250 bars turns gold, only for looks. Ticking this turns off"
+			+ " Use Oldschool theme.",
 			BossHealthBarConfig.RARE_GOLD_BARS_KEY, config::rareGoldBars);
-		checkbox(body, "Show phase markers", "Show the same phase markers as the game's own boss bar.",
+		checkbox(body, "Show phase markers", "Show the same phase markers as the game's own boss health bar, when"
+			+ " it has them.",
 			BossHealthBarConfig.SHOW_PHASE_MARKERS_KEY, config::showPhaseMarkers);
-		combo(body, "Icon placement", "Where the icon goes.",
+		combo(body, "Icon placement", "Where the icon goes. Crests puts one at each end of the bar, Crest left and"
+			+ " Crest right only on that end, and Before the name puts a small one there. With Use Oldschool theme"
+			+ " on it always goes before the name.",
 			BossHealthBarConfig.ICON_PLACEMENT_KEY, BarIconPlacement.class, config::iconPlacement);
 		checkbox(body, "Use boss icon", "Use the boss's icon instead of the theme's.",
 			BossHealthBarConfig.USE_BOSS_ICON_KEY, config::useBossIcon);
-		combo(body, "Bar ends", "The ornament at each end of the bar.",
+		combo(body, "Bar ends", "The ornament at each end of the bar. A crest covers the end it sits on, so an end"
+			+ " only shows this when Icon placement leaves it free. Not used with Use Oldschool theme on.",
 			BossHealthBarConfig.BAR_ENDS_KEY, BarEnds.class, config::barEnds);
-		spinner(body, "Bar width", "The width of the bar, in pixels.",
+		spinner(body, "Bar width", "The width of the bar, in pixels. Alt-dragging its edge overrides this until"
+			+ " you reset the overlay.",
 			BossHealthBarConfig.BAR_WIDTH_KEY, 200, 1400, config::barWidth);
-		spinner(body, "Bar height", "The height of the bar itself, in pixels.",
+		spinner(body, "Bar height", "The height of the bar itself in pixels, without the text around it.",
 			BossHealthBarConfig.BAR_HEIGHT_KEY, 4, 24, config::barHeight);
-		checkbox(body, "Fit to game view", "Make the bar narrower when the game view is small.",
+		checkbox(body, "Fit to game view", "Make the bar narrower when the game view is small. The height and text"
+			+ " keep their size.",
 			BossHealthBarConfig.FIT_TO_GAME_VIEW_KEY, config::fitToGameView);
 		button(body, "Choose fill texture", "Pick one of the game's textures to lay over the fill.",
 			pickers::openFillTexturePicker);
@@ -295,8 +307,9 @@ public class BossHealthBarPanel extends PluginPanel
 			BossHealthBarConfig.SHOW_BOSS_NAME_KEY, config::showBossName);
 		checkbox(body, "Show combat level", "Show the opponent's combat level next to its name.",
 			BossHealthBarConfig.SHOW_COMBAT_LEVEL_KEY, config::showCombatLevel);
-		combo(body, "Hitpoints text", "A percentage, the hitpoints out of the maximum, the hitpoints left on their"
-			+ " own, either of those with the percentage after it, or nothing.",
+		combo(body, "Hitpoints text", "What to show: a percentage, the hitpoints out of the maximum, the hitpoints"
+			+ " left on their own, either of those with the percentage after it, or nothing. Shows a percentage"
+			+ " when the max hitpoints aren't known.",
 			BossHealthBarConfig.HITPOINTS_TEXT_MODE_KEY, HitpointsTextMode.class, config::hitpointsTextMode);
 		checkbox(body, "Show damage number", "Show the damage of the latest attack. Hits that land together are"
 			+ " added up.", BossHealthBarConfig.SHOW_DAMAGE_NUMBER_KEY, config::showDamageNumber);
@@ -311,16 +324,21 @@ public class BossHealthBarPanel extends PluginPanel
 			+ " have seen a kill count message for it.",
 			BossHealthBarConfig.SHOW_KILL_COUNT_KEY, config::showKillCount);
 		checkbox(body, "Party defence", "Show the defence from the Party Defence Tracker or Better Party Defence"
-			+ " plugin's info box.", BossHealthBarConfig.SHOW_PARTY_DEFENCE_KEY, config::showPartyDefence);
+			+ " plugin's info box. Needs one of them installed and on.",
+			BossHealthBarConfig.SHOW_PARTY_DEFENCE_KEY, config::showPartyDefence);
 		checkbox(body, "Magic defence", "Show the magic defence from the Better Party Defence plugin's Magic"
-			+ " defence info box.", BossHealthBarConfig.SHOW_MAGIC_DEFENCE_KEY, config::showMagicDefence);
-		checkbox(body, "Special attack counts", "Show the counts from RuneLite's Special Attack Counter plugin.",
+			+ " defence info box. Needs that plugin with its Magic defence info box on.",
+			BossHealthBarConfig.SHOW_MAGIC_DEFENCE_KEY, config::showMagicDefence);
+		checkbox(body, "Special attack counts", "Show the counts from RuneLite's Special Attack Counter plugin."
+			+ " Needs that plugin on with its info boxes.",
 			BossHealthBarConfig.SHOW_SPECIAL_ATTACK_COUNTS_KEY, config::showSpecialAttackCounts);
 		checkbox(body, "Elemental weakness", "Show the boss's elemental weakness and extra damage, for example"
-			+ " +40%.", BossHealthBarConfig.SHOW_WEAKNESS_KEY, config::showWeakness);
+			+ " +40%. Values from the OSRS Wiki.", BossHealthBarConfig.SHOW_WEAKNESS_KEY, config::showWeakness);
 		checkbox(body, "Defence drain limit", "Show how far the boss's defence can be lowered in total, or"
-			+ " \"no drain\".", BossHealthBarConfig.SHOW_DRAIN_CAP_KEY, config::showDrainCap);
-		checkbox(body, "Fight timer", "Show how long the fight has lasted. It stops once the opponent is gone.",
+			+ " \"no drain\". Values from the OSRS Wiki.",
+			BossHealthBarConfig.SHOW_DRAIN_CAP_KEY, config::showDrainCap);
+		checkbox(body, "Fight timer", "Show how long the fight has lasted, from when you go for the opponent and"
+			+ " are near it. It stops once the opponent is gone.",
 			BossHealthBarConfig.SHOW_FIGHT_TIMER_KEY, config::showFightTimer);
 		checkbox(body, "Second boss bar", "A smaller bar for another boss you're fighting at the same time, with"
 			+ " its last known health while it's away.",
@@ -346,14 +364,15 @@ public class BossHealthBarPanel extends PluginPanel
 		checkbox(body, "Burn away", "Burn the bar away from right to left instead of fading it out. Only used with"
 			+ " Defeat animation on.", BossHealthBarConfig.BURN_AWAY_DEFEAT_KEY, config::burnAwayDefeat);
 		checkbox(body, "Fortify", "Mark the moment a boss goes into a phase: a flash and a sweep across the bar, a"
-			+ " shield at the ends and the frame in the phase's color. Needs Phase colors.",
+			+ " shield at the ends and the frame in the phase's color. Needs Phase colors, and does nothing with"
+			+ " the Oldschool theme.",
 			BossHealthBarConfig.FORTIFY_PHASE_KEY, config::fortifyPhase);
 	}
 
 	private void layoutRows(JPanel body)
 	{
-		combo(body, "Name", "Where the name goes, with its icon and combat level.",
-			BossHealthBarConfig.NAME_POSITION_KEY, BarPosition.class, config::namePosition);
+		combo(body, "Name", "Where the name goes, with its icon and combat level. It's shortened when it doesn't"
+			+ " fit.", BossHealthBarConfig.NAME_POSITION_KEY, BarPosition.class, config::namePosition);
 		combo(body, "Damage number", "Where the damage number goes.",
 			BossHealthBarConfig.DAMAGE_NUMBER_POSITION_KEY, BarPosition.class, config::damageNumberPosition);
 		combo(body, "Hitpoints", "Where the hitpoints text goes. \"Defeated\" shows centred on the same row.",
