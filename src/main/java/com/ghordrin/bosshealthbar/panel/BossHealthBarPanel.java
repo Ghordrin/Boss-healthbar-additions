@@ -5,9 +5,13 @@ import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.config.ConfigWrites;
 import com.ghordrin.bosshealthbar.config.Pickers;
 import com.ghordrin.bosshealthbar.config.SettingsTransfer;
+import com.ghordrin.bosshealthbar.data.DamageNumberSource;
 import com.ghordrin.bosshealthbar.debug.DebugExport;
 import com.ghordrin.bosshealthbar.render.BarEnds;
 import com.ghordrin.bosshealthbar.render.BarIconPlacement;
+import com.ghordrin.bosshealthbar.render.BarPosition;
+import com.ghordrin.bosshealthbar.render.HitpointsTextMode;
+import com.ghordrin.bosshealthbar.render.IntroAnimation;
 import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -135,7 +139,11 @@ public class BossHealthBarPanel extends PluginPanel
 			"Show the bar with a sample opponent while you aren't fighting anything, to try your settings.",
 			BossHealthBarConfig.SHOW_PREVIEW_KEY, config::showPreview);
 		settingsPanel.add(section("Look", true, this::lookRows));
-		settingsPanel.add(section("Custom colors", true, this::colorRows));
+		settingsPanel.add(section("Text", false, this::textRows));
+		settingsPanel.add(section("Boss info", false, this::bossInfoRows));
+		settingsPanel.add(section("Animations", false, this::animationRows));
+		settingsPanel.add(section("Layout", false, this::layoutRows));
+		settingsPanel.add(section("Custom colors", false, this::colorRows));
 		settingsPanel.add(section("Backup", false, this::backupRows));
 
 		final JPanel northPanel = new FixedWidthPanel();
@@ -279,6 +287,90 @@ public class BossHealthBarPanel extends PluginPanel
 			BossHealthBarConfig.FIT_TO_GAME_VIEW_KEY, config::fitToGameView);
 		button(body, "Choose fill texture", "Pick one of the game's textures to lay over the fill.",
 			pickers::openFillTexturePicker);
+	}
+
+	private void textRows(JPanel body)
+	{
+		checkbox(body, "Show name", "Show the opponent's name.",
+			BossHealthBarConfig.SHOW_BOSS_NAME_KEY, config::showBossName);
+		checkbox(body, "Show combat level", "Show the opponent's combat level next to its name.",
+			BossHealthBarConfig.SHOW_COMBAT_LEVEL_KEY, config::showCombatLevel);
+		combo(body, "Hitpoints text", "A percentage, the hitpoints out of the maximum, the hitpoints left on their"
+			+ " own, either of those with the percentage after it, or nothing.",
+			BossHealthBarConfig.HITPOINTS_TEXT_MODE_KEY, HitpointsTextMode.class, config::hitpointsTextMode);
+		checkbox(body, "Show damage number", "Show the damage of the latest attack. Hits that land together are"
+			+ " added up.", BossHealthBarConfig.SHOW_DAMAGE_NUMBER_KEY, config::showDamageNumber);
+		combo(body, "Damage number counts", "Me shows your latest attack. Party adds up your party's hits while"
+			+ " they keep coming, for members who also use this plugin.",
+			BossHealthBarConfig.DAMAGE_NUMBER_SOURCE_KEY, DamageNumberSource.class, config::damageNumberSource);
+	}
+
+	private void bossInfoRows(JPanel body)
+	{
+		checkbox(body, "Kill count", "Show your kill count for the boss. Needs RuneLite's Chat Commands plugin to"
+			+ " have seen a kill count message for it.",
+			BossHealthBarConfig.SHOW_KILL_COUNT_KEY, config::showKillCount);
+		checkbox(body, "Party defence", "Show the defence from the Party Defence Tracker or Better Party Defence"
+			+ " plugin's info box.", BossHealthBarConfig.SHOW_PARTY_DEFENCE_KEY, config::showPartyDefence);
+		checkbox(body, "Magic defence", "Show the magic defence from the Better Party Defence plugin's Magic"
+			+ " defence info box.", BossHealthBarConfig.SHOW_MAGIC_DEFENCE_KEY, config::showMagicDefence);
+		checkbox(body, "Special attack counts", "Show the counts from RuneLite's Special Attack Counter plugin.",
+			BossHealthBarConfig.SHOW_SPECIAL_ATTACK_COUNTS_KEY, config::showSpecialAttackCounts);
+		checkbox(body, "Elemental weakness", "Show the boss's elemental weakness and extra damage, for example"
+			+ " +40%.", BossHealthBarConfig.SHOW_WEAKNESS_KEY, config::showWeakness);
+		checkbox(body, "Defence drain limit", "Show how far the boss's defence can be lowered in total, or"
+			+ " \"no drain\".", BossHealthBarConfig.SHOW_DRAIN_CAP_KEY, config::showDrainCap);
+		checkbox(body, "Fight timer", "Show how long the fight has lasted. It stops once the opponent is gone.",
+			BossHealthBarConfig.SHOW_FIGHT_TIMER_KEY, config::showFightTimer);
+		checkbox(body, "Second boss bar", "A smaller bar for another boss you're fighting at the same time, with"
+			+ " its last known health while it's away.",
+			BossHealthBarConfig.SHOW_PARTNER_BAR_KEY, config::showPartnerBar);
+	}
+
+	private void animationRows(JPanel body)
+	{
+		checkbox(body, "Damage trail", "After a hit, keep the lost health visible as a lighter section before it"
+			+ " drains away.", BossHealthBarConfig.SHOW_DAMAGE_TRAIL_KEY, config::showDamageTrail);
+		spinner(body, "Heal speed", "How quickly the bar refills when the opponent heals. Higher is faster.",
+			BossHealthBarConfig.ANIMATION_SPEED_KEY, 1, 10, config::animationSpeed);
+		checkbox(body, "Low health effect", "Make the fill pulse and glow at or below the low health threshold.",
+			BossHealthBarConfig.LOW_HEALTH_EFFECT_KEY, config::lowHealthEffect);
+		spinner(body, "Low health threshold", "The health percentage at or below which the low health effect"
+			+ " starts.", BossHealthBarConfig.LOW_HEALTH_THRESHOLD_KEY, 5, 50, config::lowHealthThreshold);
+		checkbox(body, "Flash on big hits", "Briefly flash the border when a hit takes a large part of the health.",
+			BossHealthBarConfig.FLASH_ON_BIG_HITS_KEY, config::flashOnBigHits);
+		combo(body, "Intro animation", "How the bar appears for a new opponent.",
+			BossHealthBarConfig.INTRO_ANIMATION_KEY, IntroAnimation.class, config::introAnimation);
+		checkbox(body, "Defeat animation", "Hold the empty bar with a \"Defeated\" label for a moment before it"
+			+ " goes.", BossHealthBarConfig.SHOW_DEFEAT_ANIMATION_KEY, config::showDefeatAnimation);
+		checkbox(body, "Burn away", "Burn the bar away from right to left instead of fading it out. Only used with"
+			+ " Defeat animation on.", BossHealthBarConfig.BURN_AWAY_DEFEAT_KEY, config::burnAwayDefeat);
+		checkbox(body, "Fortify", "Mark the moment a boss goes into a phase: a flash and a sweep across the bar, a"
+			+ " shield at the ends and the frame in the phase's color. Needs Phase colors.",
+			BossHealthBarConfig.FORTIFY_PHASE_KEY, config::fortifyPhase);
+	}
+
+	private void layoutRows(JPanel body)
+	{
+		combo(body, "Name", "Where the name goes, with its icon and combat level.",
+			BossHealthBarConfig.NAME_POSITION_KEY, BarPosition.class, config::namePosition);
+		combo(body, "Damage number", "Where the damage number goes.",
+			BossHealthBarConfig.DAMAGE_NUMBER_POSITION_KEY, BarPosition.class, config::damageNumberPosition);
+		combo(body, "Hitpoints", "Where the hitpoints text goes. \"Defeated\" shows centred on the same row.",
+			BossHealthBarConfig.HITPOINTS_POSITION_KEY, BarPosition.class, config::hitpointsPosition);
+		combo(body, "Kill count", "Where the kill count goes.",
+			BossHealthBarConfig.KILL_COUNT_POSITION_KEY, BarPosition.class, config::killCountPosition);
+		combo(body, "Party defence", "Where the party defence and magic defence go.",
+			BossHealthBarConfig.PARTY_DEFENCE_POSITION_KEY, BarPosition.class, config::partyDefencePosition);
+		combo(body, "Special attack counts", "Where the special attack counts go.",
+			BossHealthBarConfig.SPECIAL_ATTACK_COUNTS_POSITION_KEY, BarPosition.class,
+			config::specialAttackCountsPosition);
+		combo(body, "Elemental weakness", "Where the elemental weakness goes.",
+			BossHealthBarConfig.WEAKNESS_POSITION_KEY, BarPosition.class, config::weaknessPosition);
+		combo(body, "Defence drain limit", "Where the defence drain limit goes.",
+			BossHealthBarConfig.DRAIN_CAP_POSITION_KEY, BarPosition.class, config::drainCapPosition);
+		combo(body, "Fight timer", "Where the fight timer goes.",
+			BossHealthBarConfig.FIGHT_TIMER_POSITION_KEY, BarPosition.class, config::fightTimerPosition);
 	}
 
 	private void colorRows(JPanel body)

@@ -74,13 +74,37 @@ public interface BossHealthBarConfig extends Config
 	String SHOW_PREVIEW_KEY = "showPreview";
 	String EXPORT_SETTINGS_KEY = "exportSettings";
 	String IMPORT_SETTINGS_KEY = "importSettings";
-
-	@ConfigSection(
-		name = "Text",
-		description = "The name and numbers around the bar.",
-		position = 1
-	)
-	String textSection = "text";
+	String SHOW_BOSS_NAME_KEY = "showBossName";
+	String SHOW_COMBAT_LEVEL_KEY = "showCombatLevel";
+	String HITPOINTS_TEXT_MODE_KEY = "hitpointsTextMode";
+	String SHOW_DAMAGE_NUMBER_KEY = "showDamageNumber";
+	String DAMAGE_NUMBER_SOURCE_KEY = "damageNumberSource";
+	String SHOW_KILL_COUNT_KEY = "showKillCount";
+	String SHOW_PARTY_DEFENCE_KEY = "showPartyDefence";
+	String SHOW_MAGIC_DEFENCE_KEY = "showMagicDefence";
+	String SHOW_SPECIAL_ATTACK_COUNTS_KEY = "showSpecialAttackCounts";
+	String SHOW_WEAKNESS_KEY = "showWeakness";
+	String SHOW_DRAIN_CAP_KEY = "showDrainCap";
+	String SHOW_FIGHT_TIMER_KEY = "showFightTimer";
+	String SHOW_PARTNER_BAR_KEY = "showPartnerBar";
+	String SHOW_DAMAGE_TRAIL_KEY = "showDamageTrail";
+	String ANIMATION_SPEED_KEY = "animationSpeed";
+	String LOW_HEALTH_EFFECT_KEY = "lowHealthEffect";
+	String LOW_HEALTH_THRESHOLD_KEY = "lowHealthThreshold";
+	String FLASH_ON_BIG_HITS_KEY = "flashOnBigHits";
+	String INTRO_ANIMATION_KEY = "introAnimation";
+	String SHOW_DEFEAT_ANIMATION_KEY = "showDefeatAnimation";
+	String BURN_AWAY_DEFEAT_KEY = "burnAwayDefeat";
+	String FORTIFY_PHASE_KEY = "fortifyPhase";
+	String NAME_POSITION_KEY = "namePosition";
+	String DAMAGE_NUMBER_POSITION_KEY = "damageNumberPosition";
+	String HITPOINTS_POSITION_KEY = "hitpointsPosition";
+	String KILL_COUNT_POSITION_KEY = "killCountPosition";
+	String PARTY_DEFENCE_POSITION_KEY = "partyDefencePosition";
+	String SPECIAL_ATTACK_COUNTS_POSITION_KEY = "specialAttackCountsPosition";
+	String WEAKNESS_POSITION_KEY = "weaknessPosition";
+	String DRAIN_CAP_POSITION_KEY = "drainCapPosition";
+	String FIGHT_TIMER_POSITION_KEY = "fightTimerPosition";
 
 	@ConfigSection(
 		name = "Fonts",
@@ -89,31 +113,6 @@ public interface BossHealthBarConfig extends Config
 		closedByDefault = true
 	)
 	String fontsSection = "fonts";
-
-	@ConfigSection(
-		name = "Boss info",
-		description = "Extra details about the boss shown around the bar.",
-		position = 3,
-		closedByDefault = true
-	)
-	String bossInfoSection = "bossInfo";
-
-	@ConfigSection(
-		name = "Animations",
-		description = "How the bar moves when health changes, appears and goes.",
-		position = 4,
-		closedByDefault = true
-	)
-	String animationsSection = "animations";
-
-	@ConfigSection(
-		name = "Layout",
-		description = "Where each item goes: above the bar, inside it, or on one of the two rows below it."
-			+ " Text inside the bar suits a taller bar.",
-		position = 5,
-		closedByDefault = true
-	)
-	String layoutSection = "layout";
 
 	@ConfigSection(
 		name = "When to show",
@@ -494,11 +493,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showBossName",
+		keyName = SHOW_BOSS_NAME_KEY,
 		name = "Show name",
 		description = "Show the opponent's name.",
 		position = 0,
-		section = textSection
+		hidden = true
 	)
 	default boolean showBossName()
 	{
@@ -506,11 +505,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showCombatLevel",
+		keyName = SHOW_COMBAT_LEVEL_KEY,
 		name = "Show combat level",
 		description = "Show the opponent's combat level next to its name.",
 		position = 1,
-		section = textSection
+		hidden = true
 	)
 	default boolean showCombatLevel()
 	{
@@ -518,13 +517,13 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "hitpointsTextMode",
+		keyName = HITPOINTS_TEXT_MODE_KEY,
 		name = "Hitpoints text",
 		description = "What to show: a percentage, the hitpoints out of the maximum, the hitpoints left on their"
 			+ " own, either of those with the percentage after it, or nothing. Shows a percentage when the max"
 			+ " hitpoints aren't known.",
 		position = 2,
-		section = textSection
+		hidden = true
 	)
 	default HitpointsTextMode hitpointsTextMode()
 	{
@@ -532,11 +531,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showDamageNumber",
+		keyName = SHOW_DAMAGE_NUMBER_KEY,
 		name = "Show damage number",
 		description = "Show the damage of the latest attack. Hits that land together are added up.",
 		position = 3,
-		section = textSection
+		hidden = true
 	)
 	default boolean showDamageNumber()
 	{
@@ -544,11 +543,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "damageNumberSource",
+		keyName = DAMAGE_NUMBER_SOURCE_KEY,
 		name = "Damage number counts",
 		description = "Me shows your latest attack. Party adds up your party's hits while they keep coming, for members who also use this plugin.",
 		position = 4,
-		section = textSection
+		hidden = true
 	)
 	default DamageNumberSource damageNumberSource()
 	{
@@ -556,11 +555,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showKillCount",
+		keyName = SHOW_KILL_COUNT_KEY,
 		name = "Kill count",
 		description = "Show your kill count for the boss. Needs RuneLite's Chat Commands plugin to have seen a kill count message for it.",
 		position = 0,
-		section = bossInfoSection
+		hidden = true
 	)
 	default boolean showKillCount()
 	{
@@ -568,11 +567,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showWeakness",
+		keyName = SHOW_WEAKNESS_KEY,
 		name = "Elemental weakness",
 		description = "Show the boss's elemental weakness and extra damage, for example +40%. Values from the OSRS Wiki.",
 		position = 4,
-		section = bossInfoSection
+		hidden = true
 	)
 	default boolean showWeakness()
 	{
@@ -580,11 +579,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showDrainCap",
+		keyName = SHOW_DRAIN_CAP_KEY,
 		name = "Defence drain limit",
 		description = "Show how far the boss's defence can be lowered in total, or \"no drain\". Values from the OSRS Wiki.",
 		position = 5,
-		section = bossInfoSection
+		hidden = true
 	)
 	default boolean showDrainCap()
 	{
@@ -592,11 +591,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showSpecialAttackCounts",
+		keyName = SHOW_SPECIAL_ATTACK_COUNTS_KEY,
 		name = "Special attack counts",
 		description = "Show the counts from RuneLite's Special Attack Counter plugin. Needs that plugin on with its info boxes.",
 		position = 3,
-		section = bossInfoSection
+		hidden = true
 	)
 	default boolean showSpecialAttackCounts()
 	{
@@ -604,11 +603,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showPartyDefence",
+		keyName = SHOW_PARTY_DEFENCE_KEY,
 		name = "Party defence",
 		description = "Show the defence from the Party Defence Tracker or Better Party Defence plugin's info box. Needs one of them installed and on.",
 		position = 1,
-		section = bossInfoSection
+		hidden = true
 	)
 	default boolean showPartyDefence()
 	{
@@ -616,11 +615,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showMagicDefence",
+		keyName = SHOW_MAGIC_DEFENCE_KEY,
 		name = "Magic defence",
 		description = "Show the magic defence from the Better Party Defence plugin's Magic defence info box. Needs that plugin with its Magic defence info box on.",
 		position = 2,
-		section = bossInfoSection
+		hidden = true
 	)
 	default boolean showMagicDefence()
 	{
@@ -628,11 +627,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showFightTimer",
+		keyName = SHOW_FIGHT_TIMER_KEY,
 		name = "Fight timer",
 		description = "Show how long the fight has lasted, from when you go for the opponent and are near it. It stops once the opponent is gone.",
 		position = 6,
-		section = bossInfoSection
+		hidden = true
 	)
 	default boolean showFightTimer()
 	{
@@ -640,11 +639,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showPartnerBar",
+		keyName = SHOW_PARTNER_BAR_KEY,
 		name = "Second boss bar",
 		description = "Shows a smaller bar for another boss you're fighting at the same time, with its last known health while it's away.",
 		position = 7,
-		section = bossInfoSection
+		hidden = true
 	)
 	default boolean showPartnerBar()
 	{
@@ -652,11 +651,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showDamageTrail",
+		keyName = SHOW_DAMAGE_TRAIL_KEY,
 		name = "Damage trail",
 		description = "After a hit, keep the lost health visible as a lighter section before it drains away.",
 		position = 0,
-		section = animationsSection
+		hidden = true
 	)
 	default boolean showDamageTrail()
 	{
@@ -665,11 +664,11 @@ public interface BossHealthBarConfig extends Config
 
 	@Range(min = 1, max = 10)
 	@ConfigItem(
-		keyName = "animationSpeed",
+		keyName = ANIMATION_SPEED_KEY,
 		name = "Heal speed",
 		description = "How quickly the bar refills when the opponent heals. Higher is faster.",
 		position = 1,
-		section = animationsSection
+		hidden = true
 	)
 	default int animationSpeed()
 	{
@@ -677,11 +676,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "lowHealthEffect",
+		keyName = LOW_HEALTH_EFFECT_KEY,
 		name = "Low health effect",
 		description = "Make the fill pulse and glow at or below the low health threshold.",
 		position = 2,
-		section = animationsSection
+		hidden = true
 	)
 	default boolean lowHealthEffect()
 	{
@@ -691,11 +690,11 @@ public interface BossHealthBarConfig extends Config
 	@Range(min = 5, max = 50)
 	@Units(Units.PERCENT)
 	@ConfigItem(
-		keyName = "lowHealthThreshold",
+		keyName = LOW_HEALTH_THRESHOLD_KEY,
 		name = "Low health threshold",
 		description = "The health at or below which the low health effect starts.",
 		position = 3,
-		section = animationsSection
+		hidden = true
 	)
 	default int lowHealthThreshold()
 	{
@@ -703,11 +702,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "flashOnBigHits",
+		keyName = FLASH_ON_BIG_HITS_KEY,
 		name = "Flash on big hits",
 		description = "Briefly flash the border when a hit takes a large part of the health.",
 		position = 4,
-		section = animationsSection
+		hidden = true
 	)
 	default boolean flashOnBigHits()
 	{
@@ -715,11 +714,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "introAnimation",
+		keyName = INTRO_ANIMATION_KEY,
 		name = "Intro animation",
 		description = "How the bar appears for a new opponent.",
 		position = 5,
-		section = animationsSection
+		hidden = true
 	)
 	default IntroAnimation introAnimation()
 	{
@@ -727,11 +726,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showDefeatAnimation",
+		keyName = SHOW_DEFEAT_ANIMATION_KEY,
 		name = "Defeat animation",
 		description = "Hold the empty bar with a \"Defeated\" label for a moment before it goes.",
 		position = 6,
-		section = animationsSection
+		hidden = true
 	)
 	default boolean showDefeatAnimation()
 	{
@@ -739,11 +738,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "burnAwayDefeat",
+		keyName = BURN_AWAY_DEFEAT_KEY,
 		name = "Burn away",
 		description = "Burn the bar away from right to left instead of fading it out. Only used with Defeat animation on.",
 		position = 7,
-		section = animationsSection
+		hidden = true
 	)
 	default boolean burnAwayDefeat()
 	{
@@ -751,13 +750,13 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "fortifyPhase",
+		keyName = FORTIFY_PHASE_KEY,
 		name = "Fortify",
 		description = "Mark the moment a boss goes into a phase: a flash and a sweep across the bar, a shield at"
 			+ " the ends and the frame in the phase's color. Needs Phase colors, and does nothing with the"
 			+ " Oldschool theme.",
 		position = 8,
-		section = animationsSection
+		hidden = true
 	)
 	default boolean fortifyPhase()
 	{
@@ -765,11 +764,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "namePosition",
+		keyName = NAME_POSITION_KEY,
 		name = "Name",
 		description = "Where the name goes, with its icon and combat level. It's shortened when it doesn't fit.",
 		position = 0,
-		section = layoutSection
+		hidden = true
 	)
 	default BarPosition namePosition()
 	{
@@ -777,11 +776,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "damageNumberPosition",
+		keyName = DAMAGE_NUMBER_POSITION_KEY,
 		name = "Damage number",
 		description = "Where the damage number goes.",
 		position = 1,
-		section = layoutSection
+		hidden = true
 	)
 	default BarPosition damageNumberPosition()
 	{
@@ -789,11 +788,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "hitpointsPosition",
+		keyName = HITPOINTS_POSITION_KEY,
 		name = "Hitpoints",
 		description = "Where the hitpoints text goes. \"Defeated\" shows centred on the same row.",
 		position = 2,
-		section = layoutSection
+		hidden = true
 	)
 	default BarPosition hitpointsPosition()
 	{
@@ -801,11 +800,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "killCountPosition",
+		keyName = KILL_COUNT_POSITION_KEY,
 		name = "Kill count",
 		description = "Where the kill count goes.",
 		position = 3,
-		section = layoutSection
+		hidden = true
 	)
 	default BarPosition killCountPosition()
 	{
@@ -813,11 +812,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "partyDefencePosition",
+		keyName = PARTY_DEFENCE_POSITION_KEY,
 		name = "Party defence",
 		description = "Where the party defence and magic defence go.",
 		position = 4,
-		section = layoutSection
+		hidden = true
 	)
 	default BarPosition partyDefencePosition()
 	{
@@ -825,11 +824,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "specialAttackCountsPosition",
+		keyName = SPECIAL_ATTACK_COUNTS_POSITION_KEY,
 		name = "Special attack counts",
 		description = "Where the special attack counts go.",
 		position = 5,
-		section = layoutSection
+		hidden = true
 	)
 	default BarPosition specialAttackCountsPosition()
 	{
@@ -837,11 +836,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "weaknessPosition",
+		keyName = WEAKNESS_POSITION_KEY,
 		name = "Elemental weakness",
 		description = "Where the elemental weakness goes.",
 		position = 6,
-		section = layoutSection
+		hidden = true
 	)
 	default BarPosition weaknessPosition()
 	{
@@ -849,11 +848,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "drainCapPosition",
+		keyName = DRAIN_CAP_POSITION_KEY,
 		name = "Defence drain limit",
 		description = "Where the defence drain limit goes.",
 		position = 7,
-		section = layoutSection
+		hidden = true
 	)
 	default BarPosition drainCapPosition()
 	{
@@ -861,11 +860,11 @@ public interface BossHealthBarConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "fightTimerPosition",
+		keyName = FIGHT_TIMER_POSITION_KEY,
 		name = "Fight timer",
 		description = "Where the fight timer goes.",
 		position = 8,
-		section = layoutSection
+		hidden = true
 	)
 	default BarPosition fightTimerPosition()
 	{

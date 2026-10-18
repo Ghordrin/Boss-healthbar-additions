@@ -4,14 +4,14 @@
 
 ### New
 
-- New side panel, opened from its icon in the sidebar or by right-clicking the bar and picking Open panel. It holds the Look settings, the Custom colors and the Backup buttons, and follows a setting changed anywhere else straight away. The settings screen used to keep showing the old value when the plugin wrote one itself, such as a theme filling in the Custom colors or the Oldschool tick turning off the gold bars, until it was closed and opened again. A Settings button at the top of the panel opens the rest of the settings
+- New side panel, opened from its icon in the sidebar or by right-clicking the bar and picking Open panel. It holds the look of the bar, the text, the boss info, the animations, the layout, the Custom colors and the Backup buttons, and follows a setting changed anywhere else straight away. The settings screen used to keep showing the old value when the plugin wrote one itself, such as a theme filling in the Custom colors or the Oldschool tick turning off the gold bars, until it was closed and opened again. A Settings button at the top of the panel opens the rest of the settings
 - Export settings, Import from file, Paste settings, Choose custom icon, Choose fill texture and Save debug log are buttons in the panel, instead of checkboxes that untick themselves. Paste settings is new: it reads a setup straight off your clipboard, without saving it to a file first
 - Import and Export buttons sit at the top of the panel, so a setup can be loaded or saved whatever is open below
 - Importing now says how many settings it is about to load before it loads them, and takes only the settings this plugin has, ignoring anything else in the file and any value a setting can't hold
 - The Sprites tab fills in as the sprites are read instead of waiting until it has read all of them, and reads them several times faster
 - The panel has a Discord button beside the settings button at the top
 - New Sidebar icon option (on by default). Turn it off to give the sidebar its space back; the panel can still be opened from the bar's right-click menu
-- The Look settings and the Custom colors have moved to the panel and are no longer on the settings screen, which keeps what the panel doesn't hold: the text, the fonts, the boss info, the animations, the layout and when to show a bar
+- The look of the bar, the text, the boss info, the animations, the layout and the Custom colors have moved to the panel and are no longer on the settings screen, which keeps what the panel doesn't hold: the fonts and when to show a bar. Your saved settings carry over, and only Look is open when the panel is first shown; the other sections start folded
 - Two new Hitpoints text options: Hitpoints left shows the hitpoints on their own, without the maximum, and Hitpoints left and % adds the percentage after it. Both is now named Hitpoints and %
 - New Phase colors option (Look, on by default). Some bosses turn the game's own health bar another color while they shield themselves or change phase, and the bar now follows that color instead of losing it behind our own. A Phase color picker under it shows those phases in a color of your choice instead, left transparent to use the game's
 - Right-click the bar and pick Support Discord to open the plugin's Discord in your browser, for help, bug reports and sharing setups
