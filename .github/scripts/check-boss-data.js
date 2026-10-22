@@ -11,6 +11,9 @@ const { execFileSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..', '..');
 const SRC = path.join(ROOT, 'src/main/java/com/ghordrin/bosshealthbar');
 const STATE_FILE = path.join(ROOT, '.github/boss-data/drain-pages.json');
+const NPC_STATE_FILE = path.join(ROOT, '.github/boss-data/npc-ids.json');
+// A jump in the API shouldn't turn into an issue nobody can read.
+const NEW_NPC_LIMIT = 40;
 const WIKI_API = 'https://oldschool.runescape.wiki/api.php';
 const USER_AGENT = 'boss-health-bar-additions data check (github.com/Ghordrin/Boss-healthbar-additions)';
 
@@ -358,11 +361,42 @@ async function main()
 		.map(name => `\`NpcID.${name}\` (${npcIds[name]}): add it to SuperiorTracker, or to IGNORED_SUPERIORS in this script`);
 	section('New superior NPC IDs in the RuneLite API', newSuperiors);
 
+	// 7. Monsters the API has learned about since the last reviewed run. A boss can reach the API without a
+	// boss icon of its own, so rule 3 wouldn't see it, and nothing else says which IDs a new fight is made of.
+	// Named after no boss in particular: what counts is that the wiki calls the ID a monster.
+	const npcNames = Object.keys(npcIds).filter(name => !/^_\d+$/.test(name));
+	const seen = fs.existsSync(NPC_STATE_FILE)
+		? new Set(JSON.parse(fs.readFileSync(NPC_STATE_FILE, 'utf8')))
+		: null;
+	if (seen)
+	{
+		const added = npcNames.filter(name => !seen.has(name));
+		const monsters = added.filter(name => rowsById.has(npcIds[name]));
+		// The NPCs a fight needs aren't all monsters: a pair can come with a handler that drives its health
+		// bar. Those share the leading word with the monsters they belong to, so they come along.
+		const families = new Set(monsters.map(name => name.split('_')[0]));
+		const reportable = added.filter(name =>
+			rowsById.has(npcIds[name]) || families.has(name.split('_')[0]));
+		const newNpcs = reportable.slice(0, NEW_NPC_LIMIT).map(name =>
+		{
+			const pages = (rowsById.get(npcIds[name]) || []).map(r => r.page_name);
+			const where = pages.length ? pages.map(pageLink).join(', ') : 'no wiki monster page';
+			return `\`NpcID.${name}\` (${npcIds[name]}): ${where}`;
+		});
+		if (reportable.length > NEW_NPC_LIMIT)
+		{
+			newNpcs.push(`…and ${reportable.length - NEW_NPC_LIMIT} more`);
+		}
+		section('Monsters new to the RuneLite API since the last run', newNpcs);
+	}
+
 	if (update)
 	{
 		fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
 		fs.writeFileSync(STATE_FILE, JSON.stringify(newState, null, '\t') + '\n');
 		console.log(`Saved the reviewed drain limit pages to ${path.relative(ROOT, STATE_FILE)}`);
+		fs.writeFileSync(NPC_STATE_FILE, JSON.stringify(npcNames.sort(), null, '\t') + '\n');
+		console.log(`Saved ${npcNames.length} NPC ID names to ${path.relative(ROOT, NPC_STATE_FILE)}`);
 	}
 
 	const report = sections.join('\n\n');
