@@ -7,6 +7,10 @@
 - Second bar on its own (off): gives the second boss bar its own place on screen, so it can be dragged away from the first one
 - Second bar scale (50%): how tall the second boss bar is, as a share of the bar height. On its own place it can also be alt-dragged taller or shorter
 
+### Fixed
+
+- The pillar bars' corner names use the Name font instead of the Hitpoints font, so the Hitpoints font no longer resizes them or the box they sit in
+
 ## 2.0.0 (2026-10-18)
 
 ### New
