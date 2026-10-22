@@ -10,7 +10,6 @@ import com.ghordrin.bosshealthbar.integrations.PluginState;
 import com.ghordrin.bosshealthbar.tracking.FightTimer;
 import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -108,7 +107,7 @@ public class DebugExport
 			final Filepath directory = plugin.dataDirectory();
 			directory.createDirectories();
 			final Filepath file = directory.joinSegment(fileName);
-			file.write(text.getBytes(StandardCharsets.UTF_8));
+			file.write(text);
 			removeOldFiles(directory);
 			chat("Debug log saved to .runelite/plugin-data/" + BossHealthBarPlugin.INTERNAL_NAME + "/" + fileName);
 		}

@@ -2,8 +2,8 @@ package com.ghordrin.bosshealthbar.config;
 
 import com.ghordrin.bosshealthbar.BossHealthBarPlugin;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import java.awt.Color;
 import java.awt.Toolkit;
 import java.awt.Window;
@@ -12,7 +12,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -110,7 +109,7 @@ public class SettingsTransfer
 			{
 				final Filepath directory = plugin.dataDirectory();
 				directory.createDirectories();
-				directory.joinSegment(fileName).write(json.getBytes(StandardCharsets.UTF_8));
+				directory.joinSegment(fileName).write(json);
 			}
 			catch (IOException | RuntimeException e)
 			{
@@ -228,10 +227,16 @@ public class SettingsTransfer
 
 	private void read(Filepath file)
 	{
-		final String text;
+		final Saved saved;
 		try (Reader reader = file.openReader())
 		{
-			text = CharStreams.toString(reader);
+			saved = gson.fromJson(reader, Saved.class);
+		}
+		catch (JsonSyntaxException e)
+		{
+			log.debug("Couldn't read the settings", e);
+			error("That file holds no settings for this plugin.");
+			return;
 		}
 		catch (IOException | RuntimeException e)
 		{
@@ -239,7 +244,7 @@ public class SettingsTransfer
 			error("That file couldn't be read.");
 			return;
 		}
-		use(text, "That file holds no settings for this plugin.");
+		use(saved, "That file holds no settings for this plugin.");
 	}
 
 	private void use(String text, String emptyMessage)
@@ -255,7 +260,11 @@ public class SettingsTransfer
 			error(emptyMessage);
 			return;
 		}
+		use(saved, emptyMessage);
+	}
 
+	private void use(Saved saved, String emptyMessage)
+	{
 		if (saved == null || saved.settings == null || saved.settings.isEmpty())
 		{
 			error(emptyMessage);
