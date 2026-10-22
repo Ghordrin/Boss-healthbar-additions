@@ -80,7 +80,16 @@ public class PartnerBar
 	// The room one of these takes, without the gap before it.
 	public int height(int barHeight, boolean flat, BarEnds ends)
 	{
+		prepare();
 		return height(textPainter.partnerRowHeight(), barThickness(barHeight), flat, ends);
+	}
+
+	// This holds its own text painter, so the fonts and the rows have to be set up before either is read. The
+	// row only shows the name and the hitpoints, so the items the other rows carry are left out.
+	private void prepare()
+	{
+		textPainter.updateFonts();
+		textPainter.updateRows(false, false, false, false, false);
 	}
 
 	@VisibleForTesting
@@ -106,6 +115,7 @@ public class PartnerBar
 		ThemeColors themeColors, int rowTop, int barY, int width, int shownWidth, int shownInset, int capWidth,
 		int barThickness, float fillProgress, boolean flat, BarEnds ends)
 	{
+		prepare();
 		final boolean preview = selector.isShowingPreview();
 		final FightGroup.Member member = preview ? null : group.partner(extra);
 		final BarAnimation animation = animations[extra];

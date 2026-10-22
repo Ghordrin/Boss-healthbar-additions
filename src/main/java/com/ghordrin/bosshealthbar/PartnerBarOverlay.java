@@ -56,7 +56,9 @@ public class PartnerBarOverlay extends Overlay
 			return null;
 		}
 
+		// This overlay has its own text painter, so the rows have to be set up before the row height is read.
 		textPainter.updateFonts();
+		textPainter.updateRows(false, false, false, false, false);
 		final int width = barWidth(getPreferredSize());
 		final int barThickness = partnerBar.barThickness(config.barHeight());
 		final boolean flat = BarTheme.of(config).isFlat();
