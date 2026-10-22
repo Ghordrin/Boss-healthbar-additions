@@ -16,8 +16,8 @@
 set -uo pipefail
 
 REF="${1:-HEAD}"
-# The commit the open hub pull request points at. Update this when a release is merged.
-BASE="${2:-0986413}"
+# The commit last merged to the plugin hub. Update this when a release is merged.
+BASE="${2:-add469b}"
 
 cd "$(dirname "$0")/.." || exit 2
 
