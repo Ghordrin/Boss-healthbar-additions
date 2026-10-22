@@ -53,7 +53,7 @@ In the panel:
 |---|---|
 | Look | Theme, Oldschool theme, boss colours, phase colours, rare gold bars, icons, bar ends, fill texture, phase markers, size |
 | Text | Name, combat level, hitpoints text (percentage, value, both or none), damage number and whose hits it counts |
-| Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar |
+| Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar, second bar on its own |
 | Animations | Damage trail, heal speed, low health effect, flash on big hits, intro, defeat animation, burn away, fortify |
 | Layout | Where each item goes: left, centre or right, above the bar, inside it, or on one of the two rows below it. Text inside the bar suits a taller bar |
 | Custom colors | The colours of the Custom theme and its icon |

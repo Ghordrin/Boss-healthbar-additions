@@ -343,6 +343,9 @@ public class BossHealthBarPanel extends PluginPanel
 		checkbox(body, "Second boss bar", "A smaller bar for another boss you're fighting at the same time, with"
 			+ " its last known health while it's away.",
 			BossHealthBarConfig.SHOW_PARTNER_BAR_KEY, config::showPartnerBar);
+		checkbox(body, "Second bar on its own", "Give the second bar its own place on screen, so it can be dragged"
+			+ " away from the first one. Drag it with alt held, like any overlay.",
+			BossHealthBarConfig.SECOND_BAR_SEPARATE_KEY, config::secondBarSeparate);
 	}
 
 	private void animationRows(JPanel body)

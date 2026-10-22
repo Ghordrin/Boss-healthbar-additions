@@ -118,6 +118,9 @@ public class BossHealthBarPlugin extends Plugin
 	private PillarBarsOverlay pillarBarsOverlay;
 
 	@Inject
+	private PartnerBarOverlay partnerBarOverlay;
+
+	@Inject
 	private SuperiorTracker superiorTracker;
 
 	@Inject
@@ -198,6 +201,7 @@ public class BossHealthBarPlugin extends Plugin
 		partyDamage.startUp();
 		overlayManager.add(overlay);
 		overlayManager.add(pillarBarsOverlay);
+		overlayManager.add(partnerBarOverlay);
 		opponentInfoOverride.apply();
 		panel = panelProvider.get();
 		showSidebarIcon(config.showSidebarIcon());
@@ -250,6 +254,7 @@ public class BossHealthBarPlugin extends Plugin
 		panel = null;
 		overlayManager.remove(overlay);
 		overlayManager.remove(pillarBarsOverlay);
+		overlayManager.remove(partnerBarOverlay);
 		partyDamage.shutDown();
 		opponentInfoOverride.restore();
 		pickers.close();

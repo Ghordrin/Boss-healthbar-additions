@@ -19,6 +19,8 @@ import net.runelite.client.util.Text;
 public class FightGroup
 {
 	static final int MAX_MEMBERS = 8;
+	// How many bosses besides the opponent can get a bar of their own.
+	public static final int MAX_EXTRA_BARS = 1;
 	static final int NO_INDEX = -1;
 
 	public static final class Member
@@ -64,7 +66,7 @@ public class FightGroup
 	private int nextId;
 	private int id;
 	private int bossLikeJoins;
-	public Member partner;
+	private final List<Member> partners = new ArrayList<>(MAX_EXTRA_BARS);
 
 	@Inject
 	FightGroup(HealthReader healthReader, DebugLog debugLog)
@@ -266,43 +268,80 @@ public class FightGroup
 		}
 	}
 
-	// With no opponent for a moment, such as between two NPCs, the last partner stays.
+	// With no opponent for a moment, such as between two NPCs, the last partners stay.
 	void updatePartner(Member own, boolean hasOpponent)
 	{
-		final Member next = hasOpponent ? choosePartner(own)
-			: partner != null && members.contains(partner) && !partner.isDead() ? partner : null;
-		if (next != partner)
+		final List<Member> next = hasOpponent ? choosePartner(own) : keptPartners();
+		if (next.equals(partners))
 		{
-			partner = next;
-			if (next != null)
+			return;
+		}
+		for (Member member : next)
+		{
+			if (!partners.contains(member))
 			{
-				debugLog.add("Second bar shows {}", next.npc != null ? DebugLog.describe(next.npc) : next.name + " (away)");
+				debugLog.add("Second bar shows {}",
+					member.npc != null ? DebugLog.describe(member.npc) : member.name + " (away)");
 			}
 		}
+		partners.clear();
+		partners.addAll(next);
 	}
 
-	// The boss fought most recently besides the opponent, while it's alive and has health to show, even while away.
-	Member choosePartner(Member own)
+	private List<Member> keptPartners()
 	{
-		if (own == null || !own.bossLike)
+		final List<Member> kept = new ArrayList<>(MAX_EXTRA_BARS);
+		for (Member member : partners)
 		{
-			return null;
-		}
-		Member best = null;
-		for (Member member : members)
-		{
-			if (member != own && member.bossLike && !member.isDead() && member.scale > 0
-				&& (best == null || member.lastEngagedTick > best.lastEngagedTick))
+			if (members.contains(member) && !member.isDead())
 			{
-				best = member;
+				kept.add(member);
 			}
 		}
-		return best;
+		return kept;
+	}
+
+	// The bosses fought most recently besides the opponent, while they're alive and have health to show, even while
+	// away. Most recently fought first, and only as many as there are bars for them.
+	List<Member> choosePartner(Member own)
+	{
+		final List<Member> chosen = new ArrayList<>(MAX_EXTRA_BARS);
+		if (own == null || !own.bossLike)
+		{
+			return chosen;
+		}
+		for (Member member : members)
+		{
+			if (member == own || !member.bossLike || member.isDead() || member.scale <= 0)
+			{
+				continue;
+			}
+			int at = 0;
+			while (at < chosen.size() && chosen.get(at).lastEngagedTick >= member.lastEngagedTick)
+			{
+				at++;
+			}
+			if (at < MAX_EXTRA_BARS)
+			{
+				chosen.add(at, member);
+				if (chosen.size() > MAX_EXTRA_BARS)
+				{
+					chosen.remove(chosen.size() - 1);
+				}
+			}
+		}
+		return chosen;
 	}
 
 	public Member partner()
 	{
-		return withHealth(partner);
+		return partner(0);
+	}
+
+	// The boss on the extra bar at this index, or null when there is none.
+	public Member partner(int extra)
+	{
+		return extra < partners.size() ? withHealth(partners.get(extra)) : null;
 	}
 
 	// Two bosses fought in the same fight. Kept until the fight ends, so the bar doesn't move in the middle of it.
@@ -320,7 +359,7 @@ public class FightGroup
 	private void clearMembers()
 	{
 		members.clear();
-		partner = null;
+		partners.clear();
 		bossLikeJoins = 0;
 	}
 
@@ -428,10 +467,7 @@ public class FightGroup
 	private void remove(Member member)
 	{
 		members.remove(member);
-		if (member == partner)
-		{
-			partner = null;
-		}
+		partners.remove(member);
 	}
 
 	private static String name(NPC npc)

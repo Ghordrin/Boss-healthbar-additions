@@ -88,6 +88,7 @@ public interface BossHealthBarConfig extends Config
 	String SHOW_DRAIN_CAP_KEY = "showDrainCap";
 	String SHOW_FIGHT_TIMER_KEY = "showFightTimer";
 	String SHOW_PARTNER_BAR_KEY = "showPartnerBar";
+	String SECOND_BAR_SEPARATE_KEY = "secondBarSeparate";
 	String SHOW_DAMAGE_TRAIL_KEY = "showDamageTrail";
 	String ANIMATION_SPEED_KEY = "animationSpeed";
 	String LOW_HEALTH_EFFECT_KEY = "lowHealthEffect";
@@ -669,6 +670,18 @@ public interface BossHealthBarConfig extends Config
 	default boolean showPartnerBar()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = SECOND_BAR_SEPARATE_KEY,
+		name = "Second bar on its own",
+		description = "Give the second bar its own place on screen, so it can be dragged away from the first one. Drag it with alt held, like any overlay.",
+		position = 8,
+		hidden = true
+	)
+	default boolean secondBarSeparate()
+	{
+		return false;
 	}
 
 	@ConfigItem(

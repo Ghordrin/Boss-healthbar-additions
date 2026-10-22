@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- Second bar on its own (off): gives the second boss bar its own place on screen, so it can be dragged away from the first one
+
 ## 2.0.0 (2026-10-18)
 
 ### New

@@ -75,6 +75,17 @@ public class ThemeColors
 			.build();
 	}
 
+	// The theme in an opponent's own colors, for each bar to follow the boss it shows.
+	public static ThemeColors withBoss(ThemeColors themeColors, ThemeColors bossColors, boolean flat)
+	{
+		if (bossColors == null)
+		{
+			return themeColors;
+		}
+		// A flat bar keeps its own look and only takes the opponent's fill color.
+		return flat ? withBase(themeColors, bossColors.getFillHigh()) : bossColors;
+	}
+
 	// The color's own hue at a low brightness, dark enough for the fill to stand out against it.
 	private static Color trackFor(Color base, float hue, float saturation)
 	{
