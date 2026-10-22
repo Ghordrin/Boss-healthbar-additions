@@ -25,7 +25,7 @@ public class PartnerBar
 {
 	// The room left between the main bar and the first of these.
 	public static final int GAP = 3;
-	private static final int MIN_HEIGHT = 4;
+	public static final int MIN_HEIGHT = 4;
 
 	private final BossHealthBarConfig config;
 	private final BarPainter barPainter;
@@ -72,9 +72,16 @@ public class PartnerBar
 		return show && (preview || groupFight);
 	}
 
-	public static int barThickness(int barHeight)
+	// A share of the main bar's height, so the two keep their proportion whatever that height is set to.
+	public int barThickness(int barHeight)
 	{
-		return Math.max(MIN_HEIGHT, Math.round(barHeight * 0.5f));
+		return barThickness(barHeight, config.secondBarScale());
+	}
+
+	@VisibleForTesting
+	static int barThickness(int barHeight, int scalePercent)
+	{
+		return Math.max(MIN_HEIGHT, Math.round(barHeight * scalePercent / 100f));
 	}
 
 	// The room one of these takes, without the gap before it.

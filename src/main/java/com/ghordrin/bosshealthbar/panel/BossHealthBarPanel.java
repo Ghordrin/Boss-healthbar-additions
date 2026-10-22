@@ -346,6 +346,8 @@ public class BossHealthBarPanel extends PluginPanel
 		checkbox(body, "Second bar on its own", "Give the second bar its own place on screen, so it can be dragged"
 			+ " away from the first one. Drag it with alt held, like any overlay.",
 			BossHealthBarConfig.SECOND_BAR_SEPARATE_KEY, config::secondBarSeparate);
+		spinner(body, "Second bar scale", "How tall the second bar is next to the first one, as a share of the bar"
+			+ " height.", BossHealthBarConfig.SECOND_BAR_SCALE_KEY, 20, 100, config::secondBarScale);
 	}
 
 	private void animationRows(JPanel body)

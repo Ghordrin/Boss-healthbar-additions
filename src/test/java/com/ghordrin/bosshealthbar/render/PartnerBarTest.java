@@ -17,12 +17,34 @@ public class PartnerBarTest
 	}
 
 	@Test
-	public void theBarIsHalfTheMainOnesHeightDownToAFloor()
+	public void theBarIsAShareOfTheMainOnesHeightDownToAFloor()
 	{
-		assertEquals(20, PartnerBar.barThickness(40));
-		assertEquals(8, PartnerBar.barThickness(15));
-		assertEquals(4, PartnerBar.barThickness(6));
-		assertEquals(4, PartnerBar.barThickness(1));
+		assertEquals(20, PartnerBar.barThickness(40, 50));
+		assertEquals(8, PartnerBar.barThickness(15, 50));
+		assertEquals(4, PartnerBar.barThickness(6, 50));
+		assertEquals(4, PartnerBar.barThickness(1, 50));
+		assertEquals(40, PartnerBar.barThickness(40, 100));
+		assertEquals(8, PartnerBar.barThickness(40, 20));
+		assertEquals(10, PartnerBar.barThickness(16, 65));
+	}
+
+	// Half the height is what the bar had before the scale was a setting, so that share has to land on the same
+	// pixel for every height.
+	@Test
+	public void halfTheHeightIsWhatTheBarUsedToBe()
+	{
+		for (int barHeight = 1; barHeight <= 64; barHeight++)
+		{
+			assertEquals(Math.max(4, Math.round(barHeight * 0.5f)), PartnerBar.barThickness(barHeight, 50));
+		}
+	}
+
+	@Test
+	public void theFloorHoldsAtSmallHeightsAndLowShares()
+	{
+		assertEquals(4, PartnerBar.barThickness(4, 20));
+		assertEquals(4, PartnerBar.barThickness(16, 20));
+		assertEquals(4, PartnerBar.barThickness(1, 100));
 	}
 
 	@Test

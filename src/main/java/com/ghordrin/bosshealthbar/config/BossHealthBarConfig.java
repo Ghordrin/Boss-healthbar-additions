@@ -89,6 +89,7 @@ public interface BossHealthBarConfig extends Config
 	String SHOW_FIGHT_TIMER_KEY = "showFightTimer";
 	String SHOW_PARTNER_BAR_KEY = "showPartnerBar";
 	String SECOND_BAR_SEPARATE_KEY = "secondBarSeparate";
+	String SECOND_BAR_SCALE_KEY = "secondBarScale";
 	String SHOW_DAMAGE_TRAIL_KEY = "showDamageTrail";
 	String ANIMATION_SPEED_KEY = "animationSpeed";
 	String LOW_HEALTH_EFFECT_KEY = "lowHealthEffect";
@@ -682,6 +683,20 @@ public interface BossHealthBarConfig extends Config
 	default boolean secondBarSeparate()
 	{
 		return false;
+	}
+
+	@Range(min = 20, max = 100)
+	@Units(Units.PERCENT)
+	@ConfigItem(
+		keyName = SECOND_BAR_SCALE_KEY,
+		name = "Second bar scale",
+		description = "How tall the second bar is next to the first one, as a share of the bar height.",
+		position = 9,
+		hidden = true
+	)
+	default int secondBarScale()
+	{
+		return 50;
 	}
 
 	@ConfigItem(

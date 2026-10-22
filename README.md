@@ -45,7 +45,7 @@ The bar stays on the boss while you hit its minions, follows the game's boss bar
 
 The settings live in two places. The plugin's own panel holds the look of the bar, the text, the boss info, the animations, the layout and the custom colours. Open it from its sidebar icon, or right-click the bar and pick Open panel. The fonts and when to show a bar are on the RuneLite settings screen, which the settings button at the top of the panel opens; right-clicking the bar and picking Configure gets there too.
 
-Turn on Preview, at the top of the panel, to try settings on a sample opponent without a fight. Hold Alt to move the bar or drag its edge to resize it. The pillar bars box resizes the same way.
+Turn on Preview, at the top of the panel, to try settings on a sample opponent without a fight. Hold Alt to move the bar or drag its edge to resize it. The pillar bars box resizes the same way, and so does the second bar's own box, where dragging its top or bottom edge also sets how thick that bar is.
 
 In the panel:
 
@@ -53,7 +53,7 @@ In the panel:
 |---|---|
 | Look | Theme, Oldschool theme, boss colours, phase colours, rare gold bars, icons, bar ends, fill texture, phase markers, size |
 | Text | Name, combat level, hitpoints text (percentage, value, both or none), damage number and whose hits it counts |
-| Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar, second bar on its own |
+| Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar, second bar on its own, second bar scale |
 | Animations | Damage trail, heal speed, low health effect, flash on big hits, intro, defeat animation, burn away, fortify |
 | Layout | Where each item goes: left, centre or right, above the bar, inside it, or on one of the two rows below it. Text inside the bar suits a taller bar |
 | Custom colors | The colours of the Custom theme and its icon |
