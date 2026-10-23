@@ -325,8 +325,8 @@ public class HealthReaderTest
 	public void describesWhereTheReadingCameFrom()
 	{
 		assertEquals("game boss bar at 300/450", HealthReader.describe(gameBar(300, 450)));
-		assertEquals("raid boss bar at 0/600", HealthReader.describe(raidBar(0, 600)));
-		assertEquals("overhead bar at 12/30", HealthReader.describe(overhead(12, 30)));
+		assertEquals("raid boss bar at 0/600, max 900", HealthReader.describe(raidBar(0, 600)));
+		assertEquals("overhead bar at 12/30, max 450", HealthReader.describe(overhead(12, 30)));
 		assertEquals("no reading", HealthReader.describe(null));
 	}
 }

@@ -34,6 +34,13 @@ public class GameBossBar
 		VarbitID.HPBAR_HUD_HP_2,
 	};
 
+	private static final int[] HUD_INFO_VARPS = {
+		VarPlayerID.HPBAR_HUD_INFO,
+		VarPlayerID.HPBAR_HUD_INFO_2,
+		VarPlayerID.HPBAR_HUD_INFO_3,
+		VarPlayerID.HPBAR_HUD_INFO_4,
+	};
+
 	private final Client client;
 	private final DebugLog debugLog;
 	private final HiddenWidget gameBar;
@@ -50,6 +57,9 @@ public class GameBossBar
 	private int loggedFill = -1;
 	private int loggedTrail = -1;
 	private int loggedTrack = -1;
+	// Keyed on whether the extra bar shows and the health it holds at full, both of which hold for a fight,
+	// rather than on the health left, which would write a line for every hit.
+	private String loggedExtraBar;
 	private PhaseColors phaseColors;
 
 	private final int[] phaseMarkerValues = new int[PHASE_MARKER_VARBITS.length];
@@ -83,6 +93,12 @@ public class GameBossBar
 		{
 			loggedZeroId = trackedId;
 			debugLog.add("Game boss bar reads 0 for NPC id {} before its health arrived, ignored", trackedId);
+		}
+		final String extraBar = showsExtraBar() + "/" + extraMaxHealth();
+		if (!extraBar.equals(loggedExtraBar))
+		{
+			loggedExtraBar = extraBar;
+			debugLog.add("Game extra bar: {}", extraBarReading());
 		}
 		updatePhaseColors(trackedId);
 	}
@@ -289,6 +305,39 @@ public class GameBossBar
 	public int health()
 	{
 		return client.getVarbitValue(VarbitID.HPBAR_HUD_HP);
+	}
+
+	// The game's own second bar, for a fight against a pair. Nothing draws from these yet: they are read so
+	// that one trip against a pair, such as Bork and the Smorks, says in the log whether the game drives a
+	// second bar at all, which is what a bar of our own for the other half would have to follow.
+	public boolean showsExtraBar()
+	{
+		return client.getVarpValue(VarPlayerID.HPBAR_HUD_SHOW_EXTRA_BAR) != 0;
+	}
+
+	public int extraMaxHealth()
+	{
+		return client.getVarbitValue(VarbitID.HPBAR_HUD_EXTRA_BASE);
+	}
+
+	public int extraHealth()
+	{
+		return client.getVarbitValue(VarbitID.HPBAR_HUD_EXTRA_CURRENT);
+	}
+
+	// With the HUD's information slots after it, since the extra bar carries health only and the name of the
+	// boss it belongs to has to come from somewhere.
+	public String extraBarReading()
+	{
+		final StringBuilder text = new StringBuilder()
+			.append(showsExtraBar() ? "shown" : "hidden")
+			.append(", health ").append(extraHealth()).append('/').append(extraMaxHealth())
+			.append(", hud info");
+		for (int varp : HUD_INFO_VARPS)
+		{
+			text.append(' ').append(client.getVarpValue(varp));
+		}
+		return text.toString();
 	}
 
 	// Right after the bar moves to another NPC it can read 0 before that NPC's health arrives, so a 0 only

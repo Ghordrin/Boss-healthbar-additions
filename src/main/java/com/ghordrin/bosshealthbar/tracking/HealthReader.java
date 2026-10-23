@@ -205,7 +205,10 @@ public class HealthReader
 				source = "overhead bar";
 				break;
 		}
-		return source + " at " + reading.health.ratio + "/" + reading.health.scale;
+		// The known max turns a ratio into hitpoints, so a reading that isn't exact says whether it has one.
+		final String known = !reading.health.exactHealth && reading.health.maxHealth != null
+			? ", max " + reading.health.maxHealth : "";
+		return source + " at " + reading.health.ratio + "/" + reading.health.scale + known;
 	}
 
 	// The overhead bar is up but its ratio is the client's "no value".
