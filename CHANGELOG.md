@@ -6,7 +6,7 @@
 
 - Second bar on its own (off): gives the second boss bar its own place on screen, so it can be dragged away from the first one
 - Second bar scale (50%): how tall the second boss bar is, as a share of the bar height. On its own place it can also be alt-dragged taller or shorter
-- The energy bar a boss carries besides its health, which replacing the game's bar used to hide, is drawn as a thin strip under the bar in the colours the game gives it
+- The second bar a boss carries besides its health, such as an energy bar, which replacing the game's bar used to hide. It's drawn as a thin strip under the bar in the colours the game gives it, and shows whenever the game shows one
 
 ### Fixed
 

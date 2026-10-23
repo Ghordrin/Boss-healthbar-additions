@@ -18,7 +18,7 @@ import javax.inject.Singleton;
 // colors the game paints it in. It follows the game's bar and has nothing of its own to set, so there is no
 // setting for it: it shows whenever the game shows one.
 @Singleton
-public class EnergyBar
+public class ExtraBar
 {
 	// The room left between the health bar and this one, tighter than the gap before another boss's bar since
 	// this one belongs to the same boss.
@@ -38,7 +38,7 @@ public class EnergyBar
 	private final BarAnimation animation = new BarAnimation();
 
 	@Inject
-	private EnergyBar(BossHealthBarConfig config, BarPainter barPainter, GameBossBar gameBossBar)
+	private ExtraBar(BossHealthBarConfig config, BarPainter barPainter, GameBossBar gameBossBar)
 	{
 		this.config = config;
 		this.barPainter = barPainter;
