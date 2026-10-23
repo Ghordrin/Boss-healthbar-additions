@@ -280,9 +280,17 @@ public class GameBossBar
 		final boolean replace = replaceEnabled && (isTracking(opponent)
 			? opponentGetsBar
 			: opponentGetsBar || (trackedGetsBar && !tracksStandIn()));
+		// A bar that tracks no NPC holds what the last fight left on it, which the game can put back up before it
+		// moves on to the next boss, such as on the walk into an arena. Nothing on it is current, so it stays
+		// hidden while bars are replaced. What it means for the pillar bars doesn't change, so it isn't returned.
+		final boolean leftover = replaceEnabled && trackedNpcId() == -1;
 		if (replace)
 		{
 			gameBar.hide(bar, "Game boss bar hidden (tracked id {})", trackedNpcId());
+		}
+		else if (leftover)
+		{
+			gameBar.hide(bar, "Game boss bar hidden, it tracks no NPC");
 		}
 		else
 		{

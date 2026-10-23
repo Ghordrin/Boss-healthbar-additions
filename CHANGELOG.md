@@ -12,6 +12,7 @@
 
 - The pillar bars' corner names use the Name font instead of the Hitpoints font, so the Hitpoints font no longer resizes them or the box they sit in
 - A boss that hands the game's health bar to a nameless form of itself no longer leaves the fight with no bar at all
+- The game's boss health bar no longer shows what the last fight left on it, such as on the walk into an arena before the boss appears
 
 ## 2.0.0 (2026-10-18)
 
