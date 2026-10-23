@@ -52,6 +52,8 @@ public class GameBossBar
 	private int loggedTrail = -1;
 	private int loggedTrack = -1;
 	private String loggedExtraBar;
+	private String loggedLayout;
+	private int loggedMissingId = -1;
 	private PhaseColors phaseColors;
 	private PhaseColors extraBarColors;
 
@@ -95,6 +97,27 @@ public class GameBossBar
 			loggedExtraBar = extraBar;
 			debugLog.add("Game extra bar: {}", extraBarReading());
 		}
+		final String layout = layoutReading();
+		if (!layout.equals(loggedLayout))
+		{
+			loggedLayout = layout;
+			debugLog.add("Game boss bar layout: {}", layout);
+		}
+	}
+
+	// Which of the HUD's containers are up. Only one of them is hidden here, so a fight that lays its bars out
+	// in another would keep the game's bars up next to ours.
+	public String layoutReading()
+	{
+		return "dodger " + (gameBar.isHidden() ? "hidden by us" : shown(InterfaceID.HpbarHud.HPDODGER))
+			+ ", dodger side " + shown(InterfaceID.HpbarHud.HPDODGERSIDE)
+			+ ", content side " + shown(InterfaceID.HpbarHud.HPCONTENTSIDE);
+	}
+
+	private String shown(int widgetId)
+	{
+		final Widget widget = client.getWidget(widgetId);
+		return widget == null ? "none" : widget.isSelfHidden() ? "hidden" : "shown";
 	}
 
 	// Whether the extra bar shows, the health it holds at full and the colors it is painted in: all three hold
@@ -242,6 +265,13 @@ public class GameBossBar
 				break;
 			}
 		}
+		// Our bar can only follow the game's onto an NPC it finds, so one the bar tracks but the scene doesn't
+		// hold is worth a line.
+		if (npc == null && trackedId != loggedMissingId)
+		{
+			loggedMissingId = trackedId;
+			debugLog.add("Game boss bar tracks NPC id {}, which isn't in the scene", trackedId);
+		}
 		return npc;
 	}
 
@@ -320,6 +350,8 @@ public class GameBossBar
 		loggedTrackedId = -1;
 		healthSeenId = -1;
 		loggedZeroId = -1;
+		loggedMissingId = -1;
+		loggedLayout = null;
 		loggedFill = -1;
 		loggedTrail = -1;
 		loggedTrack = -1;
