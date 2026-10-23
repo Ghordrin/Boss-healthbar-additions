@@ -1,7 +1,9 @@
 package com.ghordrin.bosshealthbar.data;
 
+import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
 import com.ghordrin.bosshealthbar.theme.ThemeColors;
 import com.google.common.base.Strings;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Actor;
 import net.runelite.api.NPC;
@@ -14,6 +16,8 @@ import net.runelite.client.util.Text;
 @Singleton
 public class OpponentInfo
 {
+	private final GameBossBar gameBossBar;
+
 	private Actor actor;
 	private int npcId = -1;
 	private String name;
@@ -22,6 +26,12 @@ public class OpponentInfo
 	private BossStats.Info stats;
 	private KnownBosses.Icon bossIcon;
 	private ThemeColors bossColors;
+
+	@Inject
+	OpponentInfo(GameBossBar gameBossBar)
+	{
+		this.gameBossBar = gameBossBar;
+	}
 
 	public String name()
 	{
@@ -77,6 +87,20 @@ public class OpponentInfo
 		stats = null;
 		if (opponent instanceof NPC)
 		{
+			// A fight can carry the game's bar on an NPC of its own that has no name, such as the one behind a
+			// pair's bars, so it goes by the name the game's bar gives it. Until one turns up, it is looked up again.
+			if (!NpcUtil.hasName(shown))
+			{
+				final String barName = gameBarName((NPC) opponent, composition);
+				if (barName != null)
+				{
+					shown = barName;
+				}
+				else
+				{
+					complete = false;
+				}
+			}
 			final KnownBosses.Boss boss = KnownBosses.find(shown);
 			if (boss != null)
 			{
@@ -103,5 +127,16 @@ public class OpponentInfo
 		name = shown;
 		actor = complete ? opponent : null;
 		npcId = id;
+	}
+
+	// The name the game gives the NPC for its health bar, or failing that the one its bar shows right now.
+	private String gameBarName(NPC npc, NPCComposition composition)
+	{
+		final String hpName = composition != null ? composition.getStringValue(ParamID.NPC_HP_NAME) : null;
+		if (!Strings.isNullOrEmpty(hpName))
+		{
+			return Text.removeTags(hpName);
+		}
+		return gameBossBar.isTracking(npc) ? gameBossBar.title() : null;
 	}
 }

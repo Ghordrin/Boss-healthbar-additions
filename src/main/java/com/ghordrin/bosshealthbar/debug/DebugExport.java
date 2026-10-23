@@ -168,7 +168,7 @@ public class DebugExport
 		final int trackedId = gameBossBar.trackedNpcId();
 		lines.add("  Game boss bar: " + (trackedId == -1 ? "none"
 			: "NPC id " + trackedId + ", health " + gameBossBar.health() + "/" + gameBossBar.maxHealth())
-			+ ", hidden " + gameBossBar.isHidden());
+			+ ", title " + gameBossBar.title() + ", hidden " + gameBossBar.isHidden());
 		lines.add("  Game extra bar: " + gameBossBar.extraBarReading());
 		lines.add("  Game bar widths: " + gameBossBar.barWidthsReading());
 		lines.add("  Raid boss bar: " + DebugLog.describe(tobBossBar.cachedBoss()) + ", hidden " + tobBossBar.isHidden()

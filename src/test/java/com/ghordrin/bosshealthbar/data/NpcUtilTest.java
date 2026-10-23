@@ -18,8 +18,8 @@ public class NpcUtilTest
 	@Test
 	public void aRealNameIsAName()
 	{
-		assertTrue(NpcUtil.hasName("Bork"));
-		assertTrue(NpcUtil.hasName("The Smorks"));
+		assertTrue(NpcUtil.hasName("Goblin"));
+		assertTrue(NpcUtil.hasName("The Twins"));
 		assertTrue(NpcUtil.hasName("Nulled Warrior"));
 	}
 }

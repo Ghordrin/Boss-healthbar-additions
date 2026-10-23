@@ -185,8 +185,7 @@ public class OpponentTracker
 	{
 		final NPC nativeBarBoss = gameBossBar.findNpc(opponent);
 		final NPC gameBarBoss = nativeBarBoss != null ? nativeBarBoss : tobBossBar.findBoss();
-		if (gameBarBoss != null && !gameBarBoss.isDead() && gameBarBoss != opponent && NpcUtil.hasName(gameBarBoss.getName())
-			&& !isNeverShown(gameBarBoss))
+		if (gameBarBoss != null && !gameBarBoss.isDead() && gameBarBoss != opponent && !isNeverShown(gameBarBoss))
 		{
 			setOpponent(gameBarBoss);
 			interactionLostMillis = 0;
@@ -439,9 +438,7 @@ public class OpponentTracker
 
 	public boolean shouldShowBarFor(Actor actor)
 	{
-		// A fight can keep an NPC of its own that carries the game's health bar and has no name, such as the one
-		// behind a pair's bars. It can't own a bar: there would be nothing to write on it.
-		if (actor == null || !NpcUtil.hasName(actor.getName()))
+		if (actor == null || actor.getName() == null)
 		{
 			return false;
 		}
@@ -721,7 +718,7 @@ public class OpponentTracker
 	// Opponents that get a bar however "Only show for bosses" is set, apart from the combat level option.
 	private boolean isBossLike(Actor actor)
 	{
-		return actor != null && NpcUtil.hasName(actor.getName())
+		return actor != null && actor.getName() != null
 			&& (listMatch(opponentListMatch, actor) == NpcFilter.Match.ALSO
 				|| isKnownBoss(actor)
 				|| isGameBarBoss(actor)

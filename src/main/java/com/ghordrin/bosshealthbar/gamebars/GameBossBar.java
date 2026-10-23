@@ -17,6 +17,7 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.util.Text;
 
 @Singleton
 public class GameBossBar
@@ -275,11 +276,8 @@ public class GameBossBar
 			return false;
 		}
 
-		// An opponent without our bar, such as one on the Never show for list, keeps the game's bar, and so does a
-		// bar carried by an NPC that can't own ours: something of ours has to take its place.
-		final boolean replace = replaceEnabled && (isTracking(opponent)
-			? opponentGetsBar
-			: opponentGetsBar || (trackedGetsBar && !tracksStandIn()));
+		// An opponent without our bar, such as one on the Never show for list, keeps the game's bar.
+		final boolean replace = replaceEnabled && (isTracking(opponent) ? opponentGetsBar : trackedGetsBar);
 		// A bar that tracks no NPC holds what the last fight left on it, which the game can put back up before it
 		// moves on to the next boss, such as on the walk into an arena. Nothing on it is current, so it stays
 		// hidden while bars are replaced. What it means for the pillar bars doesn't change, so it isn't returned.
@@ -297,14 +295,6 @@ public class GameBossBar
 			restore();
 		}
 		return replace;
-	}
-
-	// A fight can carry the game's bar on a nameless NPC of its own, which can never own our bar: there would be
-	// nothing to write on it. Replacing the game's bar for it would leave the fight with no bar at all.
-	private boolean tracksStandIn()
-	{
-		final NPC tracked = trackedNpc();
-		return tracked != null && !NpcUtil.hasName(tracked.getName());
 	}
 
 	private void restore()
@@ -344,6 +334,14 @@ public class GameBossBar
 	public int maxHealth()
 	{
 		return client.getVarbitValue(VarbitID.HPBAR_HUD_BASEHP);
+	}
+
+	// The name the game's bar shows, or null when it shows none.
+	public String title()
+	{
+		final Widget name = client.getWidget(InterfaceID.HpbarHud.CREATURE_NAME);
+		final String text = name != null ? Text.removeTags(name.getText()) : null;
+		return NpcUtil.hasName(text) ? text : null;
 	}
 
 	public int health()
