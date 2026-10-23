@@ -34,13 +34,6 @@ public class GameBossBar
 		VarbitID.HPBAR_HUD_HP_2,
 	};
 
-	private static final int[] HUD_INFO_VARPS = {
-		VarPlayerID.HPBAR_HUD_INFO,
-		VarPlayerID.HPBAR_HUD_INFO_2,
-		VarPlayerID.HPBAR_HUD_INFO_3,
-		VarPlayerID.HPBAR_HUD_INFO_4,
-	};
-
 	private final Client client;
 	private final DebugLog debugLog;
 	private final HiddenWidget gameBar;
@@ -57,10 +50,9 @@ public class GameBossBar
 	private int loggedFill = -1;
 	private int loggedTrail = -1;
 	private int loggedTrack = -1;
-	// Keyed on whether the extra bar shows and the health it holds at full, both of which hold for a fight,
-	// rather than on the health left, which would write a line for every hit.
 	private String loggedExtraBar;
 	private PhaseColors phaseColors;
+	private PhaseColors extraBarColors;
 
 	private final int[] phaseMarkerValues = new int[PHASE_MARKER_VARBITS.length];
 	private int phaseMarkerMaxHealth;
@@ -94,13 +86,46 @@ public class GameBossBar
 			loggedZeroId = trackedId;
 			debugLog.add("Game boss bar reads 0 for NPC id {} before its health arrived, ignored", trackedId);
 		}
-		final String extraBar = showsExtraBar() + "/" + extraMaxHealth();
+		updatePhaseColors(trackedId);
+		updateExtraBarColors();
+		final String extraBar = extraBarKey();
 		if (!extraBar.equals(loggedExtraBar))
 		{
 			loggedExtraBar = extraBar;
 			debugLog.add("Game extra bar: {}", extraBarReading());
 		}
-		updatePhaseColors(trackedId);
+	}
+
+	// Whether the extra bar shows, the health it holds at full and the colors it is painted in: all three hold
+	// for a fight, unlike the health left, which would write a line for every hit.
+	private String extraBarKey()
+	{
+		return showsExtraBar() + "/" + extraMaxHealth() + "/"
+			+ (extraBarColors != null ? extraBarColors.key() : 0);
+	}
+
+	// Read once a tick, as the main bar's are, since the overlay asks every frame. The game paints its extra
+	// bar in colors of its own, so our strip takes those instead of the theme's.
+	private void updateExtraBarColors()
+	{
+		PhaseColors colors = null;
+		if (showsExtraBar())
+		{
+			final Widget fill = client.getWidget(InterfaceID.HpbarHud.HEALTH_BAR_REMAINING_EXTRA);
+			final Widget trail = client.getWidget(InterfaceID.HpbarHud.HEALTH_BAR_SLIDING_EXTRA);
+			final Widget track = client.getWidget(InterfaceID.HpbarHud.HEALTH_BAR_BACK_EXTRA);
+			if (fill != null && trail != null && track != null)
+			{
+				colors = PhaseColors.of(fill.getTextColor(), trail.getTextColor(), track.getTextColor());
+			}
+		}
+		extraBarColors = colors;
+	}
+
+	// Null while the game paints the extra bar in the colors every boss bar uses, which the themes replace.
+	public PhaseColors extraBarColors()
+	{
+		return extraBarColors;
 	}
 
 	// Read once a tick, since the overlay asks every frame. The colors are logged whenever they change, so a
@@ -318,9 +343,8 @@ public class GameBossBar
 		return client.getVarbitValue(VarbitID.HPBAR_HUD_HP);
 	}
 
-	// The game's own second bar, for a fight against a pair. Nothing draws from these yet: they are read so
-	// that one trip against a pair, such as Bork and the Smorks, says in the log whether the game drives a
-	// second bar at all, which is what a bar of our own for the other half would have to follow.
+	// The game's own second bar, which a boss that carries something besides its health drives, such as an
+	// energy bar. Hiding the game's bar takes this one with it, so the overlay draws it again from these.
 	public boolean showsExtraBar()
 	{
 		return client.getVarpValue(VarPlayerID.HPBAR_HUD_SHOW_EXTRA_BAR) != 0;
@@ -336,19 +360,13 @@ public class GameBossBar
 		return client.getVarbitValue(VarbitID.HPBAR_HUD_EXTRA_CURRENT);
 	}
 
-	// With the HUD's information slots after it, since the extra bar carries health only and the name of the
-	// boss it belongs to has to come from somewhere.
+	// With the colors the game paints it in, since those are what our strip follows. The HUD carries no name
+	// for it, so nothing here says which of a boss's bars it is.
 	public String extraBarReading()
 	{
-		final StringBuilder text = new StringBuilder()
-			.append(showsExtraBar() ? "shown" : "hidden")
-			.append(", health ").append(extraHealth()).append('/').append(extraMaxHealth())
-			.append(", hud info");
-		for (int varp : HUD_INFO_VARPS)
-		{
-			text.append(' ').append(client.getVarpValue(varp));
-		}
-		return text.toString();
+		return (showsExtraBar() ? "shown" : "hidden")
+			+ ", health " + extraHealth() + "/" + extraMaxHealth()
+			+ ", colors " + (extraBarColors != null ? hex(extraBarColors.key()) : "the usual ones");
 	}
 
 	// Right after the bar moves to another NPC it can read 0 before that NPC's health arrives, so a 0 only

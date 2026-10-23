@@ -6,10 +6,12 @@
 
 - Second bar on its own (off): gives the second boss bar its own place on screen, so it can be dragged away from the first one
 - Second bar scale (50%): how tall the second boss bar is, as a share of the bar height. On its own place it can also be alt-dragged taller or shorter
+- The energy bar a boss carries besides its health, which replacing the game's bar used to hide, is drawn as a thin strip under the bar in the colours the game gives it
 
 ### Fixed
 
 - The pillar bars' corner names use the Name font instead of the Hitpoints font, so the Hitpoints font no longer resizes them or the box they sit in
+- A boss that hands the game's health bar to a nameless form of itself no longer leaves the fight with no bar at all
 
 ## 2.0.0 (2026-10-18)
 
