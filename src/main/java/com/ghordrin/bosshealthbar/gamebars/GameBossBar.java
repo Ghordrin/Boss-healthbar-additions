@@ -250,8 +250,11 @@ public class GameBossBar
 			return false;
 		}
 
-		// An opponent without our bar, such as one on the Never show for list, keeps the game's bar.
-		final boolean replace = replaceEnabled && (isTracking(opponent) ? opponentGetsBar : trackedGetsBar);
+		// An opponent without our bar, such as one on the Never show for list, keeps the game's bar, and so does a
+		// bar carried by an NPC that can't own ours: something of ours has to take its place.
+		final boolean replace = replaceEnabled && (isTracking(opponent)
+			? opponentGetsBar
+			: opponentGetsBar || (trackedGetsBar && !tracksStandIn()));
 		if (replace)
 		{
 			gameBar.hide(bar, "Game boss bar hidden (tracked id {})", trackedNpcId());
@@ -261,6 +264,14 @@ public class GameBossBar
 			restore();
 		}
 		return replace;
+	}
+
+	// A fight can carry the game's bar on a nameless NPC of its own, which can never own our bar: there would be
+	// nothing to write on it. Replacing the game's bar for it would leave the fight with no bar at all.
+	private boolean tracksStandIn()
+	{
+		final NPC tracked = trackedNpc();
+		return tracked != null && !NpcUtil.hasName(tracked.getName());
 	}
 
 	private void restore()

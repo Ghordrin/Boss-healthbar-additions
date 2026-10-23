@@ -185,7 +185,8 @@ public class OpponentTracker
 	{
 		final NPC nativeBarBoss = gameBossBar.findNpc(opponent);
 		final NPC gameBarBoss = nativeBarBoss != null ? nativeBarBoss : tobBossBar.findBoss();
-		if (gameBarBoss != null && !gameBarBoss.isDead() && gameBarBoss != opponent && !isNeverShown(gameBarBoss))
+		if (gameBarBoss != null && !gameBarBoss.isDead() && gameBarBoss != opponent && NpcUtil.hasName(gameBarBoss.getName())
+			&& !isNeverShown(gameBarBoss))
 		{
 			setOpponent(gameBarBoss);
 			interactionLostMillis = 0;
@@ -438,7 +439,9 @@ public class OpponentTracker
 
 	public boolean shouldShowBarFor(Actor actor)
 	{
-		if (actor == null || actor.getName() == null)
+		// A fight can keep an NPC of its own that carries the game's health bar and has no name, such as the one
+		// behind a pair's bars. It can't own a bar: there would be nothing to write on it.
+		if (actor == null || !NpcUtil.hasName(actor.getName()))
 		{
 			return false;
 		}
@@ -718,7 +721,7 @@ public class OpponentTracker
 	// Opponents that get a bar however "Only show for bosses" is set, apart from the combat level option.
 	private boolean isBossLike(Actor actor)
 	{
-		return actor != null && actor.getName() != null
+		return actor != null && NpcUtil.hasName(actor.getName())
 			&& (listMatch(opponentListMatch, actor) == NpcFilter.Match.ALSO
 				|| isKnownBoss(actor)
 				|| isGameBarBoss(actor)
@@ -770,16 +773,10 @@ public class OpponentTracker
 			final String name = composition != null ? composition.getName() : null;
 			// A boss with several forms has no name on the ID its bar tracks, only on the forms, so with no
 			// NPC in the scene only an entry by ID can answer for it.
-			gameBarNpcShown = NpcFilter.check(neverShowFor, NpcFilter.EMPTY, hasName(name) ? name : "", npcId)
+			gameBarNpcShown = NpcFilter.check(neverShowFor, NpcFilter.EMPTY, NpcUtil.hasName(name) ? name : "", npcId)
 				!= NpcFilter.Match.NEVER;
 		}
 		return gameBarNpcShown;
-	}
-
-	// The client spells a name it doesn't have as "null".
-	private static boolean hasName(String name)
-	{
-		return name != null && !name.isEmpty() && !"null".equals(name);
 	}
 
 	// The raid bar's boss usually isn't the opponent, and the question comes every frame, so the whole answer
