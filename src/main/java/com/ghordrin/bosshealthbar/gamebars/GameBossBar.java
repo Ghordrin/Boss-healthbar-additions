@@ -360,6 +360,30 @@ public class GameBossBar
 		return client.getVarbitValue(VarbitID.HPBAR_HUD_EXTRA_CURRENT);
 	}
 
+	// Each bar's fill, trail, track and inner widths, to lay beside the health the varbits give. If the widths
+	// alone say how full a bar is, a bar of ours can be drawn for anything the HUD shows without knowing what
+	// it is for. Both widths, since the game may not lay out again a part of the HUD that is hidden.
+	public String barWidthsReading()
+	{
+		return "main " + widthsReading(InterfaceID.HpbarHud.HEALTH_BAR_REMAINING,
+			InterfaceID.HpbarHud.HEALTH_BAR_SLIDING, InterfaceID.HpbarHud.HEALTH_BAR_BACK, InterfaceID.HpbarHud.INNER)
+			+ "; extra " + widthsReading(InterfaceID.HpbarHud.HEALTH_BAR_REMAINING_EXTRA,
+			InterfaceID.HpbarHud.HEALTH_BAR_SLIDING_EXTRA, InterfaceID.HpbarHud.HEALTH_BAR_BACK_EXTRA,
+			InterfaceID.HpbarHud.INNER_EXTRA);
+	}
+
+	private String widthsReading(int fillId, int trailId, int trackId, int innerId)
+	{
+		return "fill " + widths(fillId) + ", trail " + widths(trailId) + ", track " + widths(trackId)
+			+ ", inner " + widths(innerId);
+	}
+
+	private String widths(int widgetId)
+	{
+		final Widget widget = client.getWidget(widgetId);
+		return widget == null ? "none" : widget.getWidth() + " (set " + widget.getOriginalWidth() + ")";
+	}
+
 	// With the colors the game paints it in, since those are what our strip follows. The HUD carries no name
 	// for it, so nothing here says which of a boss's bars it is.
 	public String extraBarReading()
