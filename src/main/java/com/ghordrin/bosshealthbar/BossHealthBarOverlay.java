@@ -11,9 +11,7 @@ import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.data.BarState;
 import com.ghordrin.bosshealthbar.data.BossStats;
-import com.ghordrin.bosshealthbar.data.KnownBosses;
 import com.ghordrin.bosshealthbar.data.OpponentInfo;
-import com.ghordrin.bosshealthbar.debug.DebugLog;
 import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
 import com.ghordrin.bosshealthbar.gamebars.TobBossBar;
 import com.ghordrin.bosshealthbar.integrations.KillCounts;
@@ -31,14 +29,13 @@ import com.ghordrin.bosshealthbar.render.BarTextPainter;
 import com.ghordrin.bosshealthbar.render.CrestRenderer;
 import com.ghordrin.bosshealthbar.render.GoldBar;
 import com.ghordrin.bosshealthbar.render.HealthText;
-import com.ghordrin.bosshealthbar.render.HitpointsTextMode;
 import com.ghordrin.bosshealthbar.render.IntroAnimation;
+import com.ghordrin.bosshealthbar.render.PartnerBar;
 import com.ghordrin.bosshealthbar.theme.BarTheme;
 import com.ghordrin.bosshealthbar.theme.CustomColors;
 import com.ghordrin.bosshealthbar.theme.PhaseColors;
 import com.ghordrin.bosshealthbar.theme.ThemeColors;
 import com.ghordrin.bosshealthbar.tracking.DamageTracker;
-import com.ghordrin.bosshealthbar.tracking.FightGroup;
 import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
 import java.awt.AlphaComposite;
 import java.awt.Composite;
@@ -68,8 +65,6 @@ public class BossHealthBarOverlay extends Overlay
 	private static final int MIN_FITTED_BAR_WIDTH = 160;
 	private static final int CREST_OVERLAP = 2;
 	private static final float CLIP_REACH = 4096f;
-	private static final int PARTNER_GAP = 3;
-	private static final int PARTNER_MIN_HEIGHT = 4;
 
 	private final Client client;
 	private final BossHealthBarConfig config;
@@ -87,17 +82,9 @@ public class BossHealthBarOverlay extends Overlay
 	private final KillCounts killCounts;
 	private final PartyDefence partyDefence;
 	private final SpecialAttackCounts specialAttackCounts;
-	private final FightGroup group;
-	private final DebugLog debugLog;
+	private final PartnerBar partnerBar;
 	private final BarAnimation animation = new BarAnimation();
-	private final BarAnimation partnerAnimation = new BarAnimation();
 	private final Rectangle2D.Float burnClipShape = new Rectangle2D.Float();
-
-	private FightGroup.Member partnerMember;
-	private boolean partnerLoggedDead;
-	private BarState partnerTextState;
-	private HitpointsTextMode partnerTextMode;
-	private String partnerText;
 
 	private final OpponentInfo opponentInfo;
 
@@ -124,8 +111,7 @@ public class BossHealthBarOverlay extends Overlay
 		KillCounts killCounts,
 		PartyDefence partyDefence,
 		SpecialAttackCounts specialAttackCounts,
-		FightGroup group,
-		DebugLog debugLog)
+		PartnerBar partnerBar)
 	{
 		super(plugin);
 		this.client = client;
@@ -145,8 +131,7 @@ public class BossHealthBarOverlay extends Overlay
 		this.killCounts = killCounts;
 		this.partyDefence = partyDefence;
 		this.specialAttackCounts = specialAttackCounts;
-		this.group = group;
-		this.debugLog = debugLog;
+		this.partnerBar = partnerBar;
 
 		// Where the game puts its own boss bar, which this one stands in for.
 		setPosition(OverlayPosition.TOP_CENTER);
@@ -174,8 +159,7 @@ public class BossHealthBarOverlay extends Overlay
 	private void resetAnimation()
 	{
 		animation.reset();
-		partnerAnimation.reset();
-		partnerMember = null;
+		partnerBar.reset();
 		selector.resetState();
 	}
 
@@ -197,18 +181,14 @@ public class BossHealthBarOverlay extends Overlay
 		return barColors(updateThemeColors(), bossColors, BarTheme.of(config).isFlat());
 	}
 
-	// The second bar follows its own boss, so two bosses at once don't both take the first one's color.
-	private ThemeColors partnerColors(BarState partner, Actor member, boolean flat)
+	// The theme's own colors, for a bar drawn in the same style that follows a boss of its own.
+	public ThemeColors themeColors()
 	{
-		final KnownBosses.Boss boss = config.matchBossColors() && !selector.isShowingPreview()
-			? KnownBosses.find(partner.name) : null;
-		return withPhase(barColors(updateThemeColors(), boss != null ? boss.getColors() : null, flat),
-			phaseFor(member, -1), flat);
+		return updateThemeColors();
 	}
 
 	// The phase the game is painting the bar in, or null when it paints its usual colors. heldBossId names
 	// the boss a bar without an opponent of its own is held for, whose phase the game's bar still shows.
-	// The second bar has no such hold, so it passes -1.
 	private PhaseColors phaseFor(Actor opponent, int heldBossId)
 	{
 		if (!config.phaseColors())
@@ -343,11 +323,11 @@ public class BossHealthBarOverlay extends Overlay
 		final int totalWidth = leftExtent + width + rightExtent;
 
 		// Kept for the whole fight, so the bar doesn't move when the other boss's health first shows.
-		final boolean partnerArea = config.showPartnerBar() && (selector.isShowingPreview() || group.isGroupFight());
-		final int partnerBarHeight = Math.max(PARTNER_MIN_HEIGHT, Math.round(barHeight * 0.5f));
+		final boolean partnerArea = !config.secondBarSeparate() && partnerBar.isLive(selector.isShowingPreview());
+		final int partnerBarHeight = partnerBar.barThickness(barHeight);
 		final int partnerCapRise = capRise(partnerBarHeight, flat, ends);
 		final int partnerRowHeight = partnerArea ? textPainter.partnerRowHeight() : 0;
-		final int partnerHeight = partnerArea ? PARTNER_GAP + partnerRowHeight + partnerCapRise * 2 + partnerBarHeight : 0;
+		final int partnerHeight = partnerArea ? PartnerBar.GAP + partnerBar.height(barHeight, flat, ends) : 0;
 
 		final Composite originalComposite = graphics.getComposite();
 		final float opacity = animation.fadeInOpacity(now) * defeatOpacity;
@@ -415,10 +395,10 @@ public class BossHealthBarOverlay extends Overlay
 		if (partnerArea)
 		{
 			final int partnerTop = barY + barHeight + capRise + inBarBelow + footerHeight + secondFooterHeight
-				+ PARTNER_GAP;
-			drawPartner(graphics, originalComposite, opacity * animation.defeatTextOpacity(now, burnAway),
-				opacity * textOpacity, partnerTop, partnerTop + partnerRowHeight + partnerCapRise, width,
-				shownWidth, shownInset, capWidth, partnerBarHeight, fillProgress, flat, ends);
+				+ PartnerBar.GAP;
+			partnerBar.draw(graphics, 0, originalComposite, opacity * animation.defeatTextOpacity(now, burnAway),
+				opacity * textOpacity, updateThemeColors(), partnerTop, partnerTop + partnerRowHeight + partnerCapRise,
+				width, shownWidth, shownInset, capWidth, partnerBarHeight, fillProgress, flat, ends);
 			setOpacity(graphics, originalComposite, opacity);
 		}
 
@@ -467,61 +447,6 @@ public class BossHealthBarOverlay extends Overlay
 		return new Dimension(leftExtent + width + rightExtent, totalHeight);
 	}
 
-	// Another boss of the same fight, in the main bar's colours but without its extras.
-	private void drawPartner(Graphics2D graphics, Composite originalComposite, float barOpacity, float textOpacity,
-		int rowTop, int barY, int width, int shownWidth, int shownInset, int capWidth, int barHeight,
-		float fillProgress, boolean flat, BarEnds ends)
-	{
-		final FightGroup.Member member = selector.isShowingPreview() ? null : group.partner();
-		if (member != partnerMember)
-		{
-			// The bars swapped, so jump to the new partner's health instead of animating from the old one's.
-			partnerAnimation.reset();
-			partnerMember = member;
-			partnerLoggedDead = false;
-		}
-		final BarState partner = selector.isShowingPreview() ? BarStateSelector.PREVIEW_PARTNER : member != null ? member.state : null;
-		if (partner == null)
-		{
-			return;
-		}
-		final boolean dead = member != null && member.isDead();
-		if (member != null && dead != partnerLoggedDead)
-		{
-			if (dead)
-			{
-				debugLog.add("Second bar: {} defeated", partner.name);
-			}
-			partnerLoggedDead = dead;
-		}
-		partnerAnimation.tick(dead ? 0f : clamp01(partner.health.ratio / (float) partner.health.scale),
-			config.animationSpeed(), config.showDamageTrail(), 0);
-
-		final ThemeColors colors = partnerColors(partner, member != null ? member.npc() : null, flat);
-
-		setOpacity(graphics, originalComposite, textOpacity);
-		textPainter.drawPartnerRow(graphics, partner.name, partnerHitpointsText(partner), dead, colors, width, capWidth,
-			rowTop);
-
-		setOpacity(graphics, originalComposite, barOpacity);
-		graphics.translate(shownInset, 0);
-		barPainter.drawBar(graphics, colors, partner, partnerAnimation, dead, barY, shownWidth, barHeight, fillProgress,
-			false, flat, ends, false, false, -1);
-		graphics.translate(-shownInset, 0);
-	}
-
-	private String partnerHitpointsText(BarState partner)
-	{
-		final HitpointsTextMode mode = config.hitpointsTextMode();
-		if (partner != partnerTextState || mode != partnerTextMode)
-		{
-			partnerText = HealthText.hitpointsText(mode, partner.health);
-			partnerTextState = partner;
-			partnerTextMode = mode;
-		}
-		return partnerText;
-	}
-
 	// Everything left of the burning edge. originX is where the current origin is across the overlay.
 	private Shape burnClip(float burn, int totalWidth, int originX)
 	{
@@ -532,12 +457,7 @@ public class BossHealthBarOverlay extends Overlay
 
 	static ThemeColors barColors(ThemeColors themeColors, ThemeColors bossColors, boolean flat)
 	{
-		if (bossColors == null)
-		{
-			return themeColors;
-		}
-		// A flat bar keeps its own look and only takes the opponent's fill color.
-		return flat ? ThemeColors.withBase(themeColors, bossColors.getFillHigh()) : bossColors;
+		return ThemeColors.withBoss(themeColors, bossColors, flat);
 	}
 
 	static boolean showsGold(boolean rolledGold, boolean flat)

@@ -33,6 +33,8 @@ public class BossHealthBarConfigTest
 		assertEquals("showDrainCap", BossHealthBarConfig.SHOW_DRAIN_CAP_KEY);
 		assertEquals("showFightTimer", BossHealthBarConfig.SHOW_FIGHT_TIMER_KEY);
 		assertEquals("showPartnerBar", BossHealthBarConfig.SHOW_PARTNER_BAR_KEY);
+		assertEquals("secondBarSeparate", BossHealthBarConfig.SECOND_BAR_SEPARATE_KEY);
+		assertEquals("secondBarScale", BossHealthBarConfig.SECOND_BAR_SCALE_KEY);
 		assertEquals("showDamageTrail", BossHealthBarConfig.SHOW_DAMAGE_TRAIL_KEY);
 		assertEquals("animationSpeed", BossHealthBarConfig.ANIMATION_SPEED_KEY);
 		assertEquals("lowHealthEffect", BossHealthBarConfig.LOW_HEALTH_EFFECT_KEY);
@@ -82,6 +84,8 @@ public class BossHealthBarConfigTest
 		assertTrue(defaults.showDrainCap());
 		assertTrue(defaults.showFightTimer());
 		assertTrue(defaults.showPartnerBar());
+		assertFalse(defaults.secondBarSeparate());
+		assertEquals(50, defaults.secondBarScale());
 	}
 
 	@Test
