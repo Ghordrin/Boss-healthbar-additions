@@ -78,7 +78,7 @@ public class BossHealthBarPlugin extends Plugin
 	public static final String INTERNAL_NAME = "boss-health-bar-additions";
 	public static final String DISCORD_URL = "https://discord.gg/YPugUP8rg2";
 	// Keep in step with the version in build.gradle and runelite-plugin.properties.
-	public static final String VERSION = "2.0.0";
+	public static final String VERSION = "2.1.0";
 	private static final int MAX_LOGGED_VALUE_LENGTH = 100;
 
 	@Inject
