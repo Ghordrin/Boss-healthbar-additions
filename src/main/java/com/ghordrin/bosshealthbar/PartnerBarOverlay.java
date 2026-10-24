@@ -7,7 +7,6 @@ import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.render.BarEnds;
-import com.ghordrin.bosshealthbar.render.BarTextPainter;
 import com.ghordrin.bosshealthbar.render.PartnerBar;
 import com.ghordrin.bosshealthbar.theme.BarTheme;
 import java.awt.Composite;
@@ -30,17 +29,15 @@ public class PartnerBarOverlay extends Overlay
 	private final BossHealthBarConfig config;
 	private final BossHealthBarOverlay barOverlay;
 	private final PartnerBar partnerBar;
-	private final BarTextPainter textPainter;
 
 	@Inject
 	private PartnerBarOverlay(BossHealthBarPlugin plugin, BossHealthBarConfig config,
-		BossHealthBarOverlay barOverlay, PartnerBar partnerBar, BarTextPainter textPainter)
+		BossHealthBarOverlay barOverlay, PartnerBar partnerBar)
 	{
 		super(plugin);
 		this.config = config;
 		this.barOverlay = barOverlay;
 		this.partnerBar = partnerBar;
-		this.textPainter = textPainter;
 
 		setPosition(OverlayPosition.TOP_CENTER);
 		// The main bar's layer, or anything the game opens over this one hides it.
@@ -60,25 +57,22 @@ public class PartnerBarOverlay extends Overlay
 			return null;
 		}
 
-		// This overlay has its own text painter, so the rows have to be set up before the row height is read.
-		textPainter.updateFonts();
-		textPainter.updateRows(false, false, false, false, false);
 		final Dimension preferred = getPreferredSize();
 		final int width = barWidth(preferred, config.barWidth());
 		final boolean flat = BarTheme.of(config).isFlat();
 		final BarEnds ends = config.barEnds();
-		final int rowHeight = textPainter.partnerRowHeight();
+		final int rowHeight = partnerBar.rowHeight();
 		final int barThickness = barThickness(preferred, rowHeight, flat, ends,
 			partnerBar.barThickness(config.barHeight()));
 		final int capRise = capRise(barThickness, flat, ends);
 
-		textPainter.applyTextHints(graphics);
+		partnerBar.applyTextHints(graphics);
 		final Composite originalComposite = graphics.getComposite();
-		partnerBar.draw(graphics, 0, originalComposite, 1f, 1f, barOverlay.themeColors(), 0, rowHeight + capRise,
+		partnerBar.draw(graphics, originalComposite, 1f, 1f, barOverlay.themeColors(), 0, rowHeight + capRise,
 			width, width, 0, capWidth(barThickness, flat, ends), barThickness, 1f, flat, ends);
 		graphics.setComposite(originalComposite);
 
-		return new Dimension(width, boxHeight(rowHeight, barThickness, flat, ends));
+		return new Dimension(width, PartnerBar.height(rowHeight, barThickness, flat, ends));
 	}
 
 	// Alt-dragging the overlay's edge sets a preferred size, which takes over from "Bar width" and "Second bar
@@ -101,7 +95,7 @@ public class PartnerBarOverlay extends Overlay
 		while (smallest < largest)
 		{
 			final int candidate = (smallest + largest + 1) / 2;
-			if (boxHeight(rowHeight, candidate, flat, ends) <= preferred.height)
+			if (PartnerBar.height(rowHeight, candidate, flat, ends) <= preferred.height)
 			{
 				smallest = candidate;
 			}
@@ -111,10 +105,5 @@ public class PartnerBarOverlay extends Overlay
 			}
 		}
 		return smallest;
-	}
-
-	private static int boxHeight(int rowHeight, int barThickness, boolean flat, BarEnds ends)
-	{
-		return rowHeight + capRise(barThickness, flat, ends) * 2 + barThickness;
 	}
 }

@@ -2,6 +2,7 @@ package com.ghordrin.bosshealthbar.data;
 
 import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
 import com.ghordrin.bosshealthbar.theme.ThemeColors;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -133,10 +134,12 @@ public class OpponentInfo
 	private String gameBarName(NPC npc, NPCComposition composition)
 	{
 		final String hpName = composition != null ? composition.getStringValue(ParamID.NPC_HP_NAME) : null;
-		if (!Strings.isNullOrEmpty(hpName))
-		{
-			return Text.removeTags(hpName);
-		}
-		return gameBossBar.isTracking(npc) ? gameBossBar.title() : null;
+		return barName(hpName, gameBossBar.isTracking(npc) ? gameBossBar.title() : null);
+	}
+
+	@VisibleForTesting
+	static String barName(String hpName, String title)
+	{
+		return !Strings.isNullOrEmpty(hpName) ? Text.removeTags(hpName) : title;
 	}
 }

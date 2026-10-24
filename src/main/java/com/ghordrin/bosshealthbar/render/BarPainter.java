@@ -496,6 +496,13 @@ public class BarPainter
 		return image;
 	}
 
+	public static void setOpacity(Graphics2D graphics, Composite originalComposite, float opacity)
+	{
+		graphics.setComposite(opacity >= 1f
+			? originalComposite
+			: AlphaComposite.getInstance(AlphaComposite.SRC_OVER, clamp01(opacity)));
+	}
+
 	public static int capWidth(int barHeight, boolean flat, BarEnds ends)
 	{
 		if (flat)

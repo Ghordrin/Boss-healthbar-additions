@@ -1,12 +1,24 @@
 package com.ghordrin.bosshealthbar.theme;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import java.awt.Color;
 import org.junit.Test;
 
 public class ThemeColorsTest
 {
+	@Test
+	public void aFlatThemeOnlyTakesTheBossFillColor()
+	{
+		final ThemeColors theme = FlatTheme.OLDSCHOOL.getColors();
+		final ThemeColors boss = HealthBarTheme.BANDOS.getColors();
+		assertEquals(ThemeColors.withBase(theme, boss.getFillHigh()), ThemeColors.withBoss(theme, boss, true));
+		assertSame(boss, ThemeColors.withBoss(theme, boss, false));
+		assertSame(theme, ThemeColors.withBoss(theme, null, false));
+		assertSame(theme, ThemeColors.withBoss(theme, null, true));
+	}
+
 	@Test
 	public void themesKeepTheirColors()
 	{

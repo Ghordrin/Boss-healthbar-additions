@@ -69,14 +69,17 @@ public class ExtraBar
 		animation.reset();
 	}
 
-	public void draw(Graphics2D graphics, ThemeColors themeColors, int barY, int shownWidth, int shownInset,
+	// top is where the room under the health bar starts, so the gap and this bar's own ends are kept here.
+	public void draw(Graphics2D graphics, ThemeColors themeColors, int top, int shownWidth, int shownInset,
 		int barHeight, float fillProgress, boolean flat, BarEnds ends)
 	{
 		animation.tick(fraction(gameBossBar.extraHealth(), gameBossBar.extraMaxHealth()), config.animationSpeed(),
 			config.showDamageTrail(), 0);
+		final int thickness = thickness(barHeight);
 		graphics.translate(shownInset, 0);
-		barPainter.drawBar(graphics, colors(themeColors, flat), STATE, animation, false, barY, shownWidth,
-			thickness(barHeight), fillProgress, false, flat, ends, false, false, -1);
+		barPainter.drawBar(graphics, colors(themeColors), STATE, animation, false,
+			top + GAP + capRise(thickness, flat, ends), shownWidth, thickness, fillProgress, false, flat, ends, false,
+			false, -1);
 		graphics.translate(-shownInset, 0);
 	}
 
@@ -89,7 +92,7 @@ public class ExtraBar
 	// The game's own colors for this bar, which tell it apart from the health above it. They are this bar's
 	// colors rather than a phase of the health, so the phase color setting and the fortify tint stay out of
 	// it. A boss whose extra bar the game paints in the usual boss colors keeps the theme's.
-	private ThemeColors colors(ThemeColors themeColors, boolean flat)
+	private ThemeColors colors(ThemeColors themeColors)
 	{
 		final PhaseColors colors = gameBossBar.extraBarColors();
 		return colors != null ? colors.applyTo(themeColors, null, false) : themeColors;

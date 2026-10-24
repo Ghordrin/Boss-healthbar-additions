@@ -2,6 +2,7 @@ package com.ghordrin.bosshealthbar.gamebars;
 
 import static com.ghordrin.bosshealthbar.gamebars.GameBossBar.markerFraction;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -15,6 +16,14 @@ public class GameBossBarTest
 		assertEquals(0f, markerFraction(1, 400), 0.0001f);
 		assertEquals(1f, markerFraction(401, 400), 0.0001f);
 		assertEquals(0.5f, markerFraction(201, 400), 0.0001f);
+	}
+
+	@Test
+	public void aBarThatTracksNoNpcIsALeftoverWhileBarsAreReplaced()
+	{
+		assertTrue(GameBossBar.isLeftover(true, -1));
+		assertFalse(GameBossBar.isLeftover(true, 100));
+		assertFalse(GameBossBar.isLeftover(false, -1));
 	}
 
 	@Test
