@@ -17,6 +17,7 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.util.Text;
 
 @Singleton
 public class GameBossBar
@@ -50,7 +51,9 @@ public class GameBossBar
 	private int loggedFill = -1;
 	private int loggedTrail = -1;
 	private int loggedTrack = -1;
+	private String loggedExtraBar;
 	private PhaseColors phaseColors;
+	private PhaseColors extraBarColors;
 
 	private final int[] phaseMarkerValues = new int[PHASE_MARKER_VARBITS.length];
 	private int phaseMarkerMaxHealth;
@@ -85,6 +88,45 @@ public class GameBossBar
 			debugLog.add("Game boss bar reads 0 for NPC id {} before its health arrived, ignored", trackedId);
 		}
 		updatePhaseColors(trackedId);
+		updateExtraBarColors();
+		final String extraBar = extraBarKey();
+		if (!extraBar.equals(loggedExtraBar))
+		{
+			loggedExtraBar = extraBar;
+			debugLog.add("Game extra bar: {}", extraBarReading());
+		}
+	}
+
+	// Whether the extra bar shows, the health it holds at full and the colors it is painted in: all three hold
+	// for a fight, unlike the health left, which would write a line for every hit.
+	private String extraBarKey()
+	{
+		return showsExtraBar() + "/" + extraMaxHealth() + "/"
+			+ (extraBarColors != null ? extraBarColors.key() : 0);
+	}
+
+	// Read once a tick, as the main bar's are, since the overlay asks every frame. The game paints its extra
+	// bar in colors of its own, so our strip takes those instead of the theme's.
+	private void updateExtraBarColors()
+	{
+		PhaseColors colors = null;
+		if (showsExtraBar())
+		{
+			final Widget fill = client.getWidget(InterfaceID.HpbarHud.HEALTH_BAR_REMAINING_EXTRA);
+			final Widget trail = client.getWidget(InterfaceID.HpbarHud.HEALTH_BAR_SLIDING_EXTRA);
+			final Widget track = client.getWidget(InterfaceID.HpbarHud.HEALTH_BAR_BACK_EXTRA);
+			if (fill != null && trail != null && track != null)
+			{
+				colors = PhaseColors.of(fill.getTextColor(), trail.getTextColor(), track.getTextColor());
+			}
+		}
+		extraBarColors = colors;
+	}
+
+	// Null while the game paints the extra bar in the colors every boss bar uses, which the themes replace.
+	public PhaseColors extraBarColors()
+	{
+		return extraBarColors;
 	}
 
 	// Read once a tick, since the overlay asks every frame. The colors are logged whenever they change, so a
@@ -236,9 +278,17 @@ public class GameBossBar
 
 		// An opponent without our bar, such as one on the Never show for list, keeps the game's bar.
 		final boolean replace = replaceEnabled && (isTracking(opponent) ? opponentGetsBar : trackedGetsBar);
+		// A bar that tracks no NPC holds what the last fight left on it, which the game can put back up before it
+		// moves on to the next boss, such as on the walk into an arena. Nothing on it is current, so it stays
+		// hidden while bars are replaced. What it means for the pillar bars doesn't change, so it isn't returned.
+		final boolean leftover = replaceEnabled && trackedNpcId() == -1;
 		if (replace)
 		{
 			gameBar.hide(bar, "Game boss bar hidden (tracked id {})", trackedNpcId());
+		}
+		else if (leftover)
+		{
+			gameBar.hide(bar, "Game boss bar hidden, it tracks no NPC");
 		}
 		else
 		{
@@ -286,9 +336,67 @@ public class GameBossBar
 		return client.getVarbitValue(VarbitID.HPBAR_HUD_BASEHP);
 	}
 
+	// The name the game's bar shows, or null when it shows none.
+	public String title()
+	{
+		final Widget name = client.getWidget(InterfaceID.HpbarHud.CREATURE_NAME);
+		final String text = name != null ? Text.removeTags(name.getText()) : null;
+		return NpcUtil.hasName(text) ? text : null;
+	}
+
 	public int health()
 	{
 		return client.getVarbitValue(VarbitID.HPBAR_HUD_HP);
+	}
+
+	// The game's own second bar, which a boss that carries something besides its health drives, such as an
+	// energy bar. Hiding the game's bar takes this one with it, so the overlay draws it again from these.
+	public boolean showsExtraBar()
+	{
+		return client.getVarpValue(VarPlayerID.HPBAR_HUD_SHOW_EXTRA_BAR) != 0;
+	}
+
+	public int extraMaxHealth()
+	{
+		return client.getVarbitValue(VarbitID.HPBAR_HUD_EXTRA_BASE);
+	}
+
+	public int extraHealth()
+	{
+		return client.getVarbitValue(VarbitID.HPBAR_HUD_EXTRA_CURRENT);
+	}
+
+	// Each bar's fill, trail, track and inner widths, to lay beside the health the varbits give. If the widths
+	// alone say how full a bar is, a bar of ours can be drawn for anything the HUD shows without knowing what
+	// it is for. Both widths, since the game may not lay out again a part of the HUD that is hidden.
+	public String barWidthsReading()
+	{
+		return "main " + widthsReading(InterfaceID.HpbarHud.HEALTH_BAR_REMAINING,
+			InterfaceID.HpbarHud.HEALTH_BAR_SLIDING, InterfaceID.HpbarHud.HEALTH_BAR_BACK, InterfaceID.HpbarHud.INNER)
+			+ "; extra " + widthsReading(InterfaceID.HpbarHud.HEALTH_BAR_REMAINING_EXTRA,
+			InterfaceID.HpbarHud.HEALTH_BAR_SLIDING_EXTRA, InterfaceID.HpbarHud.HEALTH_BAR_BACK_EXTRA,
+			InterfaceID.HpbarHud.INNER_EXTRA);
+	}
+
+	private String widthsReading(int fillId, int trailId, int trackId, int innerId)
+	{
+		return "fill " + widths(fillId) + ", trail " + widths(trailId) + ", track " + widths(trackId)
+			+ ", inner " + widths(innerId);
+	}
+
+	private String widths(int widgetId)
+	{
+		final Widget widget = client.getWidget(widgetId);
+		return widget == null ? "none" : widget.getWidth() + " (set " + widget.getOriginalWidth() + ")";
+	}
+
+	// With the colors the game paints it in, since those are what our strip follows. The HUD carries no name
+	// for it, so nothing here says which of a boss's bars it is.
+	public String extraBarReading()
+	{
+		return (showsExtraBar() ? "shown" : "hidden")
+			+ ", health " + extraHealth() + "/" + extraMaxHealth()
+			+ ", colors " + (extraBarColors != null ? hex(extraBarColors.key()) : "the usual ones");
 	}
 
 	// Right after the bar moves to another NPC it can read 0 before that NPC's health arrives, so a 0 only
