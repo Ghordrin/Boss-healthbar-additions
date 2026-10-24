@@ -11,8 +11,6 @@ import static org.junit.Assert.assertTrue;
 import com.ghordrin.bosshealthbar.data.BarState;
 import com.ghordrin.bosshealthbar.data.Health;
 import com.ghordrin.bosshealthbar.debug.DebugLog;
-import java.util.Collections;
-import java.util.List;
 import org.junit.Test;
 
 public class FightGroupTest
@@ -141,34 +139,10 @@ public class FightGroupTest
 			FightGroup.read(member, overhead(20, 30));
 		}
 
-		assertEquals(Collections.singletonList(newer), group.choosePartner(own));
+		assertSame(newer, group.choosePartner(own));
 		newer.downState.defeated = true;
-		assertEquals(Collections.singletonList(older), group.choosePartner(own));
+		assertSame(older, group.choosePartner(own));
 		assertNull(noHealth.state);
-	}
-
-	// Only as many as there are bars for them, most recently fought first.
-	@Test
-	public void theOtherBossesComeInTheOrderTheyWereFought()
-	{
-		final FightGroup.Member own = group.join(1, "First", true, 30);
-		final FightGroup.Member older = group.join(2, "Second", true, 10);
-		final FightGroup.Member newer = group.join(3, "Third", true, 20);
-		FightGroup.read(older, overhead(20, 30));
-		FightGroup.read(newer, overhead(20, 30));
-
-		final List<FightGroup.Member> chosen = group.choosePartner(own);
-		assertEquals(FightGroup.MAX_EXTRA_BARS, chosen.size());
-		assertSame(newer, chosen.get(0));
-		for (int extra = 1; extra < chosen.size(); extra++)
-		{
-			assertTrue(chosen.get(extra - 1).lastEngagedTick >= chosen.get(extra).lastEngagedTick);
-		}
-
-		group.updatePartner(own, true);
-		assertSame(newer, group.partner());
-		assertSame(group.partner(), group.partner(0));
-		assertNull(group.partner(FightGroup.MAX_EXTRA_BARS));
 	}
 
 	@Test
@@ -190,8 +164,8 @@ public class FightGroupTest
 		final FightGroup.Member own = group.join(1, "Minion", false, 30);
 		final FightGroup.Member boss = group.join(2, "Boss", true, 20);
 		FightGroup.read(boss, overhead(20, 30));
-		assertTrue(group.choosePartner(own).isEmpty());
-		assertTrue(group.choosePartner(null).isEmpty());
+		assertNull(group.choosePartner(own));
+		assertNull(group.choosePartner(null));
 	}
 
 	@Test
@@ -321,7 +295,7 @@ public class FightGroupTest
 		member.downState.update(null, false, true, false, 3, null, null, null);
 		assertTrue(member.isDead());
 		assertFalse(group.isAliveMember(2, "Second"));
-		assertTrue(group.choosePartner(own).isEmpty());
+		assertNull(group.choosePartner(own));
 		assertFalse(FightGroup.startNewLife(member));
 
 		// Back with full health well after the kill, so this is the next one and not another phase.
@@ -335,7 +309,7 @@ public class FightGroupTest
 		assertNull(member.state);
 
 		FightGroup.read(member, overhead(30, 30));
-		assertEquals(Collections.singletonList(member), group.choosePartner(own));
+		assertSame(member, group.choosePartner(own));
 		group.despawned(member, false);
 		assertSame(member, group.awayByName("Second"));
 	}

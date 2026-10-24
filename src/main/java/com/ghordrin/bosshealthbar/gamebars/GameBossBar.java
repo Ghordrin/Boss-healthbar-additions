@@ -263,10 +263,8 @@ public class GameBossBar
 
 		// An opponent without our bar, such as one on the Never show for list, keeps the game's bar.
 		final boolean replace = replaceEnabled && (isTracking(opponent) ? opponentGetsBar : trackedGetsBar);
-		// A bar that tracks no NPC holds what the last fight left on it, which the game can put back up before it
-		// moves on to the next boss, such as on the walk into an arena. Nothing on it is current, so it stays
-		// hidden while bars are replaced. What it means for the pillar bars doesn't change, so it isn't returned.
-		final boolean leftover = replaceEnabled && trackedNpcId() == -1;
+		// What it means for the pillar bars doesn't change, so a leftover isn't returned.
+		final boolean leftover = isLeftover(replaceEnabled, trackedNpcId());
 		if (replace)
 		{
 			gameBar.hide(bar, "Game boss bar hidden (tracked id {})", trackedNpcId());
@@ -351,30 +349,6 @@ public class GameBossBar
 		return client.getVarbitValue(VarbitID.HPBAR_HUD_EXTRA_CURRENT);
 	}
 
-	// Each bar's fill, trail, track and inner widths, to lay beside the health the varbits give. If the widths
-	// alone say how full a bar is, a bar of ours can be drawn for anything the HUD shows without knowing what
-	// it is for. Both widths, since the game may not lay out again a part of the HUD that is hidden.
-	public String barWidthsReading()
-	{
-		return "main " + widthsReading(InterfaceID.HpbarHud.HEALTH_BAR_REMAINING,
-			InterfaceID.HpbarHud.HEALTH_BAR_SLIDING, InterfaceID.HpbarHud.HEALTH_BAR_BACK, InterfaceID.HpbarHud.INNER)
-			+ "; extra " + widthsReading(InterfaceID.HpbarHud.HEALTH_BAR_REMAINING_EXTRA,
-			InterfaceID.HpbarHud.HEALTH_BAR_SLIDING_EXTRA, InterfaceID.HpbarHud.HEALTH_BAR_BACK_EXTRA,
-			InterfaceID.HpbarHud.INNER_EXTRA);
-	}
-
-	private String widthsReading(int fillId, int trailId, int trackId, int innerId)
-	{
-		return "fill " + widths(fillId) + ", trail " + widths(trailId) + ", track " + widths(trackId)
-			+ ", inner " + widths(innerId);
-	}
-
-	private String widths(int widgetId)
-	{
-		final Widget widget = client.getWidget(widgetId);
-		return widget == null ? "none" : widget.getWidth() + " (set " + widget.getOriginalWidth() + ")";
-	}
-
 	// Right after the bar moves to another NPC it can read 0 before that NPC's health arrives, so a 0 only
 	// counts once the bar has shown health above 0 for the NPC it tracks.
 	public boolean hasHealth()
@@ -433,6 +407,14 @@ public class GameBossBar
 		}
 		phaseMarkers = markers == null ? BarState.NO_PHASE_MARKERS : Arrays.copyOf(markers, count);
 		return phaseMarkers;
+	}
+
+	// A bar that tracks no NPC holds what the last fight left on it, which the game can put back up before it
+	// moves on to the next boss, such as on the walk into an arena. Nothing on it is current, so it stays
+	// hidden while bars are replaced.
+	static boolean isLeftover(boolean replaceEnabled, int trackedId)
+	{
+		return replaceEnabled && trackedId == -1;
 	}
 
 	// Same placement as the game's own bar: a marker for value v sits at (v - 1) / max health.

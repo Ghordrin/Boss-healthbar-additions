@@ -5,6 +5,7 @@ import static com.ghordrin.bosshealthbar.render.BarPainter.RASTER_SCALE;
 import static com.ghordrin.bosshealthbar.render.BarPainter.capRise;
 import static com.ghordrin.bosshealthbar.render.BarPainter.capWidth;
 import static com.ghordrin.bosshealthbar.render.BarPainter.drawRasterImage;
+import static com.ghordrin.bosshealthbar.render.BarPainter.setOpacity;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
@@ -38,7 +39,6 @@ import com.ghordrin.bosshealthbar.theme.PhaseColors;
 import com.ghordrin.bosshealthbar.theme.ThemeColors;
 import com.ghordrin.bosshealthbar.tracking.DamageTracker;
 import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
-import java.awt.AlphaComposite;
 import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -183,13 +183,7 @@ public class BossHealthBarOverlay extends Overlay
 	{
 		final ThemeColors bossColors = config.matchBossColors() && !selector.isShowingPreview()
 			? opponentInfo.bossColors() : null;
-		return barColors(updateThemeColors(), bossColors, BarTheme.of(config).isFlat());
-	}
-
-	// The theme's own colors, for a bar drawn in the same style that follows a boss of its own.
-	public ThemeColors themeColors()
-	{
-		return updateThemeColors();
+		return ThemeColors.withBoss(themeColors(), bossColors, BarTheme.of(config).isFlat());
 	}
 
 	// The phase the game is painting the bar in, or null when it paints its usual colors. heldBossId names
@@ -211,7 +205,8 @@ public class BossHealthBarOverlay extends Overlay
 		return phase != null ? phase.applyTo(colors, config.phaseColor(), config.fortifyPhase() && !flat) : colors;
 	}
 
-	private ThemeColors updateThemeColors()
+	// The theme's own colors, also for a bar drawn in the same style that follows a boss of its own.
+	public ThemeColors themeColors()
 	{
 		if (themeColors == null)
 		{
@@ -331,7 +326,7 @@ public class BossHealthBarOverlay extends Overlay
 		final boolean partnerArea = !config.secondBarSeparate() && partnerBar.isLive(selector.isShowingPreview());
 		final int partnerBarHeight = partnerBar.barThickness(barHeight);
 		final int partnerCapRise = capRise(partnerBarHeight, flat, ends);
-		final int partnerRowHeight = partnerArea ? textPainter.partnerRowHeight() : 0;
+		final int partnerRowHeight = partnerArea ? partnerBar.rowHeight() : 0;
 		final int partnerHeight = partnerArea ? PartnerBar.GAP + partnerBar.height(barHeight, flat, ends) : 0;
 
 		// This one follows the game's own extra bar, so it comes and goes with it rather than lasting the fight.
@@ -399,10 +394,8 @@ public class BossHealthBarOverlay extends Overlay
 
 		if (extraArea)
 		{
-			final int extraThickness = ExtraBar.thickness(barHeight);
-			extraBar.draw(graphics, updateThemeColors(),
-				barY + barHeight + capRise + inBarBelow + ExtraBar.GAP + capRise(extraThickness, flat, ends),
-				shownWidth, shownInset, barHeight, fillProgress, flat, ends);
+			extraBar.draw(graphics, themeColors(), barY + barHeight + capRise + inBarBelow, shownWidth, shownInset,
+				barHeight, fillProgress, flat, ends);
 		}
 
 		setOpacity(graphics, originalComposite, opacity * textOpacity);
@@ -414,8 +407,8 @@ public class BossHealthBarOverlay extends Overlay
 		if (partnerArea)
 		{
 			final int partnerTop = belowBar + footerHeight + secondFooterHeight + PartnerBar.GAP;
-			partnerBar.draw(graphics, 0, originalComposite, opacity * animation.defeatTextOpacity(now, burnAway),
-				opacity * textOpacity, updateThemeColors(), partnerTop, partnerTop + partnerRowHeight + partnerCapRise,
+			partnerBar.draw(graphics, originalComposite, opacity * animation.defeatTextOpacity(now, burnAway),
+				opacity * textOpacity, themeColors(), partnerTop, partnerTop + partnerRowHeight + partnerCapRise,
 				width, shownWidth, shownInset, capWidth, partnerBarHeight, fillProgress, flat, ends);
 			setOpacity(graphics, originalComposite, opacity);
 		}
@@ -470,11 +463,6 @@ public class BossHealthBarOverlay extends Overlay
 		final float edge = totalWidth * (1f - burn) - originX;
 		burnClipShape.setRect(-CLIP_REACH, -CLIP_REACH, edge + CLIP_REACH, CLIP_REACH * 2);
 		return burnClipShape;
-	}
-
-	static ThemeColors barColors(ThemeColors themeColors, ThemeColors bossColors, boolean flat)
-	{
-		return ThemeColors.withBoss(themeColors, bossColors, flat);
 	}
 
 	static boolean showsGold(boolean rolledGold, boolean flat)
@@ -546,12 +534,5 @@ public class BossHealthBarOverlay extends Overlay
 		}
 		final int available = Math.round(viewportWidth * MAX_VIEWPORT_FRACTION) - crestWidth;
 		return Math.max(MIN_FITTED_BAR_WIDTH, Math.min(width, available));
-	}
-
-	private static void setOpacity(Graphics2D graphics, Composite originalComposite, float opacity)
-	{
-		graphics.setComposite(opacity >= 1f
-			? originalComposite
-			: AlphaComposite.getInstance(AlphaComposite.SRC_OVER, clamp01(opacity)));
 	}
 }

@@ -2,6 +2,7 @@ package com.ghordrin.bosshealthbar.render;
 
 import static com.ghordrin.bosshealthbar.render.BarAnimation.clamp01;
 import static com.ghordrin.bosshealthbar.render.BarPainter.capRise;
+import static com.ghordrin.bosshealthbar.render.BarPainter.setOpacity;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.data.BarState;
 import com.ghordrin.bosshealthbar.data.KnownBosses;
@@ -11,19 +12,18 @@ import com.ghordrin.bosshealthbar.theme.PhaseColors;
 import com.ghordrin.bosshealthbar.theme.ThemeColors;
 import com.ghordrin.bosshealthbar.tracking.FightGroup;
 import com.google.common.annotations.VisibleForTesting;
-import java.awt.AlphaComposite;
 import java.awt.Composite;
 import java.awt.Graphics2D;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Actor;
 
-// The smaller bars for the other bosses of the same fight, in the main bar's style but without its extras. Drawn
-// either under the main bar or in a box of their own, so everything they need is kept here.
+// The smaller bar for the other boss of the same fight, in the main bar's style but without its extras. Drawn
+// either under the main bar or in a box of its own, so everything it needs is kept here.
 @Singleton
 public class PartnerBar
 {
-	// The room left between the main bar and the first of these.
+	// The room left between the main bar and this one.
 	public static final int GAP = 3;
 	public static final int MIN_HEIGHT = 4;
 
@@ -34,13 +34,13 @@ public class PartnerBar
 	private final GameBossBar gameBossBar;
 	private final FightGroup group;
 	private final DebugLog debugLog;
+	private final BarAnimation animation = new BarAnimation();
 
-	private final BarAnimation[] animations = new BarAnimation[FightGroup.MAX_EXTRA_BARS];
-	private final FightGroup.Member[] members = new FightGroup.Member[FightGroup.MAX_EXTRA_BARS];
-	private final boolean[] loggedDead = new boolean[FightGroup.MAX_EXTRA_BARS];
-	private final BarState[] textStates = new BarState[FightGroup.MAX_EXTRA_BARS];
-	private final HitpointsTextMode[] textModes = new HitpointsTextMode[FightGroup.MAX_EXTRA_BARS];
-	private final String[] texts = new String[FightGroup.MAX_EXTRA_BARS];
+	private FightGroup.Member member;
+	private boolean loggedDead;
+	private BarState textState;
+	private HitpointsTextMode textMode;
+	private String text;
 
 	@Inject
 	private PartnerBar(BossHealthBarConfig config, BarPainter barPainter, BarStateSelector selector,
@@ -53,14 +53,9 @@ public class PartnerBar
 		this.gameBossBar = gameBossBar;
 		this.group = group;
 		this.debugLog = debugLog;
-
-		for (int extra = 0; extra < animations.length; extra++)
-		{
-			animations[extra] = new BarAnimation();
-		}
 	}
 
-	// The one gate both places that can draw these ask, so they can never both show the same boss.
+	// The one gate both places that can draw this ask, so they can never both show the same boss.
 	public boolean isLive(boolean preview)
 	{
 		return isLive(config.showPartnerBar(), preview, group.isGroupFight());
@@ -84,11 +79,26 @@ public class PartnerBar
 		return Math.max(MIN_HEIGHT, Math.round(barHeight * scalePercent / 100f));
 	}
 
-	// The room one of these takes, without the gap before it.
-	public int height(int barHeight, boolean flat, BarEnds ends)
+	public int rowHeight()
 	{
 		prepare();
-		return height(textPainter.partnerRowHeight(), barThickness(barHeight), flat, ends);
+		return textPainter.partnerRowHeight();
+	}
+
+	// The room this takes, without the gap before it.
+	public int height(int barHeight, boolean flat, BarEnds ends)
+	{
+		return height(rowHeight(), barThickness(barHeight), flat, ends);
+	}
+
+	public static int height(int rowHeight, int barThickness, boolean flat, BarEnds ends)
+	{
+		return rowHeight + capRise(barThickness, flat, ends) * 2 + barThickness;
+	}
+
+	public void applyTextHints(Graphics2D graphics)
+	{
+		textPainter.applyTextHints(graphics);
 	}
 
 	// This holds its own text painter, so the fonts and the rows have to be set up before either is read. The
@@ -99,39 +109,29 @@ public class PartnerBar
 		textPainter.updateRows(false, false, false, false, false);
 	}
 
-	@VisibleForTesting
-	static int height(int rowHeight, int barThickness, boolean flat, BarEnds ends)
-	{
-		return rowHeight + capRise(barThickness, flat, ends) * 2 + barThickness;
-	}
-
 	public void reset()
 	{
-		for (int extra = 0; extra < animations.length; extra++)
-		{
-			animations[extra].reset();
-			members[extra] = null;
-			loggedDead[extra] = false;
-			textStates[extra] = null;
-			textModes[extra] = null;
-			texts[extra] = null;
-		}
+		animation.reset();
+		member = null;
+		loggedDead = false;
+		textState = null;
+		textMode = null;
+		text = null;
 	}
 
-	public void draw(Graphics2D graphics, int extra, Composite originalComposite, float barOpacity, float textOpacity,
+	public void draw(Graphics2D graphics, Composite originalComposite, float barOpacity, float textOpacity,
 		ThemeColors themeColors, int rowTop, int barY, int width, int shownWidth, int shownInset, int capWidth,
 		int barThickness, float fillProgress, boolean flat, BarEnds ends)
 	{
 		prepare();
 		final boolean preview = selector.isShowingPreview();
-		final FightGroup.Member member = preview ? null : group.partner(extra);
-		final BarAnimation animation = animations[extra];
-		if (member != members[extra])
+		final FightGroup.Member next = preview ? null : group.partner();
+		if (next != member)
 		{
 			// The bars swapped, so jump to the new boss's health instead of animating from the old one's.
 			animation.reset();
-			members[extra] = member;
-			loggedDead[extra] = false;
+			member = next;
+			loggedDead = false;
 		}
 		final BarState state = preview ? BarStateSelector.PREVIEW_PARTNER : member != null ? member.state : null;
 		if (state == null)
@@ -139,13 +139,13 @@ public class PartnerBar
 			return;
 		}
 		final boolean dead = member != null && member.isDead();
-		if (member != null && dead != loggedDead[extra])
+		if (member != null && dead != loggedDead)
 		{
 			if (dead)
 			{
 				debugLog.add("Second bar: {} defeated", state.name);
 			}
-			loggedDead[extra] = dead;
+			loggedDead = dead;
 		}
 		animation.tick(dead ? 0f : clamp01(state.health.ratio / (float) state.health.scale),
 			config.animationSpeed(), config.showDamageTrail(), 0);
@@ -153,8 +153,7 @@ public class PartnerBar
 		final ThemeColors colors = colors(themeColors, state, member != null ? member.npc() : null, flat, preview);
 
 		setOpacity(graphics, originalComposite, textOpacity);
-		textPainter.drawPartnerRow(graphics, state.name, hitpointsText(extra, state), dead, colors, width, capWidth,
-			rowTop);
+		textPainter.drawPartnerRow(graphics, state.name, hitpointsText(state), dead, colors, width, capWidth, rowTop);
 
 		setOpacity(graphics, originalComposite, barOpacity);
 		graphics.translate(shownInset, 0);
@@ -163,32 +162,25 @@ public class PartnerBar
 		graphics.translate(-shownInset, 0);
 	}
 
-	// Each of these follows its own boss, so two bosses at once don't both take the first one's color.
+	// This follows its own boss, so two bosses at once don't both take the first one's color.
 	private ThemeColors colors(ThemeColors themeColors, BarState state, Actor npc, boolean flat, boolean preview)
 	{
 		final KnownBosses.Boss boss = config.matchBossColors() && !preview ? KnownBosses.find(state.name) : null;
 		final ThemeColors colors = ThemeColors.withBoss(themeColors, boss != null ? boss.getColors() : null, flat);
-		// These have no color held for a boss they stand in for, so only the phase the game paints now counts.
+		// This has no color held for a boss it stands in for, so only the phase the game paints now counts.
 		final PhaseColors phase = config.phaseColors() ? gameBossBar.phaseColors(npc) : null;
 		return phase != null ? phase.applyTo(colors, config.phaseColor(), config.fortifyPhase() && !flat) : colors;
 	}
 
-	private String hitpointsText(int extra, BarState state)
+	private String hitpointsText(BarState state)
 	{
 		final HitpointsTextMode mode = config.hitpointsTextMode();
-		if (state != textStates[extra] || mode != textModes[extra])
+		if (state != textState || mode != textMode)
 		{
-			texts[extra] = HealthText.hitpointsText(mode, state.health);
-			textStates[extra] = state;
-			textModes[extra] = mode;
+			text = HealthText.hitpointsText(mode, state.health);
+			textState = state;
+			textMode = mode;
 		}
-		return texts[extra];
-	}
-
-	private static void setOpacity(Graphics2D graphics, Composite originalComposite, float opacity)
-	{
-		graphics.setComposite(opacity >= 1f
-			? originalComposite
-			: AlphaComposite.getInstance(AlphaComposite.SRC_OVER, clamp01(opacity)));
+		return text;
 	}
 }
