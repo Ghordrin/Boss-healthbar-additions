@@ -51,7 +51,6 @@ public class GameBossBar
 	private int loggedFill = -1;
 	private int loggedTrail = -1;
 	private int loggedTrack = -1;
-	private String loggedExtraBar;
 	private PhaseColors phaseColors;
 	private PhaseColors extraBarColors;
 
@@ -89,20 +88,6 @@ public class GameBossBar
 		}
 		updatePhaseColors(trackedId);
 		updateExtraBarColors();
-		final String extraBar = extraBarKey();
-		if (!extraBar.equals(loggedExtraBar))
-		{
-			loggedExtraBar = extraBar;
-			debugLog.add("Game extra bar: {}", extraBarReading());
-		}
-	}
-
-	// Whether the extra bar shows, the health it holds at full and the colors it is painted in: all three hold
-	// for a fight, unlike the health left, which would write a line for every hit.
-	private String extraBarKey()
-	{
-		return showsExtraBar() + "/" + extraMaxHealth() + "/"
-			+ (extraBarColors != null ? extraBarColors.key() : 0);
 	}
 
 	// Read once a tick, as the main bar's are, since the overlay asks every frame. The game paints its extra
@@ -388,15 +373,6 @@ public class GameBossBar
 	{
 		final Widget widget = client.getWidget(widgetId);
 		return widget == null ? "none" : widget.getWidth() + " (set " + widget.getOriginalWidth() + ")";
-	}
-
-	// With the colors the game paints it in, since those are what our strip follows. The HUD carries no name
-	// for it, so nothing here says which of a boss's bars it is.
-	public String extraBarReading()
-	{
-		return (showsExtraBar() ? "shown" : "hidden")
-			+ ", health " + extraHealth() + "/" + extraMaxHealth()
-			+ ", colors " + (extraBarColors != null ? hex(extraBarColors.key()) : "the usual ones");
 	}
 
 	// Right after the bar moves to another NPC it can read 0 before that NPC's health arrives, so a 0 only
