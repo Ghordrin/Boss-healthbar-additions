@@ -770,16 +770,10 @@ public class OpponentTracker
 			final String name = composition != null ? composition.getName() : null;
 			// A boss with several forms has no name on the ID its bar tracks, only on the forms, so with no
 			// NPC in the scene only an entry by ID can answer for it.
-			gameBarNpcShown = NpcFilter.check(neverShowFor, NpcFilter.EMPTY, hasName(name) ? name : "", npcId)
+			gameBarNpcShown = NpcFilter.check(neverShowFor, NpcFilter.EMPTY, NpcUtil.hasName(name) ? name : "", npcId)
 				!= NpcFilter.Match.NEVER;
 		}
 		return gameBarNpcShown;
-	}
-
-	// The client spells a name it doesn't have as "null".
-	private static boolean hasName(String name)
-	{
-		return name != null && !name.isEmpty() && !"null".equals(name);
 	}
 
 	// The raid bar's boss usually isn't the opponent, and the question comes every frame, so the whole answer

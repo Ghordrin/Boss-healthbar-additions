@@ -51,4 +51,10 @@ public final class NpcUtil
 		final NPCComposition composition = npc.getComposition();
 		return composition != null ? composition.getId() : -1;
 	}
+
+	// The client spells a name it doesn't have as "null".
+	public static boolean hasName(String name)
+	{
+		return name != null && !name.isEmpty() && !"null".equals(name);
+	}
 }
