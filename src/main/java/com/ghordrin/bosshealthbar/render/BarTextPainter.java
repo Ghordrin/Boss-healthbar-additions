@@ -150,6 +150,17 @@ public class BarTextPainter
 		drawShadowedText(graphics, text, x, baseline, color, 1f);
 	}
 
+	public FontMetrics nameMetrics()
+	{
+		return fonts.metrics(NAME);
+	}
+
+	public void drawNameStyleText(Graphics2D graphics, String text, int x, int baseline, Color color)
+	{
+		fonts.useFont(graphics, NAME);
+		drawShadowedText(graphics, text, x, baseline, color, 1f);
+	}
+
 	public void applyTextHints(Graphics2D graphics)
 	{
 		fonts.applyTextHints(graphics);

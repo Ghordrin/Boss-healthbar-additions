@@ -97,7 +97,7 @@ public class PillarBarsOverlay extends Overlay
 		}
 
 		textPainter.updateFonts();
-		final FontMetrics metrics = textPainter.hitpointsMetrics();
+		final FontMetrics metrics = textPainter.nameMetrics();
 		if (metrics != labelMetrics)
 		{
 			measureLabels(metrics);
@@ -123,7 +123,7 @@ public class PillarBarsOverlay extends Overlay
 			final int row = corner / 2;
 			final int x = column * (barWidth + COLUMN_GAP);
 			final int y = row * (cellHeight + ROW_GAP);
-			textPainter.drawHitpointsStyleText(graphics, LABELS[corner], x + (barWidth - labelWidths[corner]) / 2,
+			textPainter.drawNameStyleText(graphics, LABELS[corner], x + (barWidth - labelWidths[corner]) / 2,
 				y + metrics.getAscent(), labelColor);
 
 			final Paint track = flat ? FLAT_TRACK : colors.getTrack() != null ? colors.getTrack() : trackPaints[row];
