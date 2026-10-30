@@ -2,6 +2,8 @@ package com.ghordrin.bosshealthbar.debug;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import com.ghordrin.bosshealthbar.data.Health;
+import com.ghordrin.bosshealthbar.tracking.HealthReader;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +18,18 @@ public class DebugExportTest
 	{
 		assertEquals("boss-health-bar-debug-20260102-130405.txt",
 			DebugExport.fileName(LocalDateTime.of(2026, 1, 2, 13, 4, 5)));
+	}
+
+	@Test
+	public void describesHealthReadings()
+	{
+		assertEquals("none", DebugExport.describe(null));
+		assertEquals("OVERHEAD 100/100, max health unknown, exact false, percent only false",
+			DebugExport.describe(new HealthReader.Reading(HealthReader.Source.OVERHEAD,
+				new Health(100, 100, false, null, false))));
+		assertEquals("GAME_BAR 900/1500, max health 1500, exact true, percent only false",
+			DebugExport.describe(new HealthReader.Reading(HealthReader.Source.GAME_BAR,
+				new Health(900, 1500, true, 1500, false))));
 	}
 
 	@Test

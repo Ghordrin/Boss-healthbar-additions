@@ -3,11 +3,13 @@ package com.ghordrin.bosshealthbar.debug;
 import com.ghordrin.bosshealthbar.BossHealthBarPlugin;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.data.Health;
+import com.ghordrin.bosshealthbar.data.NpcUtil;
 import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
 import com.ghordrin.bosshealthbar.gamebars.PillarBars;
 import com.ghordrin.bosshealthbar.gamebars.TobBossBar;
 import com.ghordrin.bosshealthbar.integrations.PluginState;
 import com.ghordrin.bosshealthbar.tracking.FightTimer;
+import com.ghordrin.bosshealthbar.tracking.HealthReader;
 import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -22,13 +24,18 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.NPC;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.RuneLiteProperties;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.game.NPCManager;
+import net.runelite.client.party.PartyService;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.util.Filepath;
@@ -53,6 +60,12 @@ public class DebugExport
 		"Better Party Defence",
 		"Special Attack Counter",
 		"Health Threshold Indicators",
+		"Chat Commands",
+		"Party",
+		"Entity Hider",
+		"GPU",
+		"117 HD",
+		"Stretched Mode",
 	};
 
 	private final Client client;
@@ -68,12 +81,16 @@ public class DebugExport
 	private final TobBossBar tobBossBar;
 	private final PillarBars pillarBars;
 	private final FightTimer fightTimer;
+	private final HealthReader healthReader;
+	private final NPCManager npcManager;
+	private final PartyService partyService;
 
 	@Inject
 	DebugExport(Client client, ClientThread clientThread, ConfigManager configManager, PluginManager pluginManager,
 		ChatMessageManager chatMessageManager, ScheduledExecutorService executor, DebugLog debugLog,
 		BossHealthBarPlugin plugin, OpponentTracker opponentTracker, GameBossBar gameBossBar, TobBossBar tobBossBar,
-		PillarBars pillarBars, FightTimer fightTimer)
+		PillarBars pillarBars, FightTimer fightTimer, HealthReader healthReader, NPCManager npcManager,
+		PartyService partyService)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
@@ -88,6 +105,9 @@ public class DebugExport
 		this.tobBossBar = tobBossBar;
 		this.pillarBars = pillarBars;
 		this.fightTimer = fightTimer;
+		this.healthReader = healthReader;
+		this.npcManager = npcManager;
+		this.partyService = partyService;
 	}
 
 	public void save()
@@ -154,6 +174,23 @@ public class DebugExport
 		lines.add("Client revision " + client.getRevision());
 		lines.add("Game state " + client.getGameState());
 		lines.add("Game tick " + client.getTickCount());
+		lines.add("Launcher " + RuneLiteProperties.getLauncherVersion());
+		lines.add("Java " + System.getProperty("java.version") + ", " + System.getProperty("os.name") + " "
+			+ System.getProperty("os.version"));
+		lines.add("World " + client.getWorld() + ", types " + client.getWorldType());
+		lines.add("Client layout " + (client.isResized() ? "resizable" : "fixed") + ", stretched "
+			+ client.isStretchedEnabled());
+
+		// These change what the game's boss bar shows, or whether it's there at all.
+		lines.add("");
+		lines.add("Game health overlay settings");
+		lines.add("  Show boss health overlay: " + onOff(client.getVarbitValue(VarbitID.HPBAR_HUD_BOSS_DISABLED) == 0));
+		lines.add("  Show normal health overlay: "
+			+ onOff(client.getVarbitValue(VarbitID.HPBAR_HUD_STANDARD_DISABLED) == 0));
+		lines.add("  Show enemy name: " + onOff(client.getVarbitValue(VarbitID.HPBAR_HUD_BOSS_NAME_DISABLED) == 0));
+		lines.add("  Display type: "
+			+ (client.getVarbitValue(VarbitID.HPBAR_HUD_BOSS_PERCENTAGE_ENABLED) != 0 ? "percentage" : "exact value"));
+		lines.add("  Compact: " + onOff(client.getVarbitValue(VarbitID.HPBAR_HUD_BOSS_COMPACT_ENABLED) != 0));
 
 		lines.add("");
 		lines.add("Related plugins");
@@ -164,7 +201,18 @@ public class DebugExport
 
 		lines.add("");
 		lines.add("Current state");
-		lines.add("  Opponent: " + DebugLog.describe(opponentTracker.getOpponent()));
+		final Actor opponent = opponentTracker.getOpponent();
+		lines.add("  Opponent: " + DebugLog.describe(opponent));
+		if (opponent != null)
+		{
+			lines.add("  Health reading: " + describe(healthReader.read(opponent)));
+			lines.add("  Overhead bar: " + opponent.getHealthRatio() + "/" + opponent.getHealthScale());
+			if (opponent instanceof NPC)
+			{
+				final Integer dataMax = npcManager.getHealth(NpcUtil.currentId((NPC) opponent));
+				lines.add("  RuneLite NPC data max health: " + (dataMax != null ? dataMax : "missing"));
+			}
+		}
 		final int trackedId = gameBossBar.trackedNpcId();
 		lines.add("  Game boss bar: " + (trackedId == -1 ? "none"
 			: "NPC id " + trackedId + ", health " + gameBossBar.health() + "/" + gameBossBar.maxHealth())
@@ -176,6 +224,7 @@ public class DebugExport
 		final String fightTime = fightTimer.getText();
 		lines.add("  Fight timer: " + (fightTime != null ? fightTime : "none") + ", precise timing "
 			+ fightTimer.isPreciseTiming());
+		lines.add("  Party: " + (partyService.isInParty() ? partyService.getMembers().size() + " members" : "none"));
 
 		lines.add("");
 		lines.add("Settings");
@@ -198,6 +247,23 @@ public class DebugExport
 			return "not installed";
 		}
 		return pluginManager.isPluginActive(other) ? "on" : "off";
+	}
+
+	private static String onOff(boolean on)
+	{
+		return on ? "on" : "off";
+	}
+
+	static String describe(HealthReader.Reading reading)
+	{
+		if (reading == null)
+		{
+			return "none";
+		}
+		final Health health = reading.health;
+		return reading.source + " " + health.ratio + "/" + health.scale + ", max health "
+			+ (health.maxHealth != null ? health.maxHealth : "unknown") + ", exact " + health.exactHealth
+			+ ", percent only " + health.percentOnly;
 	}
 
 	static String fileName(LocalDateTime time)

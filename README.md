@@ -84,7 +84,7 @@ Loading is all or nothing: every setting this plugin has that the file doesn't n
 
 ## Reporting a bug
 
-Right after the bar does something wrong, press Save debug log (Backup section of the panel) or right-click the bar and pick Save debug log. The file goes to `.runelite/plugin-data/boss-health-bar-additions/` and the chat says where. Attach it to a GitHub issue or post it in the [Discord](https://discord.gg/YPugUP8rg2). It holds the plugin and RuneLite versions, your settings for this plugin, which related plugins are on, and the plugin's last 1000 events (NPC names and IDs, times, game ticks). No player names, chat or account details; it's kept in memory only and nothing is sent anywhere.
+Right after the bar does something wrong, press Save debug log (Backup section of the panel) or right-click the bar and pick Save debug log. The file goes to `.runelite/plugin-data/boss-health-bar-additions/` and the chat says where. Attach it to a GitHub issue or post it in the [Discord](https://discord.gg/YPugUP8rg2). It holds the plugin, RuneLite, Java and OS versions, the world and client layout, the game's own health overlay settings, how the current opponent's health is being read, your settings for this plugin, which related plugins are on, and the plugin's last 1000 events (NPC names and IDs, times, game ticks). No player names, chat or account details; it's kept in memory only and nothing is sent anywhere.
 
 ## Data
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The debug log now also holds the game's own health overlay settings, where the current opponent's health is read from and its max health, the world and client layout, Java and OS versions, party status, and more plugins that can affect the bar
+
 ## 2.1.0 (2026-10-24)
 
 ### New
