@@ -450,6 +450,10 @@ public class BossHealthBarPanel extends PluginPanel
 			+ " icon.", pickers::openIconPicker);
 		button(body, "Random colors", "Fill every color above with a random set that goes together, and switch"
 			+ " to the Custom theme. The colors you had are replaced.", customColors::randomize);
+		button(body, "Copy colors", "Copy these colors and the icon as a short color code, to share in a chat"
+			+ " or on Discord.", settingsTransfer::copyColors);
+		button(body, "Paste colors", "Use the color code on your clipboard. Only the colors and the icon change,"
+			+ " and the theme becomes Custom.", settingsTransfer::pasteColors);
 	}
 
 	private void backupRows(JPanel body)

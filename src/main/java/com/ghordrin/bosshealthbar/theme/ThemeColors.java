@@ -2,7 +2,9 @@ package com.ghordrin.bosshealthbar.theme;
 
 import static com.ghordrin.bosshealthbar.theme.ColorUtil.brighten;
 import java.awt.Color;
+import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Value;
 
 @Value
@@ -36,7 +38,9 @@ public class ThemeColors
 	Color weaknessText;
 	Color drainCapText;
 	// Null keeps the color the other plugin gives these, or the name color when it gives none.
+	@Getter(AccessLevel.NONE)
 	Color defenceText;
+	@Getter(AccessLevel.NONE)
 	Color specialAttackText;
 
 	public Color getDamageText()

@@ -1,6 +1,8 @@
 package com.ghordrin.bosshealthbar.config;
 
 import com.ghordrin.bosshealthbar.BossHealthBarPlugin;
+import com.ghordrin.bosshealthbar.theme.CustomColors;
+import com.ghordrin.bosshealthbar.theme.PaletteCode;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -71,6 +73,7 @@ public class SettingsTransfer
 	private final ClientThread clientThread;
 	private final ConfigManager configManager;
 	private final BossHealthBarConfig config;
+	private final CustomColors customColors;
 	private final ChatMessageManager chatMessageManager;
 	private final ScheduledExecutorService executor;
 	private final BossHealthBarPlugin plugin;
@@ -84,13 +87,14 @@ public class SettingsTransfer
 
 	@Inject
 	SettingsTransfer(Client client, ClientThread clientThread, ConfigManager configManager,
-		BossHealthBarConfig config, ChatMessageManager chatMessageManager, ScheduledExecutorService executor,
-		BossHealthBarPlugin plugin, Gson gson)
+		BossHealthBarConfig config, CustomColors customColors, ChatMessageManager chatMessageManager,
+		ScheduledExecutorService executor, BossHealthBarPlugin plugin, Gson gson)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
 		this.configManager = configManager;
 		this.config = config;
+		this.customColors = customColors;
 		this.chatMessageManager = chatMessageManager;
 		this.executor = executor;
 		this.plugin = plugin;
@@ -163,7 +167,7 @@ public class SettingsTransfer
 			}
 			catch (RuntimeException e)
 			{
-				log.warn("Couldn't copy the settings to the clipboard", e);
+				log.warn("Couldn't copy to the clipboard", e);
 			}
 		});
 	}
@@ -194,19 +198,58 @@ public class SettingsTransfer
 	{
 		SwingUtilities.invokeLater(() ->
 		{
-			final String text;
-			try
+			final String text = clipboardText("settings");
+			if (text != null)
 			{
-				text = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+				executor.execute(() -> use(text, "Your clipboard holds no settings for this plugin."));
 			}
-			catch (UnsupportedFlavorException | IOException | RuntimeException e)
+		});
+	}
+
+	// Only the look: the Custom colors and icon as one line, short enough to share in a chat.
+	public void copyColors()
+	{
+		final String code = CustomColors.code(config);
+		copyToClipboard(code);
+		chat("Your colors are on your clipboard as a color code, ready to paste.");
+	}
+
+	public void pasteColors()
+	{
+		SwingUtilities.invokeLater(() ->
+		{
+			final String text = clipboardText("colors");
+			if (text == null)
 			{
-				log.debug("Couldn't read the clipboard", e);
-				error("There is no text on your clipboard to read settings from.");
 				return;
 			}
-			executor.execute(() -> use(text, "Your clipboard holds no settings for this plugin."));
+			final PaletteCode.Palette palette = PaletteCode.decode(text);
+			if (palette == null)
+			{
+				error("Your clipboard holds no color code. A color code starts with bhb1:");
+				return;
+			}
+			clientThread.invoke(() ->
+			{
+				customColors.use(palette);
+				chat("Colors pasted. The theme is now Custom.");
+			});
 		});
+	}
+
+	// Null, after saying so, when there is no text to read.
+	private String clipboardText(String what)
+	{
+		try
+		{
+			return (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+		}
+		catch (UnsupportedFlavorException | IOException | RuntimeException e)
+		{
+			log.debug("Couldn't read the clipboard", e);
+			error("There is no text on your clipboard to read " + what + " from.");
+			return null;
+		}
 	}
 
 	private void startIn(Filepath.Chooser chooser)

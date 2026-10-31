@@ -56,7 +56,7 @@ In the panel:
 | Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar, second bar on its own, second bar scale |
 | Animations | Damage trail, heal speed, low health effect, flash on big hits, intro, defeat animation, burn away, fortify |
 | Layout | Where each item goes: left, centre or right, above the bar, inside it, or on one of the two rows below it. Text inside the bar suits a taller bar |
-| Custom colors | The colours of the Custom theme and its icon, also on the Oldschool bar, with a colour for each piece of text and random colours |
+| Custom colors | The colours of the Custom theme and its icon, also on the Oldschool bar, with a colour for each piece of text, random colours, and colour codes to copy and paste |
 | Backup | Paste settings and Save debug log |
 
 On the settings screen:

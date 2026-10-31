@@ -6,11 +6,15 @@ import java.awt.Color;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.client.config.ConfigManager;
@@ -20,20 +24,80 @@ import net.runelite.client.config.ConfigManager;
 @Singleton
 public class CustomColors
 {
-	private static final List<String> ITEM_TEXT_COLOR_KEYS = Arrays.asList(
-		BossHealthBarConfig.CUSTOM_DAMAGE_TEXT_COLOR_KEY,
-		BossHealthBarConfig.CUSTOM_DELVE_LEVEL_TEXT_COLOR_KEY,
-		BossHealthBarConfig.CUSTOM_COMBAT_LEVEL_TEXT_COLOR_KEY,
-		BossHealthBarConfig.CUSTOM_FIGHT_TIMER_TEXT_COLOR_KEY,
-		BossHealthBarConfig.CUSTOM_KILL_COUNT_TEXT_COLOR_KEY,
-		BossHealthBarConfig.CUSTOM_WEAKNESS_TEXT_COLOR_KEY,
-		BossHealthBarConfig.CUSTOM_DRAIN_CAP_TEXT_COLOR_KEY,
-		BossHealthBarConfig.CUSTOM_DEFENCE_TEXT_COLOR_KEY,
-		BossHealthBarConfig.CUSTOM_SPECIAL_ATTACK_TEXT_COLOR_KEY);
+	// Every Custom color, in the order the panel lists them and color codes carry them, which is why a new one
+	// goes on the end. Each says where it is saved, which theme color it starts from, and where it is drawn.
+	private enum Slot
+	{
+		FILL_HIGH(BossHealthBarConfig.CUSTOM_FILL_HIGH_COLOR_KEY, BossHealthBarConfig::customFillHighColor,
+			ThemeColors::getFillHigh, ThemeColors.ThemeColorsBuilder::fillHigh),
+		FILL_LOW(BossHealthBarConfig.CUSTOM_FILL_LOW_COLOR_KEY, BossHealthBarConfig::customFillLowColor,
+			ThemeColors::getFillLow, ThemeColors.ThemeColorsBuilder::fillLow),
+		// A theme without a background of its own leaves the picker transparent, so the dark one stays.
+		TRACK(BossHealthBarConfig.CUSTOM_TRACK_COLOR_KEY, BossHealthBarConfig::customTrackColor,
+			ThemeColors::getTrack, ThemeColors.ThemeColorsBuilder::track, true),
+		TRAIL(BossHealthBarConfig.CUSTOM_TRAIL_COLOR_KEY, BossHealthBarConfig::customTrailColor,
+			ThemeColors::getTrail, ThemeColors.ThemeColorsBuilder::trail),
+		FRAME(BossHealthBarConfig.CUSTOM_FRAME_COLOR_KEY, BossHealthBarConfig::customFrameColor,
+			ThemeColors::getFrame, ThemeColors.ThemeColorsBuilder::frame),
+		TEXT(BossHealthBarConfig.CUSTOM_TEXT_COLOR_KEY, BossHealthBarConfig::customTextColor,
+			ThemeColors::getText, ThemeColors.ThemeColorsBuilder::text),
+		LEVEL_TEXT(BossHealthBarConfig.CUSTOM_LEVEL_TEXT_COLOR_KEY, BossHealthBarConfig::customLevelTextColor,
+			ThemeColors::getLevelText, ThemeColors.ThemeColorsBuilder::levelText),
+		HITPOINTS_TEXT(BossHealthBarConfig.CUSTOM_HITPOINTS_TEXT_COLOR_KEY, BossHealthBarConfig::customHitpointsTextColor,
+			ThemeColors::getHitpointsText, ThemeColors.ThemeColorsBuilder::hitpointsText),
+		DEFEATED_TEXT(BossHealthBarConfig.CUSTOM_DEFEATED_TEXT_COLOR_KEY, BossHealthBarConfig::customDefeatedTextColor,
+			ThemeColors::getDefeatedText, ThemeColors.ThemeColorsBuilder::defeatedText),
+		// No theme colors its items one by one, so they start out following the name and level colors.
+		DAMAGE_TEXT(BossHealthBarConfig.CUSTOM_DAMAGE_TEXT_COLOR_KEY, BossHealthBarConfig::customDamageTextColor,
+			ThemeColors.ThemeColorsBuilder::damageText),
+		DELVE_LEVEL_TEXT(BossHealthBarConfig.CUSTOM_DELVE_LEVEL_TEXT_COLOR_KEY,
+			BossHealthBarConfig::customDelveLevelTextColor, ThemeColors.ThemeColorsBuilder::delveLevelText),
+		COMBAT_LEVEL_TEXT(BossHealthBarConfig.CUSTOM_COMBAT_LEVEL_TEXT_COLOR_KEY,
+			BossHealthBarConfig::customCombatLevelTextColor, ThemeColors.ThemeColorsBuilder::combatLevelText),
+		FIGHT_TIMER_TEXT(BossHealthBarConfig.CUSTOM_FIGHT_TIMER_TEXT_COLOR_KEY,
+			BossHealthBarConfig::customFightTimerTextColor, ThemeColors.ThemeColorsBuilder::fightTimerText),
+		KILL_COUNT_TEXT(BossHealthBarConfig.CUSTOM_KILL_COUNT_TEXT_COLOR_KEY,
+			BossHealthBarConfig::customKillCountTextColor, ThemeColors.ThemeColorsBuilder::killCountText),
+		WEAKNESS_TEXT(BossHealthBarConfig.CUSTOM_WEAKNESS_TEXT_COLOR_KEY, BossHealthBarConfig::customWeaknessTextColor,
+			ThemeColors.ThemeColorsBuilder::weaknessText),
+		DRAIN_CAP_TEXT(BossHealthBarConfig.CUSTOM_DRAIN_CAP_TEXT_COLOR_KEY, BossHealthBarConfig::customDrainCapTextColor,
+			ThemeColors.ThemeColorsBuilder::drainCapText),
+		DEFENCE_TEXT(BossHealthBarConfig.CUSTOM_DEFENCE_TEXT_COLOR_KEY, BossHealthBarConfig::customDefenceTextColor,
+			ThemeColors.ThemeColorsBuilder::defenceText),
+		SPECIAL_ATTACK_TEXT(BossHealthBarConfig.CUSTOM_SPECIAL_ATTACK_TEXT_COLOR_KEY,
+			BossHealthBarConfig::customSpecialAttackTextColor, ThemeColors.ThemeColorsBuilder::specialAttackText);
 
-	// Read off the list keyedColors writes, so a color added there can't be missed here.
-	private static final Set<String> COLOR_KEYS =
-		Collections.unmodifiableSet(keyedColors(ThemeColors.builder().build()).keySet());
+		final String key;
+		final Function<BossHealthBarConfig, Color> saved;
+		final Function<ThemeColors, Color> fromTheme;
+		final BiConsumer<ThemeColors.ThemeColorsBuilder, Color> drawn;
+		// Transparent is how the picker says "none": the themed background, or the shared text color.
+		final boolean transparentIsNone;
+
+		Slot(String key, Function<BossHealthBarConfig, Color> saved, Function<ThemeColors, Color> fromTheme,
+			BiConsumer<ThemeColors.ThemeColorsBuilder, Color> drawn)
+		{
+			this(key, saved, fromTheme, drawn, false);
+		}
+
+		Slot(String key, Function<BossHealthBarConfig, Color> saved, BiConsumer<ThemeColors.ThemeColorsBuilder, Color> drawn)
+		{
+			this(key, saved, theme -> null, drawn, true);
+		}
+
+		Slot(String key, Function<BossHealthBarConfig, Color> saved, Function<ThemeColors, Color> fromTheme,
+			BiConsumer<ThemeColors.ThemeColorsBuilder, Color> drawn, boolean transparentIsNone)
+		{
+			this.key = key;
+			this.saved = saved;
+			this.fromTheme = fromTheme;
+			this.drawn = drawn;
+			this.transparentIsNone = transparentIsNone;
+		}
+	}
+
+	private static final Set<String> COLOR_KEYS = Collections.unmodifiableSet(new LinkedHashSet<>(
+		Arrays.stream(Slot.values()).map(slot -> slot.key).collect(Collectors.toList())));
 
 	private final ConfigManager configManager;
 
@@ -44,6 +108,43 @@ public class CustomColors
 	CustomColors(ConfigManager configManager)
 	{
 		this.configManager = configManager;
+	}
+
+	public static String code(BossHealthBarConfig config)
+	{
+		return PaletteCode.encode(configuredColors(config).values(), config.customIconItemId(),
+			config.customIconSpriteId());
+	}
+
+	// The theme goes to Custom first, so nothing it sets off copies a theme over the pasted colors. Colors an
+	// older code doesn't have go back to following the others.
+	public void use(PaletteCode.Palette palette)
+	{
+		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.THEME_KEY, HealthBarTheme.CUSTOM);
+		final List<Color> colors = palette.getColors();
+		int i = 0;
+		for (String key : COLOR_KEYS)
+		{
+			configManager.setConfiguration(BossHealthBarConfig.GROUP, key,
+				i < colors.size() ? colors.get(i) : BossHealthBarConfig.TRANSPARENT);
+			i++;
+		}
+		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.CUSTOM_ICON_ITEM_ID_KEY,
+			palette.getIconItemId());
+		configManager.setConfiguration(BossHealthBarConfig.GROUP, BossHealthBarConfig.CUSTOM_ICON_SPRITE_ID_KEY,
+			palette.getIconSpriteId());
+	}
+
+	// What each Custom color is set to now.
+	@VisibleForTesting
+	static Map<String, Color> configuredColors(BossHealthBarConfig config)
+	{
+		final Map<String, Color> colors = new LinkedHashMap<>();
+		for (Slot slot : Slot.values())
+		{
+			colors.put(slot.key, slot.saved.apply(config));
+		}
+		return colors;
 	}
 
 	public static boolean isColorKey(String key)
@@ -141,24 +242,14 @@ public class CustomColors
 		}
 	}
 
+	// The theme's colors as the Custom colors would hold them, a color it has none of left transparent.
 	static Map<String, Color> keyedColors(ThemeColors theme)
 	{
 		final Map<String, Color> colors = new LinkedHashMap<>();
-		colors.put(BossHealthBarConfig.CUSTOM_FILL_HIGH_COLOR_KEY, theme.getFillHigh());
-		colors.put(BossHealthBarConfig.CUSTOM_FILL_LOW_COLOR_KEY, theme.getFillLow());
-		// A theme without a background of its own leaves the picker transparent, so the dark one stays.
-		colors.put(BossHealthBarConfig.CUSTOM_TRACK_COLOR_KEY,
-			theme.getTrack() != null ? theme.getTrack() : BossHealthBarConfig.TRANSPARENT);
-		colors.put(BossHealthBarConfig.CUSTOM_TRAIL_COLOR_KEY, theme.getTrail());
-		colors.put(BossHealthBarConfig.CUSTOM_FRAME_COLOR_KEY, theme.getFrame());
-		colors.put(BossHealthBarConfig.CUSTOM_TEXT_COLOR_KEY, theme.getText());
-		colors.put(BossHealthBarConfig.CUSTOM_LEVEL_TEXT_COLOR_KEY, theme.getLevelText());
-		colors.put(BossHealthBarConfig.CUSTOM_HITPOINTS_TEXT_COLOR_KEY, theme.getHitpointsText());
-		colors.put(BossHealthBarConfig.CUSTOM_DEFEATED_TEXT_COLOR_KEY, theme.getDefeatedText());
-		// No theme colors its items one by one, so they go back to following the name and level colors.
-		for (String key : ITEM_TEXT_COLOR_KEYS)
+		for (Slot slot : Slot.values())
 		{
-			colors.put(key, BossHealthBarConfig.TRANSPARENT);
+			final Color color = slot.fromTheme.apply(theme);
+			colors.put(slot.key, color != null ? color : BossHealthBarConfig.TRANSPARENT);
 		}
 		return colors;
 	}
@@ -173,25 +264,12 @@ public class CustomColors
 
 	public static ThemeColors fromConfig(BossHealthBarConfig config)
 	{
-		return ThemeColors.builder()
-			.fillHigh(config.customFillHighColor())
-			.fillLow(config.customFillLowColor())
-			.track(picked(config.customTrackColor()))
-			.trail(config.customTrailColor())
-			.frame(config.customFrameColor())
-			.text(config.customTextColor())
-			.levelText(config.customLevelTextColor())
-			.hitpointsText(config.customHitpointsTextColor())
-			.defeatedText(config.customDefeatedTextColor())
-			.damageText(picked(config.customDamageTextColor()))
-			.delveLevelText(picked(config.customDelveLevelTextColor()))
-			.combatLevelText(picked(config.customCombatLevelTextColor()))
-			.fightTimerText(picked(config.customFightTimerTextColor()))
-			.killCountText(picked(config.customKillCountTextColor()))
-			.weaknessText(picked(config.customWeaknessTextColor()))
-			.drainCapText(picked(config.customDrainCapTextColor()))
-			.defenceText(picked(config.customDefenceTextColor()))
-			.specialAttackText(picked(config.customSpecialAttackTextColor()))
-			.build();
+		final ThemeColors.ThemeColorsBuilder colors = ThemeColors.builder();
+		for (Slot slot : Slot.values())
+		{
+			final Color color = slot.saved.apply(config);
+			slot.drawn.accept(colors, slot.transparentIsNone ? picked(color) : color);
+		}
+		return colors.build();
 	}
 }
