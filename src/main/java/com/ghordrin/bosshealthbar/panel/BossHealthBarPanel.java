@@ -10,6 +10,7 @@ import com.ghordrin.bosshealthbar.debug.DebugExport;
 import com.ghordrin.bosshealthbar.render.BarEnds;
 import com.ghordrin.bosshealthbar.render.BarIconPlacement;
 import com.ghordrin.bosshealthbar.render.BarPosition;
+import com.ghordrin.bosshealthbar.render.HealthText;
 import com.ghordrin.bosshealthbar.render.HitpointsTextMode;
 import com.ghordrin.bosshealthbar.render.IntroAnimation;
 import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
@@ -311,6 +312,9 @@ public class BossHealthBarPanel extends PluginPanel
 			+ " left on their own, either of those with the percentage after it, or nothing. Shows a percentage"
 			+ " when the max hitpoints aren't known.",
 			BossHealthBarConfig.HITPOINTS_TEXT_MODE_KEY, HitpointsTextMode.class, config::hitpointsTextMode);
+		spinner(body, "Percentage decimals", "How many decimals the percentage shows. Some opponents only tell"
+			+ " their health in rough steps, so the last decimals can jump instead of counting down.",
+			BossHealthBarConfig.PERCENT_DECIMALS_KEY, 0, HealthText.MAX_DECIMALS, config::percentDecimals);
 		checkbox(body, "Show damage number", "Show the damage of the latest attack. Hits that land together are"
 			+ " added up.", BossHealthBarConfig.SHOW_DAMAGE_NUMBER_KEY, config::showDamageNumber);
 		combo(body, "Damage number counts", "Me shows your latest attack. Party adds up your party's hits while"

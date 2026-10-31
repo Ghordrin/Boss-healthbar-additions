@@ -255,7 +255,8 @@ public class BossHealthBarOverlay extends Overlay
 
 		final int barHeight = config.barHeight();
 		textPainter.updateFonts();
-		final String hitpointsText = HealthText.hitpointsText(config.hitpointsTextMode(), state.health);
+		final String hitpointsText = HealthText.hitpointsText(config.hitpointsTextMode(), state.health,
+			config.percentDecimals());
 		final String killCountText = !config.showKillCount() ? null
 			: selector.isShowingPreview() ? BarStateSelector.PREVIEW_KILL_COUNT : killCounts.textFor(state.killCountKey);
 		final boolean showFightTime = config.showFightTimer();

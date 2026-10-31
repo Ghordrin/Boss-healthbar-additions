@@ -6,6 +6,7 @@ import com.ghordrin.bosshealthbar.gamebars.NativeBossBarMode;
 import com.ghordrin.bosshealthbar.render.BarEnds;
 import com.ghordrin.bosshealthbar.render.BarIconPlacement;
 import com.ghordrin.bosshealthbar.render.BarPosition;
+import com.ghordrin.bosshealthbar.render.HealthText;
 import com.ghordrin.bosshealthbar.render.HitpointsTextMode;
 import com.ghordrin.bosshealthbar.render.IntroAnimation;
 import com.ghordrin.bosshealthbar.render.TextOutline;
@@ -78,6 +79,7 @@ public interface BossHealthBarConfig extends Config
 	String SHOW_BOSS_NAME_KEY = "showBossName";
 	String SHOW_COMBAT_LEVEL_KEY = "showCombatLevel";
 	String HITPOINTS_TEXT_MODE_KEY = "hitpointsTextMode";
+	String PERCENT_DECIMALS_KEY = "percentDecimals";
 	String SHOW_DAMAGE_NUMBER_KEY = "showDamageNumber";
 	String DAMAGE_NUMBER_SOURCE_KEY = "damageNumberSource";
 	String SHOW_KILL_COUNT_KEY = "showKillCount";
@@ -551,6 +553,20 @@ public interface BossHealthBarConfig extends Config
 	default HitpointsTextMode hitpointsTextMode()
 	{
 		return HitpointsTextMode.NONE;
+	}
+
+	@Range(max = HealthText.MAX_DECIMALS)
+	@ConfigItem(
+		keyName = PERCENT_DECIMALS_KEY,
+		name = "Percentage decimals",
+		description = "How many decimals the percentage shows. Some opponents only tell their health in rough steps,"
+			+ " so the last decimals can jump instead of counting down.",
+		position = 2,
+		hidden = true
+	)
+	default int percentDecimals()
+	{
+		return 0;
 	}
 
 	@ConfigItem(
