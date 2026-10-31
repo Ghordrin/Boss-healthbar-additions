@@ -27,6 +27,63 @@ public class ThemeColors
 	Color hitpointsText;
 	Color defeatedText;
 
+	// Each item's own text color. Null follows the name color or the level color, which only the Custom colors set.
+	Color damageText;
+	Color delveLevelText;
+	Color combatLevelText;
+	Color fightTimerText;
+	Color killCountText;
+	Color weaknessText;
+	Color drainCapText;
+	// Null keeps the color the other plugin gives these, or the name color when it gives none.
+	Color defenceText;
+	Color specialAttackText;
+
+	public Color getDamageText()
+	{
+		return damageText != null ? damageText : text;
+	}
+
+	public Color getDelveLevelText()
+	{
+		return delveLevelText != null ? delveLevelText : text;
+	}
+
+	public Color getCombatLevelText()
+	{
+		return combatLevelText != null ? combatLevelText : levelText;
+	}
+
+	public Color getFightTimerText()
+	{
+		return fightTimerText != null ? fightTimerText : levelText;
+	}
+
+	public Color getKillCountText()
+	{
+		return killCountText != null ? killCountText : levelText;
+	}
+
+	public Color getWeaknessText()
+	{
+		return weaknessText != null ? weaknessText : levelText;
+	}
+
+	public Color getDrainCapText()
+	{
+		return drainCapText != null ? drainCapText : levelText;
+	}
+
+	public Color defenceText(Color pluginColor)
+	{
+		return defenceText != null ? defenceText : pluginColor != null ? pluginColor : text;
+	}
+
+	public Color specialAttackText(Color pluginColor)
+	{
+		return specialAttackText != null ? specialAttackText : pluginColor != null ? pluginColor : text;
+	}
+
 	static ThemeColors of(Color fillHigh, Color fillLow, Color frame, Color trail)
 	{
 		return ThemeColors.builder()

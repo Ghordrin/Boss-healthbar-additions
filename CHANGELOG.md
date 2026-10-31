@@ -6,6 +6,8 @@
 
 - Percentage decimals (0): show the percentage with one or two decimals
 - The Oldschool theme takes the Custom colors: pick the Custom theme with Oldschool theme on to choose its fill, background, trail, outline and text colors, and its icon
+- A color of its own for every piece of text on the bar in Custom colors: damage number, delve level, combat level, fight timer, kill count, elemental weakness, defence drain limit, party and magic defence, and special attack counts. Left transparent, each one keeps following the Name or the Level and info color, so nothing changes until you pick one
+- Random colors in Custom colors: fills every color with a random set that goes together, on colors that sit side by side or opposite each other on the color wheel, and switches to the Custom theme
 
 ### Changed
 

@@ -23,6 +23,7 @@ public class BossHealthBarConfigTest
 		assertEquals("showBossName", BossHealthBarConfig.SHOW_BOSS_NAME_KEY);
 		assertEquals("showCombatLevel", BossHealthBarConfig.SHOW_COMBAT_LEVEL_KEY);
 		assertEquals("hitpointsTextMode", BossHealthBarConfig.HITPOINTS_TEXT_MODE_KEY);
+		assertEquals("percentDecimals", BossHealthBarConfig.PERCENT_DECIMALS_KEY);
 		assertEquals("showDamageNumber", BossHealthBarConfig.SHOW_DAMAGE_NUMBER_KEY);
 		assertEquals("damageNumberSource", BossHealthBarConfig.DAMAGE_NUMBER_SOURCE_KEY);
 		assertEquals("showKillCount", BossHealthBarConfig.SHOW_KILL_COUNT_KEY);

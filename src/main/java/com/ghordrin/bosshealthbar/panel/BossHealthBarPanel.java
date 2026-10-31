@@ -13,6 +13,7 @@ import com.ghordrin.bosshealthbar.render.BarPosition;
 import com.ghordrin.bosshealthbar.render.HealthText;
 import com.ghordrin.bosshealthbar.render.HitpointsTextMode;
 import com.ghordrin.bosshealthbar.render.IntroAnimation;
+import com.ghordrin.bosshealthbar.theme.CustomColors;
 import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -90,6 +91,7 @@ public class BossHealthBarPanel extends PluginPanel
 	private final BossHealthBarConfig config;
 	private final ColorPickerManager colorPickerManager;
 	private final Pickers pickers;
+	private final CustomColors customColors;
 	private final SettingsTransfer settingsTransfer;
 	private final DebugExport debugExport;
 	private final EventBus eventBus;
@@ -107,14 +109,15 @@ public class BossHealthBarPanel extends PluginPanel
 
 	@Inject
 	BossHealthBarPanel(ConfigManager configManager, BossHealthBarConfig config, ColorPickerManager colorPickerManager,
-		Pickers pickers, SettingsTransfer settingsTransfer, DebugExport debugExport, EventBus eventBus,
-		BossHealthBarPlugin plugin)
+		Pickers pickers, CustomColors customColors, SettingsTransfer settingsTransfer, DebugExport debugExport,
+		EventBus eventBus, BossHealthBarPlugin plugin)
 	{
 		super(false);
 		this.configManager = configManager;
 		this.config = config;
 		this.colorPickerManager = colorPickerManager;
 		this.pickers = pickers;
+		this.customColors = customColors;
 		this.settingsTransfer = settingsTransfer;
 		this.debugExport = debugExport;
 		this.eventBus = eventBus;
@@ -413,16 +416,40 @@ public class BossHealthBarPanel extends PluginPanel
 			BossHealthBarConfig.CUSTOM_TRAIL_COLOR_KEY, config::customTrailColor);
 		color(body, "Frame", "The frame, the bar ends, the crests and the phase markers.",
 			BossHealthBarConfig.CUSTOM_FRAME_COLOR_KEY, config::customFrameColor);
-		color(body, "Name and damage", "The name and the damage number.",
+		color(body, "Name", "The name. The damage number, delve level, defence and special attack counts use it"
+			+ " too while their own color is transparent.",
 			BossHealthBarConfig.CUSTOM_TEXT_COLOR_KEY, config::customTextColor);
-		color(body, "Level and info", "The combat level and the info below the bar.",
+		color(body, "Level and info", "The combat level, fight timer, kill count, weakness and drain limit, while"
+			+ " their own color is transparent.",
 			BossHealthBarConfig.CUSTOM_LEVEL_TEXT_COLOR_KEY, config::customLevelTextColor);
 		color(body, "Hitpoints", "The hitpoints text.",
 			BossHealthBarConfig.CUSTOM_HITPOINTS_TEXT_COLOR_KEY, config::customHitpointsTextColor);
 		color(body, "Defeated", "The \"Defeated\" text.",
 			BossHealthBarConfig.CUSTOM_DEFEATED_TEXT_COLOR_KEY, config::customDefeatedTextColor);
+		color(body, "Damage number", "The damage number. Transparent uses the name color.",
+			BossHealthBarConfig.CUSTOM_DAMAGE_TEXT_COLOR_KEY, config::customDamageTextColor);
+		color(body, "Delve level", "The delve level after the name. Transparent uses the name color.",
+			BossHealthBarConfig.CUSTOM_DELVE_LEVEL_TEXT_COLOR_KEY, config::customDelveLevelTextColor);
+		color(body, "Combat level", "The combat level. Transparent uses the level and info color.",
+			BossHealthBarConfig.CUSTOM_COMBAT_LEVEL_TEXT_COLOR_KEY, config::customCombatLevelTextColor);
+		color(body, "Fight timer", "The fight timer. Transparent uses the level and info color.",
+			BossHealthBarConfig.CUSTOM_FIGHT_TIMER_TEXT_COLOR_KEY, config::customFightTimerTextColor);
+		color(body, "Kill count", "The kill count. Transparent uses the level and info color.",
+			BossHealthBarConfig.CUSTOM_KILL_COUNT_TEXT_COLOR_KEY, config::customKillCountTextColor);
+		color(body, "Elemental weakness", "The elemental weakness. Transparent uses the level and info color.",
+			BossHealthBarConfig.CUSTOM_WEAKNESS_TEXT_COLOR_KEY, config::customWeaknessTextColor);
+		color(body, "Defence drain limit", "The defence drain limit. Transparent uses the level and info color.",
+			BossHealthBarConfig.CUSTOM_DRAIN_CAP_TEXT_COLOR_KEY, config::customDrainCapTextColor);
+		color(body, "Party and magic defence", "The party and magic defence. Transparent keeps the other plugin's"
+			+ " color, or the name color when it gives none.",
+			BossHealthBarConfig.CUSTOM_DEFENCE_TEXT_COLOR_KEY, config::customDefenceTextColor);
+		color(body, "Special attack counts", "The special attack counts. Transparent keeps the other plugin's"
+			+ " color, or the name color when it gives none.",
+			BossHealthBarConfig.CUSTOM_SPECIAL_ATTACK_TEXT_COLOR_KEY, config::customSpecialAttackTextColor);
 		button(body, "Choose custom icon", "Pick one of the game's items or sprites for the Custom theme's"
 			+ " icon.", pickers::openIconPicker);
+		button(body, "Random colors", "Fill every color above with a random set that goes together, and switch"
+			+ " to the Custom theme. The colors you had are replaced.", customColors::randomize);
 	}
 
 	private void backupRows(JPanel body)

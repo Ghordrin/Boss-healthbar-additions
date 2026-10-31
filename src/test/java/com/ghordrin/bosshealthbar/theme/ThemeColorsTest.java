@@ -9,6 +9,45 @@ import org.junit.Test;
 public class ThemeColorsTest
 {
 	@Test
+	public void itemTextFollowsItsSharedColorUntilItHasItsOwn()
+	{
+		final Color name = new Color(1);
+		final Color level = new Color(2);
+		final Color own = new Color(3);
+		final ThemeColors shared = ThemeColors.builder().text(name).levelText(level).build();
+		assertEquals(name, shared.getDamageText());
+		assertEquals(name, shared.getDelveLevelText());
+		assertEquals(level, shared.getCombatLevelText());
+		assertEquals(level, shared.getFightTimerText());
+		assertEquals(level, shared.getKillCountText());
+		assertEquals(level, shared.getWeaknessText());
+		assertEquals(level, shared.getDrainCapText());
+
+		final ThemeColors picked = shared.toBuilder().damageText(own).combatLevelText(own).killCountText(own).build();
+		assertEquals(own, picked.getDamageText());
+		assertEquals(own, picked.getCombatLevelText());
+		assertEquals(own, picked.getKillCountText());
+		assertEquals(level, picked.getFightTimerText());
+	}
+
+	@Test
+	public void anotherPluginsColorStaysUntilOneIsPicked()
+	{
+		final Color name = new Color(1);
+		final Color plugin = new Color(4);
+		final Color own = new Color(5);
+		final ThemeColors shared = ThemeColors.builder().text(name).build();
+		assertEquals(plugin, shared.defenceText(plugin));
+		assertEquals(name, shared.defenceText(null));
+		assertEquals(plugin, shared.specialAttackText(plugin));
+		assertEquals(name, shared.specialAttackText(null));
+
+		final ThemeColors picked = shared.toBuilder().defenceText(own).specialAttackText(own).build();
+		assertEquals(own, picked.defenceText(plugin));
+		assertEquals(own, picked.specialAttackText(null));
+	}
+
+	@Test
 	public void aFlatThemeOnlyTakesTheBossFillColor()
 	{
 		final ThemeColors theme = FlatTheme.OLDSCHOOL.getColors();

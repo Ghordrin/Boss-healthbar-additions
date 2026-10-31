@@ -488,20 +488,20 @@ public class BarTextPainter
 			{
 				fonts.useLevelFont(graphics);
 				after += LEVEL_GAP;
-				drawShadowedText(graphics, levelText, after, baseline, colors.getLevelText(), 0.9f);
+				drawShadowedText(graphics, levelText, after, baseline, colors.getCombatLevelText(), 0.9f);
 				after += fonts.levelMetrics().stringWidth(levelText);
 			}
 			// Last in the row, in the name's font, since the level belongs to the name rather than to the stats.
 			if (delveText != null)
 			{
 				fonts.useFont(graphics, NAME);
-				drawShadowedText(graphics, delveText, after + LEVEL_GAP, baseline, colors.getText(), 1f);
+				drawShadowedText(graphics, delveText, after + LEVEL_GAP, baseline, colors.getDelveLevelText(), 1f);
 			}
 		}
 
 		if (onRow(DAMAGE_NUMBER, row))
 		{
-			drawDamageNumber(graphics, fonts.metrics(DAMAGE_NUMBER), row(DAMAGE_NUMBER), baseline, previewDamage, colors.getText());
+			drawDamageNumber(graphics, fonts.metrics(DAMAGE_NUMBER), row(DAMAGE_NUMBER), baseline, previewDamage, colors.getDamageText());
 		}
 
 		fonts.useFont(graphics, HITPOINTS);
@@ -522,13 +522,13 @@ public class BarTextPainter
 			fonts.useFont(graphics, FIGHT_TIMER);
 			final BarLayout timerRow = row(FIGHT_TIMER);
 			drawShadowedText(graphics, fightTimeText, damageNumberX(timerRow.spot(FIGHT_TIMER), timerRow.x(FIGHT_TIMER),
-				fightTimeSlotWidth, fightTimeWidth), baseline, colors.getLevelText(), 0.9f);
+				fightTimeSlotWidth, fightTimeWidth), baseline, colors.getFightTimerText(), 0.9f);
 		}
 
 		if (onRow(KILL_COUNT, row))
 		{
 			fonts.useFont(graphics, KILL_COUNT);
-			drawShadowedText(graphics, killCountText, x(KILL_COUNT), baseline, colors.getLevelText(), 0.9f);
+			drawShadowedText(graphics, killCountText, x(KILL_COUNT), baseline, colors.getKillCountText(), 0.9f);
 		}
 
 		final int defenceAscent = fonts.metrics(PARTY_DEFENCE).getAscent();
@@ -563,7 +563,7 @@ public class BarTextPainter
 				x += weaknessIconAdvance;
 			}
 			fonts.useFont(graphics, WEAKNESS);
-			drawShadowedText(graphics, weaknessText, x, baseline, colors.getLevelText(), 0.9f);
+			drawShadowedText(graphics, weaknessText, x, baseline, colors.getWeaknessText(), 0.9f);
 		}
 
 		if (onRow(DRAIN_CAP, row))
@@ -576,7 +576,7 @@ public class BarTextPainter
 				x += drainIconWidth;
 			}
 			fonts.useFont(graphics, DRAIN_CAP);
-			drawShadowedText(graphics, drainCapText, x, baseline, colors.getLevelText(), 0.9f);
+			drawShadowedText(graphics, drainCapText, x, baseline, colors.getDrainCapText(), 0.9f);
 		}
 	}
 
@@ -664,7 +664,7 @@ public class BarTextPainter
 		}
 		x += arrowWidth + DEFENCE_GAP;
 
-		final Color color = defence.getColor() != null ? defence.getColor() : colors.getText();
+		final Color color = colors.defenceText(defence.getColor());
 		drawShadowedText(graphics, defence.getText(), x, baseline, color, 1f);
 	}
 
@@ -691,7 +691,7 @@ public class BarTextPainter
 				x += iconAdvance;
 			}
 
-			final Color color = reading.getColor() != null ? reading.getColor() : colors.getText();
+			final Color color = colors.specialAttackText(reading.getColor());
 			drawShadowedText(graphics, reading.getText(), x, baseline, color, 1f);
 			x = itemEnd + SPECIAL_ATTACK_GAP;
 		}

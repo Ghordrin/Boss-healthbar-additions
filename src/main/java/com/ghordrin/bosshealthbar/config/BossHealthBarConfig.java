@@ -44,6 +44,15 @@ public interface BossHealthBarConfig extends Config
 	String CUSTOM_LEVEL_TEXT_COLOR_KEY = "customLevelTextColor";
 	String CUSTOM_HITPOINTS_TEXT_COLOR_KEY = "customHitpointsTextColor";
 	String CUSTOM_DEFEATED_TEXT_COLOR_KEY = "customDefeatedTextColor";
+	String CUSTOM_DAMAGE_TEXT_COLOR_KEY = "customDamageTextColor";
+	String CUSTOM_DELVE_LEVEL_TEXT_COLOR_KEY = "customDelveLevelTextColor";
+	String CUSTOM_COMBAT_LEVEL_TEXT_COLOR_KEY = "customCombatLevelTextColor";
+	String CUSTOM_FIGHT_TIMER_TEXT_COLOR_KEY = "customFightTimerTextColor";
+	String CUSTOM_KILL_COUNT_TEXT_COLOR_KEY = "customKillCountTextColor";
+	String CUSTOM_WEAKNESS_TEXT_COLOR_KEY = "customWeaknessTextColor";
+	String CUSTOM_DRAIN_CAP_TEXT_COLOR_KEY = "customDrainCapTextColor";
+	String CUSTOM_DEFENCE_TEXT_COLOR_KEY = "customDefenceTextColor";
+	String CUSTOM_SPECIAL_ATTACK_TEXT_COLOR_KEY = "customSpecialAttackTextColor";
 	String OLDSCHOOL_THEME_KEY = "oldschoolTheme";
 	String MATCH_BOSS_COLORS_KEY = "matchBossColors";
 	String PHASE_COLORS_KEY = "phaseColors";
@@ -1007,9 +1016,9 @@ public interface BossHealthBarConfig extends Config
 	@Alpha
 	@ConfigItem(
 		keyName = CUSTOM_TEXT_COLOR_KEY,
-		name = "Name and damage text",
-		description = "The color of the name, the delve level and the damage number, on both bars, and of the party"
-			+ " and magic defence and special attack counts when they have no color of their own.",
+		name = "Name text",
+		description = "The color of the name on both bars. The damage number, delve level, party and magic defence"
+			+ " and special attack counts use it too while their own color is left fully transparent.",
 		position = 6,
 		hidden = true
 	)
@@ -1023,7 +1032,8 @@ public interface BossHealthBarConfig extends Config
 		keyName = CUSTOM_LEVEL_TEXT_COLOR_KEY,
 		name = "Level and info text",
 		description = "The color of the combat level, fight timer, kill count, elemental weakness and defence"
-			+ " drain limit, which share one color and are drawn a little dimmer than the name.",
+			+ " drain limit while their own color is left fully transparent. They're drawn a little dimmer than"
+			+ " the name.",
 		position = 7,
 		hidden = true
 	)
@@ -1056,6 +1066,125 @@ public interface BossHealthBarConfig extends Config
 	default Color customDefeatedTextColor()
 	{
 		return new Color(0xB6AEA1);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = CUSTOM_DAMAGE_TEXT_COLOR_KEY,
+		name = "Damage number text",
+		description = "The color of the damage number. Fully transparent uses the name color.",
+		position = 10,
+		hidden = true
+	)
+	default Color customDamageTextColor()
+	{
+		return TRANSPARENT;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = CUSTOM_DELVE_LEVEL_TEXT_COLOR_KEY,
+		name = "Delve level text",
+		description = "The color of the delve level after the name. Fully transparent uses the name color.",
+		position = 11,
+		hidden = true
+	)
+	default Color customDelveLevelTextColor()
+	{
+		return TRANSPARENT;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = CUSTOM_COMBAT_LEVEL_TEXT_COLOR_KEY,
+		name = "Combat level text",
+		description = "The color of the combat level. Fully transparent uses the level and info color.",
+		position = 12,
+		hidden = true
+	)
+	default Color customCombatLevelTextColor()
+	{
+		return TRANSPARENT;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = CUSTOM_FIGHT_TIMER_TEXT_COLOR_KEY,
+		name = "Fight timer text",
+		description = "The color of the fight timer. Fully transparent uses the level and info color.",
+		position = 13,
+		hidden = true
+	)
+	default Color customFightTimerTextColor()
+	{
+		return TRANSPARENT;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = CUSTOM_KILL_COUNT_TEXT_COLOR_KEY,
+		name = "Kill count text",
+		description = "The color of the kill count. Fully transparent uses the level and info color.",
+		position = 14,
+		hidden = true
+	)
+	default Color customKillCountTextColor()
+	{
+		return TRANSPARENT;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = CUSTOM_WEAKNESS_TEXT_COLOR_KEY,
+		name = "Elemental weakness text",
+		description = "The color of the elemental weakness. Fully transparent uses the level and info color.",
+		position = 15,
+		hidden = true
+	)
+	default Color customWeaknessTextColor()
+	{
+		return TRANSPARENT;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = CUSTOM_DRAIN_CAP_TEXT_COLOR_KEY,
+		name = "Defence drain limit text",
+		description = "The color of the defence drain limit. Fully transparent uses the level and info color.",
+		position = 16,
+		hidden = true
+	)
+	default Color customDrainCapTextColor()
+	{
+		return TRANSPARENT;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = CUSTOM_DEFENCE_TEXT_COLOR_KEY,
+		name = "Party and magic defence text",
+		description = "The color of the party and magic defence. Fully transparent keeps the color the other plugin"
+			+ " gives it, or the name color when it gives none.",
+		position = 17,
+		hidden = true
+	)
+	default Color customDefenceTextColor()
+	{
+		return TRANSPARENT;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = CUSTOM_SPECIAL_ATTACK_TEXT_COLOR_KEY,
+		name = "Special attack counts text",
+		description = "The color of the special attack counts. Fully transparent keeps the color the other plugin"
+			+ " gives them, or the name color when it gives none.",
+		position = 18,
+		hidden = true
+	)
+	default Color customSpecialAttackTextColor()
+	{
+		return TRANSPARENT;
 	}
 
 	@ConfigItem(
