@@ -35,7 +35,7 @@ The bar stays on the boss while you hit its minions, follows the game's boss bar
 | Plugin | What the bar does with it |
 |---|---|
 | Opponent Information (RuneLite) | Turns its health bar off while this plugin runs, so you don't see two. Your setting comes back after |
-| Chat Commands (RuneLite) | Reads the kill counts it saves |
+| Chat Commands (RuneLite) | Reads the kill counts and personal bests it saves, for the kill count and the milestone and PB moments |
 | Special Attack Counter (RuneLite) | Shows its counts with each weapon's icon |
 | Party (RuneLite) | Damage number can add up the hits of party members who also run this plugin |
 | Boss Health Indicators | Draws the health lines you set up there on this bar |
@@ -53,7 +53,7 @@ In the panel:
 |---|---|
 | Look | Theme, Oldschool theme, boss colours, phase colours, rare gold bars, icons, bar ends, fill texture, phase markers, size |
 | Text | Name, combat level, hitpoints text (percentage, value, both or none), percentage decimals, damage number and whose hits it counts |
-| Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar, second bar on its own, second bar scale |
+| Boss info | Kill count, kill milestones, personal bests, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar, second bar on its own, second bar scale |
 | Animations | Damage trail, heal speed, low health effect, flash on big hits, intro, defeat animation, burn away, fortify |
 | Layout | Where each item goes: left, centre or right, above the bar, inside it, or on one of the two rows below it. Text inside the bar suits a taller bar |
 | Custom colors | The colours of the Custom theme and its icon, also on the Oldschool bar, with a colour for each piece of text, random colours, and colour codes to copy and paste |

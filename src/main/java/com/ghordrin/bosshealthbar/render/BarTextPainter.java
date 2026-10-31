@@ -78,6 +78,7 @@ public class BarTextPainter
 	private BufferedImage nameIcon;
 	private String hitpointsText;
 	private boolean defeated;
+	private String defeatedText;
 	private int defeatedX;
 	private int previewDamage;
 	private String fightTimeText;
@@ -302,7 +303,8 @@ public class BarTextPainter
 
 	public void layoutText(String name, String shortName, int combatLevel, int delveLevel, BufferedImage nameIcon,
 		String hitpointsText,
-		boolean defeated, int previewDamage, boolean showFightTime, String fightTimeText, String killCountText,
+		boolean defeated, String defeatedText, int previewDamage, boolean showFightTime, String fightTimeText,
+		String killCountText,
 		PartyDefence.Reading defence,
 		BufferedImage defenceIcon, PartyDefence.Reading magicDefence, BufferedImage magicIcon,
 		List<SpecialAttackCounts.Reading> specialAttacks, String weaknessText,
@@ -315,6 +317,7 @@ public class BarTextPainter
 		this.nameIcon = nameIcon;
 		this.hitpointsText = hitpointsText;
 		this.defeated = defeated;
+		this.defeatedText = defeatedText != null ? defeatedText : DEFEATED_TEXT;
 		this.previewDamage = previewDamage;
 		this.fightTimeText = fightTimeText;
 		this.killCountText = killCountText;
@@ -438,7 +441,7 @@ public class BarTextPainter
 		}
 
 		defeatedX = defeated
-			? row(HITPOINTS).centredX(fonts.metrics(HITPOINTS).stringWidth(DEFEATED_TEXT), HITPOINTS) : BarLayout.NOT_PLACED;
+			? row(HITPOINTS).centredX(fonts.metrics(HITPOINTS).stringWidth(this.defeatedText), HITPOINTS) : BarLayout.NOT_PLACED;
 
 		baselines[TOP_ROW] = rowBaselines[TOP_ROW];
 		// The in-bar row is centred on the bar, so it straddles a bar shorter than its text.
@@ -509,7 +512,7 @@ public class BarTextPainter
 		{
 			if (defeatedX != BarLayout.NOT_PLACED && positions[HITPOINTS].getRow() == row)
 			{
-				drawShadowedText(graphics, DEFEATED_TEXT, defeatedX, baseline, colors.getDefeatedText(), 1f);
+				drawShadowedText(graphics, defeatedText, defeatedX, baseline, colors.getDefeatedText(), 1f);
 			}
 		}
 		else if (onRow(HITPOINTS, row))

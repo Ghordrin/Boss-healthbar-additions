@@ -9,6 +9,8 @@
 - A color of its own for every piece of text on the bar in Custom colors: damage number, delve level, combat level, fight timer, kill count, elemental weakness, defence drain limit, party and magic defence, and special attack counts. Left transparent, each one keeps following the Name or the Level and info color, so nothing changes until you pick one
 - Random colors in Custom colors: fills every color with a random set that goes together, on colors that sit side by side or opposite each other on the color wheel, and switches to the Custom theme
 - Copy colors and Paste colors in Custom colors: your colors and icon as one short color code, to share in a chat or on Discord. Pasting one only changes the colors and the icon
+- Kill milestones (on, every 100): your first kill and every 100th turn the bar gold and name the kill as it fades out. Needs RuneLite's Chat Commands plugin
+- Personal bests (on): a kill that sets a new personal best time turns the bar gold and says New PB as it fades out. Needs RuneLite's Chat Commands plugin
 
 ### Changed
 

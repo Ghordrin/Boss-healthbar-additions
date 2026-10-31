@@ -330,6 +330,14 @@ public class BossHealthBarPanel extends PluginPanel
 		checkbox(body, "Kill count", "Show your kill count for the boss. Needs RuneLite's Chat Commands plugin to"
 			+ " have seen a kill count message for it.",
 			BossHealthBarConfig.SHOW_KILL_COUNT_KEY, config::showKillCount);
+		checkbox(body, "Kill milestones", "When a kill brings your kill count to a milestone, the bar turns gold"
+			+ " and names the kill as it fades out. Your first kill counts too. Needs RuneLite's Chat Commands"
+			+ " plugin.", BossHealthBarConfig.KILL_MILESTONES_KEY, config::killMilestones);
+		spinner(body, "Milestone every", "How many kills apart the milestones are.",
+			BossHealthBarConfig.KILL_MILESTONE_EVERY_KEY, 10, 1000, config::killMilestoneEvery);
+		checkbox(body, "Personal bests", "When a kill sets a new personal best time, the bar turns gold and says"
+			+ " New PB as it fades out. Needs RuneLite's Chat Commands plugin.",
+			BossHealthBarConfig.PERSONAL_BESTS_KEY, config::personalBests);
 		checkbox(body, "Party defence", "Show the defence from the Party Defence Tracker or Better Party Defence"
 			+ " plugin's info box. Needs one of them installed and on.",
 			BossHealthBarConfig.SHOW_PARTY_DEFENCE_KEY, config::showPartyDefence);

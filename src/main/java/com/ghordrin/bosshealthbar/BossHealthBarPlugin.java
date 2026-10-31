@@ -17,6 +17,7 @@ import com.ghordrin.bosshealthbar.gamebars.TobBossBar;
 import com.ghordrin.bosshealthbar.integrations.BossBarPartyHit;
 import com.ghordrin.bosshealthbar.integrations.HealthIndicatorMarkers;
 import com.ghordrin.bosshealthbar.integrations.KillCounts;
+import com.ghordrin.bosshealthbar.integrations.KillMoments;
 import com.ghordrin.bosshealthbar.integrations.OpponentInfoOverride;
 import com.ghordrin.bosshealthbar.integrations.PartyDamage;
 import com.ghordrin.bosshealthbar.integrations.PartyDefence;
@@ -156,6 +157,9 @@ public class BossHealthBarPlugin extends Plugin
 
 	@Inject
 	private KillCounts killCounts;
+
+	@Inject
+	private KillMoments killMoments;
 
 	@Inject
 	private PartyDefence partyDefence;
@@ -340,9 +344,18 @@ public class BossHealthBarPlugin extends Plugin
 			return;
 		}
 
+		// On the bar's clock, which the overlay reads the moment back on.
+		final long nowMillis = System.nanoTime() / 1_000_000L;
 		if (KillCounts.CONFIG_GROUP.equals(event.getGroup()))
 		{
+			killMoments.killCountSaved(event.getKey(), event.getOldValue(), event.getNewValue(), nowMillis);
 			clientThread.invoke(killCounts::invalidate);
+			return;
+		}
+
+		if (KillMoments.PERSONAL_BEST_GROUP.equals(event.getGroup()))
+		{
+			killMoments.personalBestSaved(event.getKey(), event.getOldValue(), event.getNewValue(), nowMillis);
 			return;
 		}
 

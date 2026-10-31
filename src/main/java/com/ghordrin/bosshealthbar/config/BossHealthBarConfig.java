@@ -92,6 +92,9 @@ public interface BossHealthBarConfig extends Config
 	String SHOW_DAMAGE_NUMBER_KEY = "showDamageNumber";
 	String DAMAGE_NUMBER_SOURCE_KEY = "damageNumberSource";
 	String SHOW_KILL_COUNT_KEY = "showKillCount";
+	String KILL_MILESTONES_KEY = "killMilestones";
+	String KILL_MILESTONE_EVERY_KEY = "killMilestoneEvery";
+	String PERSONAL_BESTS_KEY = "personalBests";
 	String SHOW_PARTY_DEFENCE_KEY = "showPartyDefence";
 	String SHOW_MAGIC_DEFENCE_KEY = "showMagicDefence";
 	String SHOW_SPECIAL_ATTACK_COUNTS_KEY = "showSpecialAttackCounts";
@@ -612,6 +615,46 @@ public interface BossHealthBarConfig extends Config
 	default boolean showKillCount()
 	{
 		return false;
+	}
+
+	@ConfigItem(
+		keyName = KILL_MILESTONES_KEY,
+		name = "Kill milestones",
+		description = "When a kill brings your kill count to a milestone, the bar turns gold and names the kill"
+			+ " as it fades out. Your first kill counts too. Needs RuneLite's Chat Commands plugin, which counts"
+			+ " the kills, and works for the bosses that get a kill count.",
+		position = 20,
+		hidden = true
+	)
+	default boolean killMilestones()
+	{
+		return true;
+	}
+
+	@Range(min = 10, max = 1000)
+	@ConfigItem(
+		keyName = KILL_MILESTONE_EVERY_KEY,
+		name = "Milestone every",
+		description = "How many kills apart the milestones are.",
+		position = 21,
+		hidden = true
+	)
+	default int killMilestoneEvery()
+	{
+		return 100;
+	}
+
+	@ConfigItem(
+		keyName = PERSONAL_BESTS_KEY,
+		name = "Personal bests",
+		description = "When a kill sets a new personal best time, the bar turns gold and says New PB as it fades"
+			+ " out. Needs RuneLite's Chat Commands plugin, which saves the personal bests.",
+		position = 22,
+		hidden = true
+	)
+	default boolean personalBests()
+	{
+		return true;
 	}
 
 	@ConfigItem(

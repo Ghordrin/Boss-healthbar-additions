@@ -16,6 +16,7 @@ import com.ghordrin.bosshealthbar.data.OpponentInfo;
 import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
 import com.ghordrin.bosshealthbar.gamebars.TobBossBar;
 import com.ghordrin.bosshealthbar.integrations.KillCounts;
+import com.ghordrin.bosshealthbar.integrations.KillMoments;
 import com.ghordrin.bosshealthbar.integrations.PartyDefence;
 import com.ghordrin.bosshealthbar.integrations.SpecialAttackCounts;
 import com.ghordrin.bosshealthbar.render.BarAnimation;
@@ -81,6 +82,7 @@ public class BossHealthBarOverlay extends Overlay
 	private final DamageTracker damageTracker;
 	private final GoldBar goldBar;
 	private final KillCounts killCounts;
+	private final KillMoments killMoments;
 	private final PartyDefence partyDefence;
 	private final SpecialAttackCounts specialAttackCounts;
 	private final PartnerBar partnerBar;
@@ -111,6 +113,7 @@ public class BossHealthBarOverlay extends Overlay
 		DamageTracker damageTracker,
 		GoldBar goldBar,
 		KillCounts killCounts,
+		KillMoments killMoments,
 		PartyDefence partyDefence,
 		SpecialAttackCounts specialAttackCounts,
 		PartnerBar partnerBar,
@@ -132,6 +135,7 @@ public class BossHealthBarOverlay extends Overlay
 		this.damageTracker = damageTracker;
 		this.goldBar = goldBar;
 		this.killCounts = killCounts;
+		this.killMoments = killMoments;
 		this.partyDefence = partyDefence;
 		this.specialAttackCounts = specialAttackCounts;
 		this.partnerBar = partnerBar;
@@ -288,9 +292,13 @@ public class BossHealthBarOverlay extends Overlay
 		final long fortifyMillis = fortify ? animation.fortifyMillis(now) : -1;
 		final ThemeColors baseColors = withPhase(baseColors(),
 			fortify && animation.fortifyHoldsPhase(now) ? null : phase, flat);
-		final boolean gold = showsGold(selector.rolledGold() && !selector.isShowingPreview() && config.rareGoldBars(), flat);
-		final ThemeColors colors = gold ? goldBar.colors(baseColors) : baseColors;
 		final long nowMillis = now / 1_000_000L;
+		// A milestone or a new personal best turns the kill gold, and the flat bar its colors at least.
+		final String momentText = defeated && !selector.isShowingPreview()
+			? killMoments.labelFor(state.killCountKey, nowMillis) : null;
+		final boolean gold = showsGold(momentText != null
+			|| selector.rolledGold() && !selector.isShowingPreview() && config.rareGoldBars(), flat);
+		final ThemeColors colors = gold || momentText != null ? goldBar.colors(baseColors) : baseColors;
 
 		final BarEnds ends = config.barEnds();
 		final int capRise = capRise(barHeight, flat, ends);
@@ -343,7 +351,7 @@ public class BossHealthBarOverlay extends Overlay
 		textPainter.applyTextHints(graphics);
 		final BufferedImage nameIcon = barIcons.nameIcon(theme, opponentInfo.bossIcon(), selector.isShowingPreview());
 		textPainter.layoutText(state.name, state.shortName, state.combatLevel, state.delveLevel, nameIcon,
-			hitpointsText, defeated,
+			hitpointsText, defeated, momentText,
 			selector.isShowingPreview() ? BarStateSelector.PREVIEW_DAMAGE : 0, showFightTime, fightTimeText,
 			killCountText, defence,
 			defence != null || drainCapText != null ? partyDefence.icon() : null,
