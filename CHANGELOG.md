@@ -10,6 +10,10 @@
 
 - The debug log now also holds the game's own health overlay settings, where the current opponent's health is read from and its max health, the world and client layout, Java and OS versions, party status, and more plugins that can affect the bar
 
+### Fixed
+
+- Picking a theme or ticking Oldschool theme in the panel updates the Custom colors and the other settings it changes there straight away, instead of still showing the old ones
+
 ## 2.1.0 (2026-10-24)
 
 ### New

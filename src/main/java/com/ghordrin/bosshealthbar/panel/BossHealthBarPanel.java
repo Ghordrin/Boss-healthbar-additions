@@ -100,8 +100,8 @@ public class BossHealthBarPanel extends PluginPanel
 	// Puts every control back to what the settings now say. One per control, in the order they were built.
 	private final List<Runnable> refreshers = new ArrayList<>();
 
-	// True while this panel is the one writing, so a setting it just wrote doesn't bounce back as a rebuild.
-	private boolean writing;
+	// The key this panel is writing, so a setting it just wrote doesn't bounce back as a rebuild.
+	private String writingKey;
 	// True while the controls are being put back, so setting a control doesn't read as the user using it.
 	private boolean refreshing;
 
@@ -634,22 +634,23 @@ public class BossHealthBarPanel extends PluginPanel
 
 	private void write(String key, Object value)
 	{
-		writing = true;
+		writingKey = key;
 		try
 		{
 			ConfigWrites.write(configManager, key, value);
 		}
 		finally
 		{
-			writing = false;
+			writingKey = null;
 		}
 	}
 
 	// A setting changed somewhere else: the config screen, a theme filling in the colors, an import, or the
-	// Oldschool tick writing its companions. Everything is put back, since one change can move several.
-	public void settingsChanged()
+	// Oldschool tick writing its companions. Everything is put back, since one change can move several. Those
+	// follow-up writes arrive while this panel's own write is still running, so only that one key is skipped.
+	public void settingsChanged(String key)
 	{
-		if (writing)
+		if (writingKey != null && writingKey.equals(key))
 		{
 			return;
 		}

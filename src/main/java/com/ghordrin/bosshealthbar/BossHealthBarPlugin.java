@@ -354,7 +354,7 @@ public class BossHealthBarPlugin extends Plugin
 		// The panel shows the same settings, so it follows a change made anywhere else.
 		if (panel != null)
 		{
-			panel.settingsChanged();
+			panel.settingsChanged(event.getKey());
 		}
 
 		if (BossHealthBarConfig.SHOW_SIDEBAR_ICON_KEY.equals(event.getKey()))
