@@ -56,7 +56,7 @@ public class TextOutlineTest
 			final BufferedImage image = new BufferedImage(120, 40, BufferedImage.TYPE_INT_ARGB);
 			final Graphics2D graphics = image.createGraphics();
 			painter.applyTextHints(graphics);
-			painter.drawHitpointsStyleText(graphics, TEXT, 20, 25, FILL);
+			painter.drawNameStyleText(graphics, TEXT, 20, 25, FILL);
 			graphics.dispose();
 
 			final List<Point> pixels = filledPixels(image);
@@ -79,7 +79,7 @@ public class TextOutlineTest
 			config.outline = outline;
 			final BarTextPainter painter = new BarTextPainter(new DamageTracker(), config);
 			painter.updateFonts();
-			final int stringWidth = painter.hitpointsMetrics().stringWidth(TEXT);
+			final int stringWidth = painter.nameMetrics().stringWidth(TEXT);
 			if (width == null)
 			{
 				width = stringWidth;

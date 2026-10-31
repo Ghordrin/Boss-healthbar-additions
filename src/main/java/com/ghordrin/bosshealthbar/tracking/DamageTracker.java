@@ -2,7 +2,6 @@ package com.ghordrin.bosshealthbar.tracking;
 
 import java.time.Duration;
 import javax.inject.Singleton;
-import lombok.AccessLevel;
 import lombok.Getter;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.HitsplatID;

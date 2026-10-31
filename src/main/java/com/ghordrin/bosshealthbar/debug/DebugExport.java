@@ -246,7 +246,7 @@ public class DebugExport
 		{
 			return "not installed";
 		}
-		return pluginManager.isPluginActive(other) ? "on" : "off";
+		return onOff(pluginManager.isPluginActive(other));
 	}
 
 	private static String onOff(boolean on)

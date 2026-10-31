@@ -9,7 +9,6 @@ import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
 import com.ghordrin.bosshealthbar.gamebars.TobBossBar;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import lombok.AccessLevel;
 import lombok.Getter;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;

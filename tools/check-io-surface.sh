@@ -17,7 +17,7 @@ set -uo pipefail
 
 REF="${1:-HEAD}"
 # The commit last merged to the plugin hub. Update this when a release is merged.
-BASE="${2:-add469b}"
+BASE="${2:-7a627ac}"
 
 cd "$(dirname "$0")/.." || exit 2
 

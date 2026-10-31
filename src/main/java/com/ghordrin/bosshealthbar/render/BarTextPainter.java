@@ -139,17 +139,6 @@ public class BarTextPainter
 		return fonts;
 	}
 
-	public FontMetrics hitpointsMetrics()
-	{
-		return fonts.metrics(HITPOINTS);
-	}
-
-	public void drawHitpointsStyleText(Graphics2D graphics, String text, int x, int baseline, Color color)
-	{
-		fonts.useFont(graphics, HITPOINTS);
-		drawShadowedText(graphics, text, x, baseline, color, 1f);
-	}
-
 	public FontMetrics nameMetrics()
 	{
 		return fonts.metrics(NAME);
