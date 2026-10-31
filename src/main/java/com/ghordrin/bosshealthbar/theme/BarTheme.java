@@ -11,10 +11,14 @@ public interface BarTheme
 
 	static BarTheme effective(boolean oldschool, HealthBarTheme dropdownTheme)
 	{
-		return oldschool ? FlatTheme.OLDSCHOOL : dropdownTheme;
+		if (!oldschool)
+		{
+			return dropdownTheme;
+		}
+		return dropdownTheme == HealthBarTheme.CUSTOM ? FlatTheme.CUSTOM : FlatTheme.OLDSCHOOL;
 	}
 
-	// Null for the Custom theme, whose colors come from the config.
+	// Null for a Custom theme, whose colors come from the config.
 	ThemeColors getColors();
 
 	// Null for a theme with no icon of its own.

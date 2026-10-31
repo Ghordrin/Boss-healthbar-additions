@@ -19,7 +19,7 @@ See the [changelog](CHANGELOG.md) for what's new in each version.
 - A smaller second bar shows another boss you're fighting at the same time, with its last known health while it's away
 - Remembers a boss you walk out of sight of: come back to it in the same area and the bar carries on with its health and fight time, without "Defeated" or the intro
 - Optional info around the bar: kill count, fight timer, elemental weakness, defence drain limit, party and magic defence, special attack counts
-- Themes: god themes, a custom theme with your own colours and icon, the boss's own icon and colours, a plain Oldschool look, and the game's textures over the fill
+- Themes: god themes, a custom theme with your own colours and icon, the boss's own icon and colours, a plain Oldschool look that the custom colours also work on, and the game's textures over the fill
 - Its own panel in the sidebar for nearly every setting, with the game's items and sprites for the icon, and Import and Export to keep a setup or pass it on
 
 It only shows what the game already tells you, plus a timer for how long the fight has lasted. No attack timers or prediction.
@@ -56,7 +56,7 @@ In the panel:
 | Boss info | Kill count, party defence, magic defence, special attack counts, elemental weakness, defence drain limit, fight timer, second boss bar, second bar on its own, second bar scale |
 | Animations | Damage trail, heal speed, low health effect, flash on big hits, intro, defeat animation, burn away, fortify |
 | Layout | Where each item goes: left, centre or right, above the bar, inside it, or on one of the two rows below it. Text inside the bar suits a taller bar |
-| Custom colors | The colours of the Custom theme and its icon |
+| Custom colors | The colours of the Custom theme and its icon, also on the Oldschool bar |
 | Backup | Paste settings and Save debug log |
 
 On the settings screen:

@@ -210,7 +210,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = THEME_KEY,
 		name = "Theme",
-		description = "The colors of the bar. Custom starts from the theme you had and uses the Custom colors section. Not used with Use Oldschool theme on.",
+		description = "The colors of the bar. Custom starts from the theme you had and uses the Custom colors section. With Use Oldschool theme on, only Custom is used, to color the plain bar.",
 		position = 0,
 		hidden = true
 	)
@@ -222,7 +222,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = OLDSCHOOL_THEME_KEY,
 		name = "Use Oldschool theme",
-		description = "A plain green bar over red, like the game's own. Turns off Rare gold bars until you untick it. The Custom colors aren't used either. With Match boss colors on, the bar takes the boss's color instead of green.",
+		description = "A plain green bar over red, like the game's own. Turns off Rare gold bars until you untick it. Pick the Custom theme to choose its colors. With Match boss colors on, the bar takes the boss's color instead of green.",
 		position = 1,
 		hidden = true
 	)

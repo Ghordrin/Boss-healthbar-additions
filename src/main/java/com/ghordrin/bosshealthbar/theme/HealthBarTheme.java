@@ -44,18 +44,6 @@ public enum HealthBarTheme implements BarTheme
 		this.colors = ThemeColors.of(new Color(fillHigh), new Color(fillLow), new Color(frame), new Color(trail));
 	}
 
-	static HealthBarTheme named(String name)
-	{
-		for (HealthBarTheme theme : values())
-		{
-			if (theme.name().equals(name))
-			{
-				return theme;
-			}
-		}
-		return null;
-	}
-
 	@Override
 	public boolean isFlat()
 	{

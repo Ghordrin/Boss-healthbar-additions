@@ -22,6 +22,7 @@ import com.ghordrin.bosshealthbar.integrations.PartyDamage;
 import com.ghordrin.bosshealthbar.integrations.PartyDefence;
 import com.ghordrin.bosshealthbar.integrations.SpecialAttackCounts;
 import com.ghordrin.bosshealthbar.panel.BossHealthBarPanel;
+import com.ghordrin.bosshealthbar.theme.BarTheme;
 import com.ghordrin.bosshealthbar.theme.CustomColors;
 import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
 import com.ghordrin.bosshealthbar.tracking.DamageTracker;
@@ -382,14 +383,15 @@ public class BossHealthBarPlugin extends Plugin
 		// set that was chosen together, and they would answer by writing over what was just loaded.
 		if (!settingsTransfer.isImporting())
 		{
-			// The Custom colors are a template of the theme in the dropdown, so they follow it until Custom is
-			// picked, which leaves them alone to be tweaked from there.
-			if (BossHealthBarConfig.THEME_KEY.equals(event.getKey()))
+			// The Custom colors are a template of the bar as it looks, so they follow the theme and the Oldschool
+			// checkbox until Custom is picked, which leaves them alone to be tweaked from there.
+			if (BossHealthBarConfig.THEME_KEY.equals(event.getKey())
+				|| BossHealthBarConfig.OLDSCHOOL_THEME_KEY.equals(event.getKey()))
 			{
 				pickers.themeChanged();
-				if (!HealthBarTheme.CUSTOM.name().equals(event.getNewValue()))
+				if (config.theme() != HealthBarTheme.CUSTOM)
 				{
-					customColors.copyFrom(event.getNewValue());
+					customColors.copyFrom(BarTheme.of(config).getColors());
 				}
 			}
 

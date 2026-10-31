@@ -78,7 +78,7 @@ public class Pickers
 	// it asked about is kept so a decline doesn't ask again for every other color of the same theme.
 	public void confirmCustomTheme()
 	{
-		if (config.oldschoolTheme() || config.theme() == HealthBarTheme.CUSTOM
+		if (config.theme() == HealthBarTheme.CUSTOM
 			|| config.theme().name().equals(declinedFor))
 		{
 			return;
