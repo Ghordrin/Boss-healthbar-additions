@@ -17,20 +17,28 @@ public class OldschoolThemeTest
 	public void oldschoolIsFlatAndNotInTheDropdown()
 	{
 		assertTrue(FlatTheme.OLDSCHOOL.isFlat());
+		assertTrue(FlatTheme.CUSTOM.isFlat());
 		for (HealthBarTheme theme : HealthBarTheme.values())
 		{
 			assertFalse(theme.name(), theme.isFlat());
 			assertNotEquals(FlatTheme.OLDSCHOOL.name(), theme.name());
 		}
-		assertNull(HealthBarTheme.named(FlatTheme.OLDSCHOOL.name()));
 	}
 
 	@Test
 	public void checkboxOverridesTheDropdown()
 	{
 		assertSame(FlatTheme.OLDSCHOOL, BarTheme.effective(true, HealthBarTheme.SARADOMIN));
-		assertSame(FlatTheme.OLDSCHOOL, BarTheme.effective(true, HealthBarTheme.CUSTOM));
 		assertSame(HealthBarTheme.SARADOMIN, BarTheme.effective(false, HealthBarTheme.SARADOMIN));
+		assertSame(HealthBarTheme.CUSTOM, BarTheme.effective(false, HealthBarTheme.CUSTOM));
+	}
+
+	@Test
+	public void customColorsTheOldschoolBar()
+	{
+		assertSame(FlatTheme.CUSTOM, BarTheme.effective(true, HealthBarTheme.CUSTOM));
+		assertNull(FlatTheme.CUSTOM.getColors());
+		assertNull(FlatTheme.CUSTOM.getIcon());
 	}
 
 	@Test

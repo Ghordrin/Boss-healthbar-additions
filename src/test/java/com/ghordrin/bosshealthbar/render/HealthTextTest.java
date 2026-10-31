@@ -57,22 +57,47 @@ public class HealthTextTest
 	@Test
 	public void hitpointsPercentMatchesTheRawRatioInTheMiddleOfTheBar()
 	{
-		assertEquals(50, hitpointsPercent(50, 100));
-		assertEquals(99, hitpointsPercent(99, 100));
+		assertEquals("50", hitpointsPercent(50, 100, 0));
+		assertEquals("99", hitpointsPercent(99, 100, 0));
 	}
 
 	@Test
 	public void hitpointsPercentOnlyShowsZeroOrFullWhenTrulyEmptyOrFull()
 	{
-		assertEquals(0, hitpointsPercent(0, 100));
-		assertEquals(100, hitpointsPercent(100, 100));
+		for (int decimals = 0; decimals <= HealthText.MAX_DECIMALS; decimals++)
+		{
+			assertEquals(0.0, Double.parseDouble(hitpointsPercent(0, 100, decimals)), 0.0);
+			assertEquals(100.0, Double.parseDouble(hitpointsPercent(100, 100, decimals)), 0.0);
+		}
 	}
 
 	@Test
 	public void hitpointsPercentClampsAwayFromZeroAndFullWhileStillAliveOrDamaged()
 	{
-		assertEquals(1, hitpointsPercent(1, 1_000_000));
-		assertEquals(99, hitpointsPercent(999_999, 1_000_000));
+		assertEquals("1", hitpointsPercent(1, 1_000_000, 0));
+		assertEquals("99", hitpointsPercent(999_999, 1_000_000, 0));
+		assertEquals("0.1", hitpointsPercent(1, 1_000_000, 1));
+		assertEquals("99.9", hitpointsPercent(999_999, 1_000_000, 1));
+		assertEquals("0.01", hitpointsPercent(1, 1_000_000, 2));
+		assertEquals("99.99", hitpointsPercent(999_999, 1_000_000, 2));
+	}
+
+	@Test
+	public void hitpointsPercentShowsTheDecimalsAsked()
+	{
+		assertEquals("62.5", hitpointsPercent(250, 400, 1));
+		assertEquals("62.50", hitpointsPercent(250, 400, 2));
+		assertEquals("33.33", hitpointsPercent(1, 3, 2));
+		assertEquals("5.08", hitpointsPercent(127, 2500, 2));
+		assertEquals("100.00", hitpointsPercent(400, 400, 2));
+		assertEquals("0.00", hitpointsPercent(0, 400, 2));
+	}
+
+	@Test
+	public void hitpointsPercentKeepsDecimalsInRange()
+	{
+		assertEquals("50", hitpointsPercent(1, 2, -1));
+		assertEquals("50.00", hitpointsPercent(1, 2, 7));
 	}
 
 	private static Health health(Integer maxHealth, int ratio, int scale, boolean exactHealth, boolean percentOnly)
@@ -82,7 +107,16 @@ public class HealthTextTest
 
 	private static String text(HitpointsTextMode mode, Health health)
 	{
-		return HealthText.hitpointsText(mode, health);
+		return HealthText.hitpointsText(mode, health, 0);
+	}
+
+	@Test
+	public void hitpointsTextCarriesTheDecimals()
+	{
+		final Health exact = health(400, 250, 400, true, false);
+		assertEquals("62.5%", HealthText.hitpointsText(HitpointsTextMode.PERCENTAGE, exact, 1));
+		assertEquals("250 / 400   62.50%", HealthText.hitpointsText(HitpointsTextMode.BOTH, exact, 2));
+		assertEquals("250 / 400", HealthText.hitpointsText(HitpointsTextMode.HITPOINTS, exact, 2));
 	}
 
 	@Test

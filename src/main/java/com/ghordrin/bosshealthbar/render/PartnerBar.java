@@ -40,6 +40,7 @@ public class PartnerBar
 	private boolean loggedDead;
 	private BarState textState;
 	private HitpointsTextMode textMode;
+	private int textDecimals;
 	private String text;
 
 	@Inject
@@ -175,11 +176,13 @@ public class PartnerBar
 	private String hitpointsText(BarState state)
 	{
 		final HitpointsTextMode mode = config.hitpointsTextMode();
-		if (state != textState || mode != textMode)
+		final int decimals = config.percentDecimals();
+		if (state != textState || mode != textMode || decimals != textDecimals)
 		{
-			text = HealthText.hitpointsText(mode, state.health);
+			text = HealthText.hitpointsText(mode, state.health, decimals);
 			textState = state;
 			textMode = mode;
+			textDecimals = decimals;
 		}
 		return text;
 	}

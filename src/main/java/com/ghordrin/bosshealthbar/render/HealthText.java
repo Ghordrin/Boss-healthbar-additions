@@ -4,18 +4,21 @@ import com.ghordrin.bosshealthbar.data.Health;
 
 public final class HealthText
 {
+	public static final int MAX_DECIMALS = 2;
+	private static final int[] POWERS_OF_TEN = {1, 10, 100};
+
 	private HealthText()
 	{
 	}
 
-	public static String hitpointsText(HitpointsTextMode mode, Health health)
+	public static String hitpointsText(HitpointsTextMode mode, Health health, int decimals)
 	{
 		if (mode == HitpointsTextMode.NONE)
 		{
 			return null;
 		}
 
-		final String percentText = hitpointsPercent(health.ratio, health.scale) + "%";
+		final String percentText = hitpointsPercent(health.ratio, health.scale, decimals) + "%";
 		final String hpText = hitpointsPart(mode, health);
 
 		if (hpText == null)
@@ -41,14 +44,20 @@ public final class HealthText
 	}
 
 	// Like the game's own bar, 0% and 100% are only shown when the opponent is really dead or full.
-	static int hitpointsPercent(int ratio, int scale)
+	static String hitpointsPercent(int ratio, int scale, int decimals)
 	{
-		int percent = (int) Math.round(100.0 * ratio / scale);
+		final int places = Math.max(0, Math.min(MAX_DECIMALS, decimals));
+		final int unit = POWERS_OF_TEN[places];
+		long percent = Math.round(100.0 * unit * ratio / scale);
 		if (ratio > 0 && ratio < scale)
 		{
-			percent = Math.max(1, Math.min(99, percent));
+			percent = Math.max(1, Math.min(100L * unit - 1, percent));
 		}
-		return percent;
+		if (places == 0)
+		{
+			return String.valueOf(percent);
+		}
+		return percent / unit + "." + String.valueOf(unit + percent % unit).substring(1);
 	}
 
 	// The game sends ratio = 1 + (scale - 1) * health / maxHealth, rounded down, for health above 0.

@@ -2,7 +2,18 @@
 
 ## Unreleased
 
+### New
+
+- Percentage decimals (0): show the percentage with one or two decimals
+- The Oldschool theme takes the Custom colors: pick the Custom theme with Oldschool theme on to choose its fill, background, trail, outline and text colors, and its icon
+
 ### Changed
+
+- The Custom colors follow the Oldschool theme while it's on, so picking Custom starts from its green and red
+
+### Fixed
+
+- Picking a theme or ticking Oldschool theme in the panel updates the Custom colors and the other settings it changes there straight away, instead of still showing the old ones
 
 - The debug log now also holds the game's own health overlay settings, where the current opponent's health is read from and its max health, the world and client layout, Java and OS versions, party status, and more plugins that can affect the bar
 

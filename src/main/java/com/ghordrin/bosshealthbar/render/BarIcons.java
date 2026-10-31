@@ -3,6 +3,7 @@ package com.ghordrin.bosshealthbar.render;
 import com.ghordrin.bosshealthbar.config.BossHealthBarConfig;
 import com.ghordrin.bosshealthbar.data.KnownBosses;
 import com.ghordrin.bosshealthbar.theme.BarTheme;
+import com.ghordrin.bosshealthbar.theme.FlatTheme;
 import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
 import com.ghordrin.bosshealthbar.theme.ThemeIcon;
 import java.awt.image.BufferedImage;
@@ -58,7 +59,7 @@ public class BarIcons
 			}
 		}
 
-		if (theme == HealthBarTheme.CUSTOM)
+		if (theme == HealthBarTheme.CUSTOM || theme == FlatTheme.CUSTOM)
 		{
 			// The picker only ever sets one of the two, but a sprite answers first so a config edited by
 			// hand still shows something rather than nothing.

@@ -10,6 +10,7 @@ import com.ghordrin.bosshealthbar.debug.DebugExport;
 import com.ghordrin.bosshealthbar.render.BarEnds;
 import com.ghordrin.bosshealthbar.render.BarIconPlacement;
 import com.ghordrin.bosshealthbar.render.BarPosition;
+import com.ghordrin.bosshealthbar.render.HealthText;
 import com.ghordrin.bosshealthbar.render.HitpointsTextMode;
 import com.ghordrin.bosshealthbar.render.IntroAnimation;
 import com.ghordrin.bosshealthbar.theme.HealthBarTheme;
@@ -99,8 +100,8 @@ public class BossHealthBarPanel extends PluginPanel
 	// Puts every control back to what the settings now say. One per control, in the order they were built.
 	private final List<Runnable> refreshers = new ArrayList<>();
 
-	// True while this panel is the one writing, so a setting it just wrote doesn't bounce back as a rebuild.
-	private boolean writing;
+	// The key this panel is writing, so a setting it just wrote doesn't bounce back as a rebuild.
+	private String writingKey;
 	// True while the controls are being put back, so setting a control doesn't read as the user using it.
 	private boolean refreshing;
 
@@ -260,11 +261,11 @@ public class BossHealthBarPanel extends PluginPanel
 	private void lookRows(JPanel body)
 	{
 		combo(body, "Theme", "The colors of the bar. Custom starts from the theme you had and uses the Custom"
-			+ " colors section. Not used with Use Oldschool theme on.",
+			+ " colors section. With Use Oldschool theme on, only Custom is used, to color the plain bar.",
 			BossHealthBarConfig.THEME_KEY, HealthBarTheme.class, config::theme);
 		checkbox(body, "Oldschool theme", "A plain green bar over red, like the game's own. Turns off Rare gold"
-			+ " bars until you untick it. The Custom colors aren't used either. With Match boss colors on, the"
-			+ " bar takes the boss's color instead of green.",
+			+ " bars until you untick it. Pick the Custom theme to choose its colors. With Match boss colors on,"
+			+ " the bar takes the boss's color instead of green.",
 			BossHealthBarConfig.OLDSCHOOL_THEME_KEY, config::oldschoolTheme);
 		checkbox(body, "Match boss colors", "Color the bar to suit the boss you're fighting, on any theme.",
 			BossHealthBarConfig.MATCH_BOSS_COLORS_KEY, config::matchBossColors);
@@ -311,6 +312,9 @@ public class BossHealthBarPanel extends PluginPanel
 			+ " left on their own, either of those with the percentage after it, or nothing. Shows a percentage"
 			+ " when the max hitpoints aren't known.",
 			BossHealthBarConfig.HITPOINTS_TEXT_MODE_KEY, HitpointsTextMode.class, config::hitpointsTextMode);
+		spinner(body, "Percentage decimals", "How many decimals the percentage shows. Some opponents only tell"
+			+ " their health in rough steps, so the last decimals can jump instead of counting down.",
+			BossHealthBarConfig.PERCENT_DECIMALS_KEY, 0, HealthText.MAX_DECIMALS, config::percentDecimals);
 		checkbox(body, "Show damage number", "Show the damage of the latest attack. Hits that land together are"
 			+ " added up.", BossHealthBarConfig.SHOW_DAMAGE_NUMBER_KEY, config::showDamageNumber);
 		combo(body, "Damage number counts", "Me shows your latest attack. Party adds up your party's hits while"
@@ -630,22 +634,23 @@ public class BossHealthBarPanel extends PluginPanel
 
 	private void write(String key, Object value)
 	{
-		writing = true;
+		writingKey = key;
 		try
 		{
 			ConfigWrites.write(configManager, key, value);
 		}
 		finally
 		{
-			writing = false;
+			writingKey = null;
 		}
 	}
 
 	// A setting changed somewhere else: the config screen, a theme filling in the colors, an import, or the
-	// Oldschool tick writing its companions. Everything is put back, since one change can move several.
-	public void settingsChanged()
+	// Oldschool tick writing its companions. Everything is put back, since one change can move several. Those
+	// follow-up writes arrive while this panel's own write is still running, so only that one key is skipped.
+	public void settingsChanged(String key)
 	{
-		if (writing)
+		if (writingKey != null && writingKey.equals(key))
 		{
 			return;
 		}
