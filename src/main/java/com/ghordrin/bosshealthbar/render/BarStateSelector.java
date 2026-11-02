@@ -48,8 +48,9 @@ public class BarStateSelector
 	public static final int PREVIEW_DAMAGE = 37;
 	// A sample fight time, shown the way the game's precise timing setting has the real one shown.
 	private static final int PREVIEW_FIGHT_TICKS = 139;
-	public static final PartyDefence.Reading PREVIEW_DEFENCE = new PartyDefence.Reading("42", Color.WHITE);
-	public static final PartyDefence.Reading PREVIEW_MAGIC_DEFENCE = new PartyDefence.Reading("60", Color.WHITE);
+	public static final PartyDefence.Reading PREVIEW_DEFENCE = new PartyDefence.Reading("42", Color.WHITE,
+		"Spec history:<br>You: DWH 1<br>Party member: BGS 31");
+	public static final PartyDefence.Reading PREVIEW_MAGIC_DEFENCE = new PartyDefence.Reading("60", Color.WHITE, null);
 	private static final Duration SWITCH_HOLD = Duration.ofSeconds(3);
 	private static final BossStats.Info PREVIEW_STATS = new BossStats.Info(BossStats.Element.FIRE,
 		BossStats.weaknessText(new BossStats.Weakness(BossStats.Element.FIRE, 40)), BossStats.drainCapText(20));
@@ -548,8 +549,11 @@ public class BarStateSelector
 		if (previewSpecialAttacks == null)
 		{
 			previewSpecialAttacks = Arrays.asList(
-				new SpecialAttackCounts.Reading(itemManager.getImage(ItemID.DRAGON_WARHAMMER), "2", Color.WHITE),
-				new SpecialAttackCounts.Reading(itemManager.getImage(ItemID.BGS), "31", Color.WHITE));
+				new SpecialAttackCounts.Reading(itemManager.getImage(ItemID.DRAGON_WARHAMMER), "2", Color.WHITE,
+					"Dragon warhammer special has hit 2 times.</br>You: Dragon warhammer special has hit 1 time."
+						+ "</br>Party member: Dragon warhammer special has hit 1 time."),
+				new SpecialAttackCounts.Reading(itemManager.getImage(ItemID.BGS), "31", Color.WHITE,
+					"Bandos godsword special has hit 31 total.</br>You: Bandos godsword special has hit 31 total."));
 		}
 		return previewSpecialAttacks;
 	}

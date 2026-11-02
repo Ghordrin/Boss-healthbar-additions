@@ -13,7 +13,7 @@ public class PluginReaderTest
 	public void keepsTheReadingForOneTickWhenTheBoxIsMissing()
 	{
 		final PluginReader.HeldReading<PartyDefence.Reading> defence = new PluginReader.HeldReading<>();
-		final PartyDefence.Reading reading = new PartyDefence.Reading("24", Color.RED);
+		final PartyDefence.Reading reading = new PartyDefence.Reading("24", Color.RED, null);
 
 		defence.accept("Big Boss", reading);
 		assertSame(reading, defence.readingFor("Big Boss"));
@@ -29,8 +29,8 @@ public class PluginReaderTest
 	public void aNewReadingResetsTheMissedTick()
 	{
 		final PluginReader.HeldReading<PartyDefence.Reading> defence = new PluginReader.HeldReading<>();
-		final PartyDefence.Reading first = new PartyDefence.Reading("24", Color.RED);
-		final PartyDefence.Reading second = new PartyDefence.Reading("20", Color.RED);
+		final PartyDefence.Reading first = new PartyDefence.Reading("24", Color.RED, null);
+		final PartyDefence.Reading second = new PartyDefence.Reading("20", Color.RED, null);
 
 		defence.accept("Big Boss", first);
 		defence.accept("Big Boss", null);
@@ -43,7 +43,7 @@ public class PluginReaderTest
 	public void readingIsOnlyForTheSameName()
 	{
 		final PluginReader.HeldReading<PartyDefence.Reading> defence = new PluginReader.HeldReading<>();
-		defence.accept("Big Boss", new PartyDefence.Reading("24", Color.RED));
+		defence.accept("Big Boss", new PartyDefence.Reading("24", Color.RED, null));
 
 		assertNull(defence.readingFor("Small Boss"));
 		assertNull(defence.readingFor(null));

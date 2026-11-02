@@ -15,7 +15,7 @@ See the [changelog](CHANGELOG.md) for what's new in each version.
 ## What it does
 
 - Replaces the opponent health bar with a wide, themed bar: name, combat level and hitpoints, a damage trail after each hit, a low health pulse, and the damage of your latest attack (or your party's)
-- Takes over the game's own boss health bar, using its exact hitpoints and phase markers. The other bars the game shows with it are drawn in the same style: a second bar a boss carries besides its health, such as an energy bar, becomes a thin strip under the bar, and pillar bars get their own movable box
+- Takes over the game's own boss health bar, using its exact hitpoints and phase markers. The other bars the game shows with it are drawn in the same style: a second bar a boss carries besides its health, such as an energy bar, becomes a thin strip under the bar with its value written across it, and pillar bars get their own movable box
 - A smaller second bar shows another boss you're fighting at the same time, with its last known health while it's away
 - Remembers a boss you walk out of sight of: come back to it in the same area and the bar carries on with its health and fight time, without "Defeated" or the intro
 - Optional info around the bar: kill count, fight timer, elemental weakness, defence drain limit, party and magic defence, special attack counts
@@ -36,10 +36,10 @@ The bar stays on the boss while you hit its minions, follows the game's boss bar
 |---|---|
 | Opponent Information (RuneLite) | Turns its health bar off while this plugin runs, so you don't see two. Your setting comes back after |
 | Chat Commands (RuneLite) | Reads the kill counts and personal bests it saves, for the kill count and the milestone and PB moments |
-| Special Attack Counter (RuneLite) | Shows its counts with each weapon's icon |
+| Special Attack Counter (RuneLite) | Shows its counts with each weapon's icon; hover one to see who landed how many |
 | Party (RuneLite) | Damage number can add up the hits of party members who also run this plugin |
 | Boss Health Indicators | Draws the health lines you set up there on this bar |
-| Party Defence Tracker / Better Party Defence | Shows the defence (and magic defence) from their info boxes |
+| Party Defence Tracker / Better Party Defence | Shows the defence (and magic defence) from their info boxes; with Better Party Defence, its weapon spec counts too, and hovering shows its spec history |
 
 ## Settings
 

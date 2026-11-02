@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- Hover over a special attack count to see who landed how many, the way its own info box shows it
+- Special attack counts also come from Better Party Defence's weapon info boxes, with its misses and party sync. While it shows them, they're used instead of Special Attack Counter's, so no weapon is counted twice
+- Hover over the party or magic defence from Better Party Defence to see its spec history
+- The second bar a boss carries, such as an energy bar or the other boss's health, shows its value across it, in the form the hitpoints setting picks
+
+### Changed
+
+- The bar draws its ends, backdrop and crests faster, from copies made once at the right size instead of shrinking them every frame
+
 ## 2.2.0 (2026-10-31)
 
 ### New

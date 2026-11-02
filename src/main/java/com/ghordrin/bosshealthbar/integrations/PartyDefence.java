@@ -43,6 +43,7 @@ public class PartyDefence
 	{
 		String text;
 		Color color;
+		String tooltip;
 	}
 
 	private final Client client;
@@ -199,7 +200,7 @@ public class PartyDefence
 			{
 				continue;
 			}
-			final Reading reading = reading(infoBox);
+			final Reading reading = reading(infoBox, null);
 			if (reading != null)
 			{
 				return reading;
@@ -226,7 +227,7 @@ public class PartyDefence
 		{
 			if (box != magicBox)
 			{
-				return reading(box);
+				return reading(box, box.getTooltip());
 			}
 		}
 		return null;
@@ -236,7 +237,7 @@ public class PartyDefence
 	static Reading findBetterMagic(List<InfoBox> infoBoxes, Predicate<BufferedImage> isMagic)
 	{
 		final InfoBox magicBox = magicBox(betterBoxes(infoBoxes), isMagic);
-		return magicBox != null ? reading(magicBox) : null;
+		return magicBox != null ? reading(magicBox, magicBox.getTooltip()) : null;
 	}
 
 	// The Defence and Magic defence boxes share a name and can be added in either order, so only the image
@@ -266,10 +267,11 @@ public class PartyDefence
 		return boxes;
 	}
 
-	private static Reading reading(InfoBox infoBox)
+	// Party Defence Tracker's tooltip only names the NPC, while Better Party Defence's holds its spec history.
+	private static Reading reading(InfoBox infoBox, String tooltip)
 	{
 		final String text = infoBox.getText();
-		return text != null && !text.isEmpty() ? new Reading(text, infoBox.getTextColor()) : null;
+		return text != null && !text.isEmpty() ? new Reading(text, infoBox.getTextColor(), tooltip) : null;
 	}
 
 	@VisibleForTesting

@@ -1,10 +1,8 @@
 package com.ghordrin.bosshealthbar;
 
 import static com.ghordrin.bosshealthbar.render.BarAnimation.clamp01;
-import static com.ghordrin.bosshealthbar.render.BarPainter.RASTER_SCALE;
 import static com.ghordrin.bosshealthbar.render.BarPainter.capRise;
 import static com.ghordrin.bosshealthbar.render.BarPainter.capWidth;
-import static com.ghordrin.bosshealthbar.render.BarPainter.drawRasterImage;
 import static com.ghordrin.bosshealthbar.render.BarPainter.setOpacity;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
@@ -43,6 +41,7 @@ import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
 import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
@@ -57,6 +56,8 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.tooltip.Tooltip;
+import net.runelite.client.ui.overlay.tooltip.TooltipManager;
 import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.Text;
 
@@ -87,6 +88,7 @@ public class BossHealthBarOverlay extends Overlay
 	private final SpecialAttackCounts specialAttackCounts;
 	private final PartnerBar partnerBar;
 	private final ExtraBar extraBar;
+	private final TooltipManager tooltipManager;
 	private final BarAnimation animation = new BarAnimation();
 	private final Rectangle2D.Float burnClipShape = new Rectangle2D.Float();
 
@@ -117,7 +119,8 @@ public class BossHealthBarOverlay extends Overlay
 		PartyDefence partyDefence,
 		SpecialAttackCounts specialAttackCounts,
 		PartnerBar partnerBar,
-		ExtraBar extraBar)
+		ExtraBar extraBar,
+		TooltipManager tooltipManager)
 	{
 		super(plugin);
 		this.client = client;
@@ -140,6 +143,7 @@ public class BossHealthBarOverlay extends Overlay
 		this.specialAttackCounts = specialAttackCounts;
 		this.partnerBar = partnerBar;
 		this.extraBar = extraBar;
+		this.tooltipManager = tooltipManager;
 
 		// Where the game puts its own boss bar, which this one stands in for.
 		setPosition(OverlayPosition.TOP_CENTER);
@@ -232,6 +236,18 @@ public class BossHealthBarOverlay extends Overlay
 		return opacity;
 	}
 
+	// The rows were drawn shifted by rowsX and rowsY within the overlay, so the mouse is shifted the same way.
+	private void showHoveredTip(int rowsX, int rowsY)
+	{
+		final net.runelite.api.Point mouse = client.getMouseCanvasPosition();
+		final Rectangle bounds = getBounds();
+		final String tip = textPainter.tipAt(mouse.getX() - bounds.x - rowsX, mouse.getY() - bounds.y - rowsY);
+		if (tip != null)
+		{
+			tooltipManager.add(new Tooltip(tip));
+		}
+	}
+
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
@@ -313,7 +329,7 @@ public class BossHealthBarOverlay extends Overlay
 		final boolean rightCrest = crest != null && placement.hasRightCrest();
 		final int leftExtent = leftCrest ? Math.max(0, crest.left.anchorX - CREST_OVERLAP) : 0;
 		final int rightExtent = rightCrest
-			? Math.max(0, Math.round(crest.right.image.getWidth() / RASTER_SCALE) - crest.right.anchorX - CREST_OVERLAP) : 0;
+			? Math.max(0, crest.right.image.width - crest.right.anchorX - CREST_OVERLAP) : 0;
 		final int width = barWidth(leftExtent + rightExtent);
 		final int barCenterOffset = capRise + barHeight / 2;
 		final int aboveBar = headerHeight + inBarAbove;
@@ -340,7 +356,7 @@ public class BossHealthBarOverlay extends Overlay
 
 		// This one follows the game's own extra bar, so it comes and goes with it rather than lasting the fight.
 		final boolean extraArea = extraBar.isLive(selector.isShowingPreview());
-		final int extraHeight = extraArea ? ExtraBar.GAP + ExtraBar.height(barHeight, flat, ends) : 0;
+		final int extraHeight = extraArea ? ExtraBar.GAP + extraBar.height(barHeight, flat, ends) : 0;
 		// Directly under the bar, so it reads as part of it and the rows below keep their order.
 		final int belowBar = barY + barHeight + capRise + inBarBelow + extraHeight;
 
@@ -411,6 +427,11 @@ public class BossHealthBarOverlay extends Overlay
 		textPainter.drawRow(graphics, BarPosition.Row.IN_BAR, colors);
 		textPainter.drawRow(graphics, BarPosition.Row.BOTTOM, colors);
 		textPainter.drawRow(graphics, BarPosition.Row.BOTTOM_2, colors);
+		if (extraArea)
+		{
+			extraBar.drawText(graphics, colors, barY + barHeight + capRise + inBarBelow, width, barHeight, flat, ends);
+		}
+		showHoveredTip(leftExtent, topOffset + slideOffset);
 		setOpacity(graphics, originalComposite, opacity);
 
 		if (partnerArea)
@@ -507,17 +528,15 @@ public class BossHealthBarOverlay extends Overlay
 	private int drawCrestPiece(Graphics2D graphics, CrestRenderer.Crest crest, CrestRenderer.Piece piece,
 		BufferedImage icon, int x, int centerY, int slideOffset)
 	{
-		final int width = Math.round(piece.image.getWidth() / RASTER_SCALE);
-		final int height = Math.round(piece.image.getHeight() / RASTER_SCALE);
 		final int y = centerY - piece.anchorY;
-		drawRasterImage(graphics, piece.image, x - piece.anchorX, y + slideOffset, width, height);
+		piece.image.draw(graphics, x - piece.anchorX, y + slideOffset);
 
 		// Drawn every frame rather than baked into the plate image, because ItemManager hands out a
 		// placeholder image that only fills in once the icon has loaded.
 		final int iconSize = crest.iconSize;
 		graphics.drawImage(icon, x - iconSize / 2, centerY + slideOffset - iconSize / 2, iconSize, iconSize, null);
 
-		return y + height;
+		return y + piece.image.height;
 	}
 
 

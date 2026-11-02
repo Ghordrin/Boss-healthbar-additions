@@ -117,6 +117,9 @@ public class BarTextPainter
 	private final Map<BufferedImage, BufferedImage> itemIcons = new IdentityHashMap<>();
 	private int itemIconHeight;
 
+	// Filled by drawRow, in the coordinates the rows are drawn in.
+	private final HoverTips hoverTips = new HoverTips();
+
 	@Inject
 	BarTextPainter(DamageTracker damageTracker, BossHealthBarConfig config)
 	{
@@ -301,6 +304,21 @@ public class BarTextPainter
 		}
 	}
 
+	// The room a line of text in the hitpoints font takes.
+	public int hitpointsHeight()
+	{
+		return fonts.above(HITPOINTS) + fonts.below(HITPOINTS);
+	}
+
+	// A line in the hitpoints font, centred on a point, as the in-bar row is centred on the bar.
+	public void drawCentredHitpoints(Graphics2D graphics, String text, int centreX, int middle, ThemeColors colors)
+	{
+		fonts.useFont(graphics, HITPOINTS);
+		final int x = centreX - fonts.metrics(HITPOINTS).stringWidth(text) / 2;
+		drawShadowedText(graphics, text, x, middle - hitpointsHeight() / 2 + fonts.above(HITPOINTS),
+			colors.getHitpointsText(), 1f);
+	}
+
 	public void layoutText(String name, String shortName, int combatLevel, int delveLevel, BufferedImage nameIcon,
 		String hitpointsText,
 		boolean defeated, String defeatedText, int previewDamage, boolean showFightTime, String fightTimeText,
@@ -324,6 +342,7 @@ public class BarTextPainter
 		this.defence = defence;
 		this.magicDefence = magicDefence;
 		this.specialAttacks = specialAttacks;
+		hoverTips.clear();
 		this.weaknessText = weaknessText;
 		this.weaknessIcon = weaknessIcon;
 		this.drainCapText = drainCapText;
@@ -470,6 +489,12 @@ public class BarTextPainter
 	static int itemIconSize(FontMetrics metrics)
 	{
 		return Math.round((metrics.getAscent() + 1) * RUNE_ICON_SCALE);
+	}
+
+	// The tooltip of what drawRow drew at this point this frame, or null.
+	public String tipAt(int x, int y)
+	{
+		return hoverTips.tipAt(x, y);
 	}
 
 	public void drawRow(Graphics2D graphics, BarPosition.Row row, ThemeColors colors)
@@ -669,12 +694,20 @@ public class BarTextPainter
 
 		final Color color = colors.defenceText(defence.getColor());
 		drawShadowedText(graphics, defence.getText(), x, baseline, color, 1f);
+
+		final FontMetrics metrics = graphics.getFontMetrics();
+		final int iconTop = scaledIcon != null ? middle - scaledIcon.getHeight() / 2 : baseline - ascent;
+		hoverTips.add(left, Math.min(iconTop, baseline - ascent), x + metrics.stringWidth(defence.getText()),
+			Math.max(iconTop + (scaledIcon != null ? scaledIcon.getHeight() : 0), baseline + metrics.getDescent()),
+			defence.getTooltip());
 	}
 
 	private void drawSpecialAttacks(Graphics2D graphics, List<SpecialAttackCounts.Reading> readings, FontMetrics metrics,
 		int iconHeight, int left, int baseline, ThemeColors colors)
 	{
 		final int middle = baseline - metrics.getAscent() / 2;
+		final int top = Math.min(middle - iconHeight / 2, baseline - metrics.getAscent());
+		final int bottom = Math.max(middle - iconHeight / 2 + iconHeight, baseline + metrics.getDescent());
 		int x = left;
 		for (SpecialAttackCounts.Reading reading : readings)
 		{
@@ -683,6 +716,7 @@ public class BarTextPainter
 			final int iconPadding = itemIconPadding(iconWidth);
 			final int iconAdvance = iconAdvance(icon, iconHeight);
 			final int itemEnd = x + iconAdvance + metrics.stringWidth(reading.getText());
+			hoverTips.add(x, top, itemEnd, bottom, reading.getTooltip());
 
 			if (iconWidth > 0)
 			{

@@ -24,6 +24,15 @@ public class ExtraBarTest
 		}
 	}
 
+	// The value is written across the strip, so its room grows to the text, and the strip alone sets it otherwise.
+	@Test
+	public void theRoomFitsTheValueText()
+	{
+		assertEquals(7, ExtraBar.height(8, true, BarEnds.CLASSIC, 0));
+		assertEquals(14, ExtraBar.height(8, true, BarEnds.CLASSIC, 14));
+		assertEquals(16, ExtraBar.height(36, true, BarEnds.CLASSIC, 10));
+	}
+
 	@Test
 	public void theFillFollowsTheGamesReading()
 	{

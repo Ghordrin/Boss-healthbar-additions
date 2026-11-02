@@ -684,7 +684,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = SHOW_SPECIAL_ATTACK_COUNTS_KEY,
 		name = "Special attack counts",
-		description = "Show the counts from RuneLite's Special Attack Counter plugin. Needs that plugin on with its info boxes.",
+		description = "Show the counts from the Better Party Defence plugin's weapon info boxes, or else RuneLite's Special Attack Counter plugin. Hover one to see who landed it. Needs one of them on with its info boxes.",
 		position = 3,
 		hidden = true
 	)
@@ -696,7 +696,7 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = SHOW_PARTY_DEFENCE_KEY,
 		name = "Party defence",
-		description = "Show the defence from the Party Defence Tracker or Better Party Defence plugin's info box. Needs one of them installed and on.",
+		description = "Show the defence from the Party Defence Tracker or Better Party Defence plugin's info box. With Better Party Defence, hover it to see its spec history. Needs one of them installed and on.",
 		position = 1,
 		hidden = true
 	)

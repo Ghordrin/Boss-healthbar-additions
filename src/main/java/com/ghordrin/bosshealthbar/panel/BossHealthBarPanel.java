@@ -339,13 +339,15 @@ public class BossHealthBarPanel extends PluginPanel
 			+ " New PB as it fades out. Needs RuneLite's Chat Commands plugin.",
 			BossHealthBarConfig.PERSONAL_BESTS_KEY, config::personalBests);
 		checkbox(body, "Party defence", "Show the defence from the Party Defence Tracker or Better Party Defence"
-			+ " plugin's info box. Needs one of them installed and on.",
+			+ " plugin's info box. With Better Party Defence, hover it to see its spec history. Needs one of them"
+			+ " installed and on.",
 			BossHealthBarConfig.SHOW_PARTY_DEFENCE_KEY, config::showPartyDefence);
 		checkbox(body, "Magic defence", "Show the magic defence from the Better Party Defence plugin's Magic"
 			+ " defence info box. Needs that plugin with its Magic defence info box on.",
 			BossHealthBarConfig.SHOW_MAGIC_DEFENCE_KEY, config::showMagicDefence);
-		checkbox(body, "Special attack counts", "Show the counts from RuneLite's Special Attack Counter plugin."
-			+ " Needs that plugin on with its info boxes.",
+		checkbox(body, "Special attack counts", "Show the counts from the Better Party Defence plugin's weapon info"
+			+ " boxes, or else RuneLite's Special Attack Counter plugin. Hover one to see who landed it."
+			+ " Needs one of them on with its info boxes.",
 			BossHealthBarConfig.SHOW_SPECIAL_ATTACK_COUNTS_KEY, config::showSpecialAttackCounts);
 		checkbox(body, "Elemental weakness", "Show the boss's elemental weakness and extra damage, for example"
 			+ " +40%. Values from the OSRS Wiki.", BossHealthBarConfig.SHOW_WEAKNESS_KEY, config::showWeakness);

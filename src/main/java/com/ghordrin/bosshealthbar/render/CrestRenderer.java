@@ -21,11 +21,11 @@ public class CrestRenderer
 {
 	public static final class Piece
 	{
-		public final BufferedImage image;
+		public final RasterImage image;
 		public final int anchorX;
 		public final int anchorY;
 
-		public Piece(BufferedImage image, int anchorX, int anchorY)
+		public Piece(RasterImage image, int anchorX, int anchorY)
 		{
 			this.image = image;
 			this.anchorX = anchorX;
@@ -152,15 +152,14 @@ public class CrestRenderer
 
 	private static Piece mirror(Piece piece)
 	{
-		final BufferedImage source = piece.image;
+		final BufferedImage source = piece.image.large;
 		final int width = source.getWidth();
 		final int height = source.getHeight();
 		final BufferedImage flipped = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = flipped.createGraphics();
 		g.drawImage(source, width, 0, 0, height, 0, 0, width, height, null);
 		g.dispose();
-		final int logicalWidth = Math.round(width / BarPainter.RASTER_SCALE);
-		return new Piece(flipped, logicalWidth - piece.anchorX, piece.anchorY);
+		return new Piece(new RasterImage(flipped), piece.image.width - piece.anchorX, piece.anchorY);
 	}
 
 	private static Piece rasterise(float minX, float minY, float maxX, float maxY, Consumer<Graphics2D> painter)
@@ -181,7 +180,7 @@ public class CrestRenderer
 		g.translate(anchorX, anchorY);
 		painter.accept(g);
 		g.dispose();
-		return new Piece(image, anchorX, anchorY);
+		return new Piece(new RasterImage(image), anchorX, anchorY);
 	}
 
 	private static void shadow(Graphics2D g, Shape shape)

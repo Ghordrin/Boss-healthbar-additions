@@ -95,8 +95,8 @@ public class BarPainter
 	private final BarEffects.Particle particle = new BarEffects.Particle();
 	private BufferedImage burnEdgeImage;
 
-	private BufferedImage backdropImage;
-	private BufferedImage endsImage;
+	private RasterImage backdropImage;
+	private RasterImage endsImage;
 	private int barImageWidth;
 	private int barImageHeight;
 	private Color barImageFrameColor;
@@ -162,7 +162,7 @@ public class BarPainter
 			{
 				updateBarImages(width, height, frameColor, track, ends);
 				graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-				drawRasterImage(graphics, backdropImage, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD, width + BAR_IMAGE_PAD * 2, height + BAR_IMAGE_PAD * 2);
+				backdropImage.draw(graphics, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD);
 			}
 			else
 			{
@@ -271,7 +271,7 @@ public class BarPainter
 			if (useImageCache)
 			{
 				graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-				drawRasterImage(graphics, endsImage, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD, width + BAR_IMAGE_PAD * 2, height + BAR_IMAGE_PAD * 2);
+				endsImage.draw(graphics, -BAR_IMAGE_PAD, y - BAR_IMAGE_PAD);
 			}
 			else
 			{
@@ -602,7 +602,7 @@ public class BarPainter
 		barImageEnds = ends;
 	}
 
-	private static BufferedImage barImage(int width, int height, Consumer<Graphics2D> painter)
+	private static RasterImage barImage(int width, int height, Consumer<Graphics2D> painter)
 	{
 		final int logicalWidth = width + BAR_IMAGE_PAD * 2;
 		final int logicalHeight = height + BAR_IMAGE_PAD * 2;
@@ -614,12 +614,7 @@ public class BarPainter
 		g.translate(BAR_IMAGE_PAD, 0);
 		painter.accept(g);
 		g.dispose();
-		return image;
-	}
-
-	public static void drawRasterImage(Graphics2D graphics, BufferedImage image, int x, int y, int logicalWidth, int logicalHeight)
-	{
-		graphics.drawImage(image, x, y, x + logicalWidth, y + logicalHeight, 0, 0, image.getWidth(), image.getHeight(), null);
+		return new RasterImage(image);
 	}
 
 	private static void drawBackdrop(Graphics2D graphics, int barX, int y, int barWidth, int height)

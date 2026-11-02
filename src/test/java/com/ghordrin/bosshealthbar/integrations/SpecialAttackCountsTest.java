@@ -26,6 +26,10 @@ public class SpecialAttackCountsTest
 	{
 	}
 
+	private static class BetterPartyDefencePlugin extends Plugin
+	{
+	}
+
 	private static class SpecialCounter extends InfoBox
 	{
 		private final String text;
@@ -59,6 +63,14 @@ public class SpecialAttackCountsTest
 		}
 	}
 
+	private static class SpecWeaponInfoBox extends SpecialCounter
+	{
+		SpecWeaponInfoBox(BufferedImage image, String text)
+		{
+			super(new BetterPartyDefencePlugin(), image, text, Color.WHITE);
+		}
+	}
+
 	private static final Plugin COUNTER_PLUGIN = new SpecialCounterPlugin();
 	private static final BufferedImage MAUL = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 	private static final BufferedImage GODSWORD = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
@@ -76,10 +88,11 @@ public class SpecialAttackCountsTest
 	@Test
 	public void ignoresOtherBoxes()
 	{
-		assertTrue(SpecialAttackCounts.matches(box(MAUL, "2", Color.WHITE)));
-		assertFalse(SpecialAttackCounts.matches(new OtherCounter(COUNTER_PLUGIN)));
-		assertFalse(SpecialAttackCounts.matches(new SpecialCounter(new OtherPlugin(), MAUL, "2", Color.WHITE)));
-		assertFalse(SpecialAttackCounts.matches(null));
+		assertTrue(SpecialAttackCounts.matches(box(MAUL, "2", Color.WHITE), SpecialAttackCounts.BOX_NAME));
+		assertFalse(SpecialAttackCounts.matches(new OtherCounter(COUNTER_PLUGIN), SpecialAttackCounts.BOX_NAME));
+		assertFalse(SpecialAttackCounts.matches(new SpecialCounter(new OtherPlugin(), MAUL, "2", Color.WHITE),
+			SpecialAttackCounts.BOX_NAME));
+		assertFalse(SpecialAttackCounts.matches(null, SpecialAttackCounts.BOX_NAME));
 	}
 
 	@Test
@@ -90,18 +103,49 @@ public class SpecialAttackCountsTest
 			new OtherCounter(COUNTER_PLUGIN),
 			box(null, "", Color.WHITE),
 			box(null, null, Color.WHITE),
-			box(GODSWORD, "31", Color.GREEN)));
+			box(GODSWORD, "31", Color.GREEN)), SpecialAttackCounts.BOX_NAME);
 
 		assertEquals(readings(
-			new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE),
-			new SpecialAttackCounts.Reading(GODSWORD, "31", Color.GREEN)), found);
+			new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE, null),
+			new SpecialAttackCounts.Reading(GODSWORD, "31", Color.GREEN, null)), found);
+	}
+
+	// In a party the tooltip names who landed what, which the bar shows when the count is hovered.
+	@Test
+	public void keepsTheTooltip()
+	{
+		final SpecialCounter box = box(MAUL, "2", Color.WHITE);
+		box.setTooltip("Dragon warhammer special has hit 2 times.</br>You: Dragon warhammer special has hit 2 times.");
+
+		assertEquals(readings(new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE,
+				"Dragon warhammer special has hit 2 times.</br>You: Dragon warhammer special has hit 2 times.")),
+			SpecialAttackCounts.find(Collections.singletonList(box), SpecialAttackCounts.BOX_NAME));
+	}
+
+	// Both plugins can count the same specs, so Better Party Defence's boxes take over while it shows any.
+	@Test
+	public void betterPartyDefenceWinsWhileItShowsBoxes()
+	{
+		final List<InfoBox> both = Arrays.asList(box(MAUL, "2", Color.WHITE), new SpecWeaponInfoBox(GODSWORD, "3"));
+		final List<SpecialAttackCounts.Reading> better = readings(
+			new SpecialAttackCounts.Reading(GODSWORD, "3", Color.WHITE, null));
+		final List<SpecialAttackCounts.Reading> counter = readings(
+			new SpecialAttackCounts.Reading(MAUL, "2", Color.WHITE, null));
+
+		assertTrue(SpecialAttackCounts.matches(new SpecWeaponInfoBox(GODSWORD, "3"), SpecialAttackCounts.BETTER_BOX_NAME));
+		assertEquals(better, SpecialAttackCounts.select(both, true));
+		assertEquals(counter, SpecialAttackCounts.select(both, false));
+		assertEquals(counter, SpecialAttackCounts.select(Collections.singletonList(box(MAUL, "2", Color.WHITE)), true));
+		assertEquals(better, SpecialAttackCounts.select(
+			Collections.singletonList(new SpecWeaponInfoBox(GODSWORD, "3")), true));
 	}
 
 	@Test
 	public void findsNothingWithoutBoxes()
 	{
-		assertTrue(SpecialAttackCounts.find(Collections.emptyList()).isEmpty());
-		assertTrue(SpecialAttackCounts.find(Collections.singletonList(new OtherCounter(COUNTER_PLUGIN))).isEmpty());
+		assertTrue(SpecialAttackCounts.find(Collections.emptyList(), SpecialAttackCounts.BOX_NAME).isEmpty());
+		assertTrue(SpecialAttackCounts.find(Collections.singletonList(new OtherCounter(COUNTER_PLUGIN)),
+			SpecialAttackCounts.BOX_NAME).isEmpty());
 	}
 
 	@Test
@@ -112,14 +156,14 @@ public class SpecialAttackCountsTest
 		graphics.dispose();
 
 		final List<SpecialAttackCounts.Reading> noIcons = readings(
-			new SpecialAttackCounts.Reading(null, "2", Color.WHITE),
-			new SpecialAttackCounts.Reading(null, "31", Color.WHITE));
+			new SpecialAttackCounts.Reading(null, "2", Color.WHITE, null),
+			new SpecialAttackCounts.Reading(null, "31", Color.WHITE, null));
 		assertEquals(10 + metrics.stringWidth("2") + 6 + metrics.stringWidth("31"),
 			BarTextPainter.specialAttacksEnd(noIcons, metrics, 10, 13));
 
 		// A 36x32 item image at height 13 is 15 wide with 1px of padding each side, plus the 3px gap.
 		final BufferedImage itemImage = new BufferedImage(36, 32, BufferedImage.TYPE_INT_ARGB);
-		final List<SpecialAttackCounts.Reading> withIcon = readings(new SpecialAttackCounts.Reading(itemImage, "2", Color.WHITE));
+		final List<SpecialAttackCounts.Reading> withIcon = readings(new SpecialAttackCounts.Reading(itemImage, "2", Color.WHITE, null));
 		assertEquals(10 + 16 + metrics.stringWidth("2"), BarTextPainter.specialAttacksEnd(withIcon, metrics, 10, 13));
 	}
 }

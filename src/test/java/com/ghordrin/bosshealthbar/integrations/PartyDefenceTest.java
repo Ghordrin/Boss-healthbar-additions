@@ -69,6 +69,8 @@ public class PartyDefenceTest
 
 	private static final Plugin TRACKER = new DefenceTrackerPlugin();
 	private static final Plugin BETTER = new BetterPartyDefencePlugin();
+	// Better Party Defence's tooltip holds its spec history, which the bar shows when the defence is hovered.
+	private static final String BETTER_TIP = "No specs yet";
 	private static final BufferedImage DEFENCE_IMAGE = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 	private static final BufferedImage MAGIC_IMAGE = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 	private static final Predicate<BufferedImage> IS_MAGIC = image -> image == MAGIC_IMAGE;
@@ -81,7 +83,7 @@ public class PartyDefenceTest
 
 	private static DefenceInfoBox betterBox(BufferedImage image, String text, Color color)
 	{
-		return new DefenceInfoBox(BETTER, image, "No specs yet", text, color);
+		return new DefenceInfoBox(BETTER, image, BETTER_TIP, text, color);
 	}
 
 	@Test
@@ -91,7 +93,7 @@ public class PartyDefenceTest
 			betterBox(MAGIC_IMAGE, "150", Color.WHITE),
 			betterBox(DEFENCE_IMAGE, "120", Color.GREEN)), IS_MAGIC);
 
-		assertEquals(new PartyDefence.Reading("120", Color.GREEN), reading);
+		assertEquals(new PartyDefence.Reading("120", Color.GREEN, BETTER_TIP), reading);
 	}
 
 	@Test
@@ -102,7 +104,7 @@ public class PartyDefenceTest
 			betterBox(DEFENCE_IMAGE, "120", Color.GREEN),
 			betterBox(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB), "150", Color.WHITE)), IS_MAGIC);
 
-		assertEquals(new PartyDefence.Reading("120", Color.GREEN), reading);
+		assertEquals(new PartyDefence.Reading("120", Color.GREEN, BETTER_TIP), reading);
 		assertEquals(reading, PartyDefence.findBetter(Arrays.asList(
 			betterBox(DEFENCE_IMAGE, "120", Color.GREEN),
 			betterBox(MAGIC_IMAGE, "150", Color.WHITE)), NOTHING_IS_MAGIC));
@@ -127,8 +129,8 @@ public class PartyDefenceTest
 			betterBox(DEFENCE_IMAGE, "120", Color.GREEN),
 			betterBox(MAGIC_IMAGE, "150", Color.YELLOW));
 
-		assertEquals(new PartyDefence.Reading("150", Color.YELLOW), PartyDefence.findBetterMagic(boxes, IS_MAGIC));
-		assertEquals(new PartyDefence.Reading("150", Color.YELLOW), PartyDefence.findBetterMagic(Arrays.asList(
+		assertEquals(new PartyDefence.Reading("150", Color.YELLOW, BETTER_TIP), PartyDefence.findBetterMagic(boxes, IS_MAGIC));
+		assertEquals(new PartyDefence.Reading("150", Color.YELLOW, BETTER_TIP), PartyDefence.findBetterMagic(Arrays.asList(
 			betterBox(MAGIC_IMAGE, "150", Color.YELLOW),
 			betterBox(DEFENCE_IMAGE, "120", Color.GREEN)), IS_MAGIC));
 	}
@@ -140,7 +142,7 @@ public class PartyDefenceTest
 			betterBox(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB), "150", Color.YELLOW),
 			betterBox(DEFENCE_IMAGE, "120", Color.GREEN));
 
-		assertEquals(new PartyDefence.Reading("150", Color.YELLOW), PartyDefence.findBetter(boxes, IS_MAGIC));
+		assertEquals(new PartyDefence.Reading("150", Color.YELLOW, BETTER_TIP), PartyDefence.findBetter(boxes, IS_MAGIC));
 		assertNull(PartyDefence.findBetterMagic(boxes, IS_MAGIC));
 	}
 
@@ -157,8 +159,8 @@ public class PartyDefenceTest
 		for (List<InfoBox> boxes : Arrays.asList(Arrays.asList(themedMagic, themedDefence),
 			Arrays.asList(themedDefence, themedMagic)))
 		{
-			assertEquals(new PartyDefence.Reading("120", Color.GREEN), PartyDefence.findBetter(boxes, isMagic));
-			assertEquals(new PartyDefence.Reading("150", Color.YELLOW), PartyDefence.findBetterMagic(boxes, isMagic));
+			assertEquals(new PartyDefence.Reading("120", Color.GREEN, BETTER_TIP), PartyDefence.findBetter(boxes, isMagic));
+			assertEquals(new PartyDefence.Reading("150", Color.YELLOW, BETTER_TIP), PartyDefence.findBetterMagic(boxes, isMagic));
 		}
 	}
 
@@ -195,7 +197,7 @@ public class PartyDefenceTest
 	{
 		final List<InfoBox> boxes = Collections.singletonList(betterBox(DEFENCE_IMAGE, "120", Color.GREEN));
 
-		assertEquals(new PartyDefence.Reading("120", Color.GREEN), PartyDefence.findBetter(boxes, IS_MAGIC));
+		assertEquals(new PartyDefence.Reading("120", Color.GREEN, BETTER_TIP), PartyDefence.findBetter(boxes, IS_MAGIC));
 		assertNull(PartyDefence.findBetterMagic(boxes, IS_MAGIC));
 		assertNull(PartyDefence.findBetterMagic(Collections.singletonList(box("Big Boss", "24", Color.RED)), IS_MAGIC));
 	}
@@ -218,7 +220,7 @@ public class PartyDefenceTest
 			box("Big Boss", "24", Color.RED),
 			betterBox(DEFENCE_IMAGE, "120", Color.GREEN));
 
-		assertEquals(new PartyDefence.Reading("120", Color.GREEN), PartyDefence.select(boxes, "Big Boss", true, IS_MAGIC));
+		assertEquals(new PartyDefence.Reading("120", Color.GREEN, BETTER_TIP), PartyDefence.select(boxes, "Big Boss", true, IS_MAGIC));
 		assertNull(PartyDefence.select(Collections.singletonList(box("Big Boss", "24", Color.RED)), "Big Boss", true, IS_MAGIC));
 	}
 
@@ -230,7 +232,7 @@ public class PartyDefenceTest
 			box("Small Boss", "5", Color.WHITE),
 			box("Big Boss", "24", Color.RED));
 
-		assertEquals(new PartyDefence.Reading("24", Color.RED), PartyDefence.select(boxes, "Big Boss", false, NOTHING_IS_MAGIC));
+		assertEquals(new PartyDefence.Reading("24", Color.RED, null), PartyDefence.select(boxes, "Big Boss", false, NOTHING_IS_MAGIC));
 		assertNull(PartyDefence.select(boxes, "Other Boss", false, NOTHING_IS_MAGIC));
 	}
 
@@ -263,7 +265,7 @@ public class PartyDefenceTest
 			box("<col=ffffff>Big Boss</col>", "", Color.WHITE),
 			box("<col=ffffff>Big Boss</col>", "24", Color.RED)), "Big Boss");
 
-		assertEquals(new PartyDefence.Reading("24", Color.RED), reading);
+		assertEquals(new PartyDefence.Reading("24", Color.RED, null), reading);
 	}
 
 	@Test
