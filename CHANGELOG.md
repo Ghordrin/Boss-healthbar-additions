@@ -5,6 +5,7 @@
 ### Fixed
 
 - Hide Opponent Information bar only hides RuneLite's Opponent Information box while this plugin's bar shows, so normal monsters keep it. Turned off, it is never hidden. Your Opponent Information settings are no longer changed
+- A boss's second bar, such as Ocellus's charge, no longer crowds the bar's own text. It now sits under the bar's text rows, with its value on a line of its own above it, so the boss's health text stays next to the health bar
 
 ## 2.3.0 (2026-11-04)
 

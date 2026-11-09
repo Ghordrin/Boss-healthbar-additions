@@ -24,13 +24,13 @@ public class ExtraBarTest
 		}
 	}
 
-	// The value is written across the strip, so its room grows to the text, and the strip alone sets it otherwise.
+	// The value takes a line of its own above the strip, so the room is both, and the strip alone without text.
 	@Test
-	public void theRoomFitsTheValueText()
+	public void theRoomFitsTheValueTextAboveTheStrip()
 	{
 		assertEquals(7, ExtraBar.height(8, true, BarEnds.CLASSIC, 0));
-		assertEquals(14, ExtraBar.height(8, true, BarEnds.CLASSIC, 14));
-		assertEquals(16, ExtraBar.height(36, true, BarEnds.CLASSIC, 10));
+		assertEquals(21, ExtraBar.height(8, true, BarEnds.CLASSIC, 14));
+		assertEquals(26, ExtraBar.height(36, true, BarEnds.CLASSIC, 10));
 	}
 
 	@Test

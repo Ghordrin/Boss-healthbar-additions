@@ -373,8 +373,9 @@ public class BossHealthBarOverlay extends Overlay
 		// This one follows the game's own extra bar, so it comes and goes with it rather than lasting the fight.
 		final boolean extraArea = extraBar.isLive(selector.isShowingPreview());
 		final int extraHeight = extraArea ? ExtraBar.GAP + extraBar.height(barHeight, flat, ends) : 0;
-		// Directly under the bar, so it reads as part of it and the rows below keep their order.
-		final int belowBar = barY + barHeight + capRise + inBarBelow + extraHeight;
+		final int belowBar = barY + barHeight + capRise + inBarBelow;
+		// Under the rows, so the health's own text stays next to the health bar.
+		final int extraTop = belowBar + footerHeight + secondFooterHeight;
 
 		final Composite originalComposite = graphics.getComposite();
 		final float opacity = animation.fadeInOpacity(now) * defeatOpacity;
@@ -435,8 +436,8 @@ public class BossHealthBarOverlay extends Overlay
 
 		if (extraArea)
 		{
-			extraBar.draw(graphics, themeColors(), barY + barHeight + capRise + inBarBelow, shownWidth, shownInset,
-				barHeight, fillProgress, flat, ends);
+			extraBar.draw(graphics, themeColors(), extraTop, shownWidth, shownInset, barHeight, fillProgress, flat,
+				ends);
 		}
 
 		setOpacity(graphics, originalComposite, opacity * textOpacity);
@@ -445,14 +446,14 @@ public class BossHealthBarOverlay extends Overlay
 		textPainter.drawRow(graphics, BarPosition.Row.BOTTOM_2, colors);
 		if (extraArea)
 		{
-			extraBar.drawText(graphics, colors, barY + barHeight + capRise + inBarBelow, width, barHeight, flat, ends);
+			extraBar.drawText(graphics, colors, extraTop, width);
 		}
 		showHoveredTip(leftExtent, topOffset + slideOffset);
 		setOpacity(graphics, originalComposite, opacity);
 
 		if (partnerArea)
 		{
-			final int partnerTop = belowBar + footerHeight + secondFooterHeight + PartnerBar.GAP;
+			final int partnerTop = extraTop + extraHeight + PartnerBar.GAP;
 			partnerBar.draw(graphics, originalComposite, opacity * animation.defeatTextOpacity(now, burnAway),
 				opacity * textOpacity, themeColors(), partnerTop, partnerTop + partnerRowHeight + partnerCapRise,
 				width, shownWidth, shownInset, capWidth, partnerBarHeight, fillProgress, flat, ends);
@@ -461,7 +462,7 @@ public class BossHealthBarOverlay extends Overlay
 
 		graphics.translate(-leftExtent, -(topOffset + slideOffset));
 
-		int totalHeight = topOffset + belowBar + footerHeight + secondFooterHeight + partnerHeight;
+		int totalHeight = topOffset + extraTop + extraHeight + partnerHeight;
 		final int centerY = topOffset + aboveBar + barCenterOffset;
 		// Crests and sparkles burn away with the bar.
 		final Shape clip = burn > 0f ? graphics.getClip() : null;
