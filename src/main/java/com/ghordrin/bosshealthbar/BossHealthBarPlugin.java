@@ -207,7 +207,7 @@ public class BossHealthBarPlugin extends Plugin
 		overlayManager.add(overlay);
 		overlayManager.add(pillarBarsOverlay);
 		overlayManager.add(partnerBarOverlay);
-		opponentInfoOverride.apply();
+		opponentInfoOverride.restoreOldSetting();
 		panel = panelProvider.get();
 		showSidebarIcon(config.showSidebarIcon());
 	}
@@ -261,10 +261,10 @@ public class BossHealthBarPlugin extends Plugin
 		overlayManager.remove(pillarBarsOverlay);
 		overlayManager.remove(partnerBarOverlay);
 		partyDamage.shutDown();
-		opponentInfoOverride.restore();
 		pickers.close();
 		clientThread.invoke(() ->
 		{
+			opponentInfoOverride.update(false);
 			tobBossBar.restore();
 			resetState();
 		});
@@ -426,18 +426,6 @@ public class BossHealthBarPlugin extends Plugin
 		{
 			clientThread.invoke(opponentTracker::loadLists);
 		}
-
-		if (BossHealthBarConfig.HIDE_VANILLA_OVERLAY_KEY.equals(event.getKey()))
-		{
-			if (config.hideVanillaOverlay())
-			{
-				opponentInfoOverride.apply();
-			}
-			else
-			{
-				opponentInfoOverride.restore();
-			}
-		}
 	}
 
 	@Subscribe
@@ -448,6 +436,7 @@ public class BossHealthBarPlugin extends Plugin
 			healthIndicatorMarkers.invalidate();
 			partyDefence.invalidatePlugin();
 			specialAttackCounts.invalidatePlugin();
+			opponentInfoOverride.onPluginChanged(event.getPlugin());
 		});
 	}
 
@@ -565,6 +554,7 @@ public class BossHealthBarPlugin extends Plugin
 		pillarBars.update(replacing);
 		final NPC raidBoss = tobBossBar.findBoss();
 		tobBossBar.update(replace, raidBoss, opponentTracker.raidBarBossGetsBar(raidBoss));
+		opponentInfoOverride.update(config.hideVanillaOverlay() && overlay.isBarDrawn());
 	}
 
 	@Subscribe

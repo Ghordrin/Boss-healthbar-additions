@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Hide Opponent Information bar only hides RuneLite's Opponent Information box while this plugin's bar shows, so normal monsters keep it. Turned off, it is never hidden. Your Opponent Information settings are no longer changed
+
 ## 2.3.0 (2026-11-04)
 
 ### New

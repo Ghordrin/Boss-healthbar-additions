@@ -1332,7 +1332,8 @@ public interface BossHealthBarConfig extends Config
 	@ConfigItem(
 		keyName = HIDE_VANILLA_OVERLAY_KEY,
 		name = "Hide Opponent Information bar",
-		description = "Turn off the health bar of RuneLite's Opponent Information plugin while this plugin is on.",
+		description = "Hide the health box of RuneLite's Opponent Information plugin while this plugin's bar shows. It stays for"
+			+ " opponents that don't get this bar.",
 		position = 8,
 		section = whenToShowSection
 	)

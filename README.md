@@ -34,7 +34,7 @@ The bar stays on the boss while you hit its minions, follows the game's boss bar
 
 | Plugin | What the bar does with it |
 |---|---|
-| Opponent Information (RuneLite) | Turns its health bar off while this plugin runs, so you don't see two. Your setting comes back after |
+| Opponent Information (RuneLite) | Hides its health box while this plugin's bar shows, so you don't see two. It stays for opponents that don't get this bar |
 | Chat Commands (RuneLite) | Reads the kill counts and personal bests it saves, for the kill count and the milestone and PB moments |
 | Special Attack Counter (RuneLite) | Shows its counts with each weapon's icon; hover one to see who landed how many |
 | Party (RuneLite) | Damage number can add up the hits of party members who also run this plugin |

@@ -38,6 +38,7 @@ import com.ghordrin.bosshealthbar.theme.PhaseColors;
 import com.ghordrin.bosshealthbar.theme.ThemeColors;
 import com.ghordrin.bosshealthbar.tracking.DamageTracker;
 import com.ghordrin.bosshealthbar.tracking.OpponentTracker;
+import com.google.common.annotations.VisibleForTesting;
 import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -68,6 +69,7 @@ public class BossHealthBarOverlay extends Overlay
 	private static final int MIN_FITTED_BAR_WIDTH = 160;
 	private static final int CREST_OVERLAP = 2;
 	private static final float CLIP_REACH = 4096f;
+	private static final long BAR_DRAWN_NANOS = 500_000_000L;
 
 	private final Client client;
 	private final BossHealthBarConfig config;
@@ -95,6 +97,7 @@ public class BossHealthBarOverlay extends Overlay
 	private final OpponentInfo opponentInfo;
 
 	private ThemeColors themeColors;
+	private long barDrawnNanos = System.nanoTime() - BAR_DRAWN_NANOS;
 
 
 	@Inject
@@ -179,6 +182,18 @@ public class BossHealthBarOverlay extends Overlay
 	void invalidateColors()
 	{
 		themeColors = null;
+	}
+
+	// A frame or two without a bar isn't the bar going away, so the Opponent Information box isn't put back for it.
+	public boolean isBarDrawn()
+	{
+		return drawnRecently(System.nanoTime(), barDrawnNanos);
+	}
+
+	@VisibleForTesting
+	static boolean drawnRecently(long now, long drawnNanos)
+	{
+		return now - drawnNanos < BAR_DRAWN_NANOS;
 	}
 
 	public boolean isShowingPreview()
@@ -267,6 +282,7 @@ public class BossHealthBarOverlay extends Overlay
 		{
 			return null;
 		}
+		barDrawnNanos = now;
 		final long defeatMillis = animation.defeatEffectMillis(now);
 		final float burn = burnAway ? BarEffects.burnProgress(defeatMillis) : 0f;
 
