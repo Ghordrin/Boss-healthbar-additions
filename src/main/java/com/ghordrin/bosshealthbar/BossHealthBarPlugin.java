@@ -8,7 +8,6 @@ import com.ghordrin.bosshealthbar.config.PanelMoveNotice;
 import com.ghordrin.bosshealthbar.config.Pickers;
 import com.ghordrin.bosshealthbar.config.SettingsTransfer;
 import com.ghordrin.bosshealthbar.data.Health;
-import com.ghordrin.bosshealthbar.debug.DebugExport;
 import com.ghordrin.bosshealthbar.debug.DebugLog;
 import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
 import com.ghordrin.bosshealthbar.gamebars.PillarBars;
@@ -169,9 +168,6 @@ public class BossHealthBarPlugin extends Plugin
 
 	@Inject
 	private DebugLog debugLog;
-
-	@Inject
-	private DebugExport debugExport;
 
 	@Inject
 	private ClientToolbar clientToolbar;

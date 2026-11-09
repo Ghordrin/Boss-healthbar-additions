@@ -58,8 +58,8 @@ public class PartyDefence
 	private boolean magicAvailable;
 	private final PluginReader.HeldReading<Reading> defence = new PluginReader.HeldReading<>();
 	private final PluginReader.HeldReading<Reading> magic = new PluginReader.HeldReading<>();
-	public BufferedImage icon;
-	public BufferedImage magicIcon;
+	private BufferedImage icon;
+	private BufferedImage magicIcon;
 	private final MagicIconMatcher magicIconMatcher = new MagicIconMatcher();
 	private SpritePixels magicOverrideSource;
 	private BufferedImage magicOverrideImage;

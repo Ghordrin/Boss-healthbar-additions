@@ -12,7 +12,6 @@ import com.ghordrin.bosshealthbar.data.BarState;
 import com.ghordrin.bosshealthbar.data.BossStats;
 import com.ghordrin.bosshealthbar.data.OpponentInfo;
 import com.ghordrin.bosshealthbar.gamebars.GameBossBar;
-import com.ghordrin.bosshealthbar.gamebars.TobBossBar;
 import com.ghordrin.bosshealthbar.integrations.KillCounts;
 import com.ghordrin.bosshealthbar.integrations.KillMoments;
 import com.ghordrin.bosshealthbar.integrations.PartyDefence;
@@ -60,7 +59,6 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.tooltip.Tooltip;
 import net.runelite.client.ui.overlay.tooltip.TooltipManager;
 import net.runelite.client.util.LinkBrowser;
-import net.runelite.client.util.Text;
 
 @Singleton
 public class BossHealthBarOverlay extends Overlay
@@ -81,7 +79,6 @@ public class BossHealthBarOverlay extends Overlay
 	private final BarTextPainter textPainter;
 	private final OpponentTracker opponentTracker;
 	private final GameBossBar gameBossBar;
-	private final TobBossBar tobBossBar;
 	private final DamageTracker damageTracker;
 	private final GoldBar goldBar;
 	private final KillCounts killCounts;
@@ -114,7 +111,6 @@ public class BossHealthBarOverlay extends Overlay
 		BarTextPainter textPainter,
 		OpponentTracker opponentTracker,
 		GameBossBar gameBossBar,
-		TobBossBar tobBossBar,
 		DamageTracker damageTracker,
 		GoldBar goldBar,
 		KillCounts killCounts,
@@ -137,7 +133,6 @@ public class BossHealthBarOverlay extends Overlay
 		this.textPainter = textPainter;
 		this.opponentTracker = opponentTracker;
 		this.gameBossBar = gameBossBar;
-		this.tobBossBar = tobBossBar;
 		this.damageTracker = damageTracker;
 		this.goldBar = goldBar;
 		this.killCounts = killCounts;
@@ -368,7 +363,8 @@ public class BossHealthBarOverlay extends Overlay
 		final int partnerBarHeight = partnerBar.barThickness(barHeight);
 		final int partnerCapRise = capRise(partnerBarHeight, flat, ends);
 		final int partnerRowHeight = partnerArea ? partnerBar.rowHeight() : 0;
-		final int partnerHeight = partnerArea ? PartnerBar.GAP + partnerBar.height(barHeight, flat, ends) : 0;
+		final int partnerHeight = partnerArea
+			? PartnerBar.GAP + PartnerBar.height(partnerRowHeight, partnerBarHeight, flat, ends) : 0;
 
 		// This one follows the game's own extra bar, so it comes and goes with it rather than lasting the fight.
 		final boolean extraArea = extraBar.isLive(selector.isShowingPreview());

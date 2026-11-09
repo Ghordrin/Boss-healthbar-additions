@@ -80,6 +80,7 @@ public class PartnerBar
 		return Math.max(MIN_HEIGHT, Math.round(barHeight * scalePercent / 100f));
 	}
 
+	// Asked first every frame, so the fonts and the rows are brought up to date here.
 	public int rowHeight()
 	{
 		prepare();
@@ -87,11 +88,6 @@ public class PartnerBar
 	}
 
 	// The room this takes, without the gap before it.
-	public int height(int barHeight, boolean flat, BarEnds ends)
-	{
-		return height(rowHeight(), barThickness(barHeight), flat, ends);
-	}
-
 	public static int height(int rowHeight, int barThickness, boolean flat, BarEnds ends)
 	{
 		return rowHeight + capRise(barThickness, flat, ends) * 2 + barThickness;
@@ -124,7 +120,6 @@ public class PartnerBar
 		ThemeColors themeColors, int rowTop, int barY, int width, int shownWidth, int shownInset, int capWidth,
 		int barThickness, float fillProgress, boolean flat, BarEnds ends)
 	{
-		prepare();
 		final boolean preview = selector.isShowingPreview();
 		final FightGroup.Member next = preview ? null : group.partner();
 		if (next != member)
